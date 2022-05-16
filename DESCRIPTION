@@ -17,4 +17,11 @@ URL: https://github.com/skysyzygy/tessilake
 BugReports: https://github.com/skysyzygy/tessilake/issues
 Imports: 
     data.table,
-    magrittr
+    ff,
+    ffbase,
+    glue,
+    Rfast
+Suggests: 
+    covr,
+    testthat (>= 3.0.0)
+Config/testthat/edition: 3
