@@ -2,6 +2,7 @@
 
 export(as.ram2)
 export(fix_vmode)
+export(setleftjoin)
 import(data.table)
 import(ff)
 importFrom(Rfast,is_integer)
@@ -11,3 +12,5 @@ importFrom(ff,as.ram)
 importFrom(ff,delete)
 importFrom(ffbase,as.ram.ffdf)
 importFrom(glue,glue)
+importFrom(rlang,"%||%")
+importFrom(stats,setNames)

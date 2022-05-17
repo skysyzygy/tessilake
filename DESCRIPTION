@@ -20,7 +20,8 @@ Imports:
     ff,
     ffbase,
     glue,
-    Rfast
+    Rfast,
+    rlang
 Suggests: 
     covr,
     testthat (>= 3.0.0)
