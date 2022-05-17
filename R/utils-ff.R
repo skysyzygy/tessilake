@@ -72,34 +72,35 @@ fix_vmode = function(vec) {
   isDate = inherits(vec,"Date")
   hasDec = !isDate && !Rfast::is_integer(vec[which(!is.na(vec))])
   hasNA = any(is.na(vec))
-  signed = minVec<0
+  signed = minVec<0 || isDate
   bits = ceiling(log2(abs(as.numeric(maxVec))+.01))
 
   vmode =
     if(hasDec) {"double" 	#64 bit float
-    } else if(bits ==1 & !signed & !hasNA & !isDate) {"boolean" 	#1 bit logical without NA
-    } else if(bits ==1 & !signed & !isDate) {"logical" 	#2 bit logical with NA
-    } else if(bits <=2 & !signed & !hasNA) {"quad" 	#2 bit unsigned integer without NA
-    } else if(bits <=4 & !signed & !hasNA) {"nibble" #	4 bit unsigned integer without NA
-    } else if(bits <=7) {"byte" #8 bit signed integer with NA
-    } else if(bits <=8 & !signed & !hasNA) {"ubyte" 	#8 bit unsigned integer without NA
-    } else if(bits <=15) {"short" 	#16 bit signed integer with NA
-    } else if(bits <=16 & !signed & !hasNA) {"ushort" 	#16 bit unsigned integer without NA
-      #} else if(bits <=23) {"single" 	#32 bit float
-    } else if(bits <=31) {"integer" 	#32 bit signed integer with NA
-    } else {"double"} 	#64 bit float
-
-
-  if(vmode(vec)!=vmode) {
-    if(.rammode[vmode]!=storage.mode(vec)) {
-      message(glue("Converting {vmode(vec)} to {vmode}..."))
-      vmode(vec) <- vmode
+    } else if(!signed & !hasNA) {
+      if(!isDate & bits==1) {"boolean"} # 1 bit logical without NA
+      else if(bits<=2) {"quad"} # 2 bit unsigned integer without NA
+      else if(bits<=4) {"nibble"} # 4 bit unsigned integer without NA
+      else if(bits<=8) {"ubyte"} # 8 bit unsigned integer without NA
+      else if(bits<=16) {"ushort"} # 16 bit unsigned integer without NA
+      else if(bits<=32) {"integer"} # 32 bit unsigned integer without NA
+      else {"double"}
     } else {
-      message(glue("Changing vmode attribute from {vmode(vec)} to {vmode}"))
-      setattr(vec,"vmode",vmode)
+      if(!isDate & bits==1 & !signed) {"logical"} # 2 bit logical with NA
+      else if(bits<=7) {"byte"} # 8 bit signed integer with NA
+      else if(bits<=15) {"short"} # 16 bit signed integer with NA
+      else if(bits<=31) {"integer"} # 32 bit signed integer with NA
+      else {"double"}
     }
+
+
+  setattr(vec,"vmode",NULL)
+  if(.rammode[vmode]!=storage.mode(vec)) {
+    message(glue("Converting to {vmode}..."))
+    vmode(vec) <- vmode
   } else {
-    message(glue("Nothing to be done, already {vmode(vec)}"))
+    message(glue("Assigning vmode attribute to {vmode}..."))
+    setattr(vec,"vmode",vmode)
   }
   vec
 }

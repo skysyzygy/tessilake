@@ -1,6 +1,7 @@
 
 library(ffbase)
 library(data.table)
+library(purrr)
 
 # as.ram2 -----------------------------------------------------------------
 
@@ -28,6 +29,8 @@ test_that("as.ram2 leaves nothing behind", {
 
 # fix_vmode ---------------------------------------------------------------
 
+fix_vmode = function(...) {suppressMessages(tessilake::fix_vmode(...))}
+
 test_that("fix_vmode throws an error when given an ff",{
   test.ff = ff(1:5)
   expect_error(fix_vmode(test.ff))
@@ -40,86 +43,93 @@ test_that("fix_vmode converts character to factor and leaves factors alone",{
   expect_equal(fix_vmode(vec.fact),vec.fact)
 })
 
-vec.bool = c(0,2^0)
-vec.quad = c(0,2^(0:1))
-vec.nibble = c(0,2^(0:3))
-vec.ubyte = c(0,2^(0:7))
-vec.ushort = c(0,2^(0:15))
-vec.integer = c(0,2^(0:31))
-vec.double = c(0,2^(0:63))
+
+local_create_vec = function() {
+  vecs = map(as.list(2^(0:63)),~c(0,.))
+  rlang::env_bind(parent.frame(),
+    vecs = vecs,
+    vecs_na = map(vecs,~c(NA,.)),
+    vecs_1 = map(vecs,~c(-1,.)),
+    vecs_e = copy(vecs),
+    vecs_e_na = map(vecs,~c(NA,.)),
+    vecs_e_1 = map(vecs,~c(-1,.)))
+}
 
 test_that("fix_vmode sets vmode on integer values based on the number of bits required",{
-  expect_equal(vmode(fix_vmode(vec.bool)),"boolean")
-  expect_equal(vmode(fix_vmode(vec.quad)),"quad")
-  expect_equal(vmode(fix_vmode(vec.nibble)),"nibble")
-  expect_equal(vmode(fix_vmode(vec.ubyte)),"ubyte")
-  expect_equal(vmode(fix_vmode(vec.ushort)),"ushort")
-  expect_equal(vmode(fix_vmode(vec.double)),"double")
+  local_create_vec()
+  expect_equal(map_chr(vecs,~vmode(fix_vmode(.))),c("boolean",
+                                                    "quad",
+                                                rep("nibble",2),
+                                                rep("ubyte",4),
+                                                rep("ushort",8),
+                                                rep("integer",15),
+                                                rep("double",33)))
+
 })
 
+
 test_that("fix_vmode upgrades vmode on integer values when there are NA or signed values",{
-  expect_equal(vmode(fix_vmode(c(NA,vec.bool))),"logical")
-  expect_equal(vmode(fix_vmode(c(NA,vec.quad))),"byte")
-  expect_equal(vmode(fix_vmode(c(NA,vec.nibble))),"byte")
-  expect_equal(vmode(fix_vmode(c(NA,vec.ubyte))),"short")
-  expect_equal(vmode(fix_vmode(c(NA,vec.ushort))),"integer")
-  expect_equal(vmode(fix_vmode(c(NA,vec.double))),"double")
-  expect_equal(vmode(fix_vmode(c(-1,vec.bool))),"byte")
-  expect_equal(vmode(fix_vmode(c(-1,vec.quad))),"byte")
-  expect_equal(vmode(fix_vmode(c(-1,vec.nibble))),"byte")
-  expect_equal(vmode(fix_vmode(c(-1,vec.ubyte))),"short")
-  expect_equal(vmode(fix_vmode(c(-1,vec.ushort))),"integer")
-  expect_equal(vmode(fix_vmode(c(-1,vec.double))),"double")
+  local_create_vec()
+  expect_equal(map_chr(vecs_na,~vmode(fix_vmode(.))),c("logical",
+                                                    rep("byte",6),
+                                                    rep("short",8),
+                                                    rep("integer",16),
+                                                    rep("double",33)))
+  expect_equal(map_chr(vecs_1,~vmode(fix_vmode(.))),c(rep("byte",7),
+                                                       rep("short",8),
+                                                       rep("integer",16),
+                                                       rep("double",33)))
+
 })
 
 test_that("fix_vmode doesn't destroy any values when passing through ff",{
-  expect_equal(as.ram2(ff(fix_vmode(vec.bool)))+0,vec.bool)
-  expect_equal(as.ram2(ff(fix_vmode(vec.quad)))+0,vec.quad)
-  expect_equal(as.ram2(ff(fix_vmode(vec.nibble)))+0,vec.nibble)
-  expect_equal(as.ram2(ff(fix_vmode(vec.ubyte)))+0,vec.ubyte)
-  expect_equal(as.ram2(ff(fix_vmode(vec.ushort)))+0,vec.ushort)
-  expect_equal(as.ram2(ff(fix_vmode(vec.double)))+0,vec.double)
-
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.bool))))+0,c(NA,vec.bool))
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.quad))))+0,c(NA,vec.quad))
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.nibble))))+0,c(NA,vec.nibble))
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.ubyte))))+0,c(NA,vec.ubyte))
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.ushort))))+0,c(NA,vec.ushort))
-  expect_equal(as.ram2(ff(fix_vmode(c(NA,vec.double))))+0,c(NA,vec.double))
-
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.bool))))+0,c(-1,vec.bool))
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.quad))))+0,c(-1,vec.quad))
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.nibble))))+0,c(-1,vec.nibble))
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.ubyte))))+0,c(-1,vec.ubyte))
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.ushort))))+0,c(-1,vec.ushort))
-  expect_equal(as.ram2(ff(fix_vmode(c(-1,vec.double))))+0,c(-1,vec.double))
+  local_create_vec()
+  expect_equal(map(vecs,~as.ram2(ff(fix_vmode(.)))+0),vecs_e)
+  expect_equal(map(vecs_na,~as.ram2(ff(fix_vmode(.)))+0),vecs_e_na)
+  expect_equal(map(vecs_1,~as.ram2(ff(fix_vmode(.)))+0),vecs_e_1)
 })
 
 as.Date.numeric = function(x,...) {base::as.Date.numeric(x,origin=as.Date("1970-01-01"))}
 test_that("fix_vmode doesn't destroy dates when passing through ff", {
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.bool)))),as.Date(vec.bool))
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.quad)))),as.Date(vec.quad))
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.nibble)))),as.Date(vec.nibble))
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.ubyte)))),as.Date(vec.ubyte))
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.ushort)))),as.Date(vec.ushort))
-  expect_equal(as.ram2(ff(fix_vmode(as.Date(vec.double)))),as.Date(vec.double))
+  local_create_vec()
+  expect_equal(map(vecs,~as.ram2(ff(fix_vmode(as.Date.numeric(.))))),map(vecs_e,as.Date.numeric))
+  expect_equal(map(vecs_na,~as.ram2(ff(fix_vmode(as.Date.numeric(.))))),map(vecs_e_na,as.Date.numeric))
+  expect_equal(map(vecs_1,~as.ram2(ff(fix_vmode(as.Date.numeric(.))))),map(vecs_e_1,as.Date.numeric))
 })
 
 as.POSIXct.numeric = function(x,...) {base::as.POSIXct.numeric(x,origin=as.POSIXct("1970-01-01 00:00:00"))}
 test_that("fix_vmode doesn't destroy POSIXct when passing through ff", {
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.bool+.1)))),as.POSIXct(vec.bool+.1))
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.quad+.1)))),as.POSIXct(vec.quad+.1))
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.nibble+.1)))),as.POSIXct(vec.nibble+.1))
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.ubyte+.1)))),as.POSIXct(vec.ubyte+.1))
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.ushort+.1)))),as.POSIXct(vec.ushort+.1))
-  expect_equal(as.ram2(ff(fix_vmode(as.POSIXct(vec.double+.1)))),as.POSIXct(vec.double+.1))
+  local_create_vec()
+  expect_equal(map(vecs,~as.ram2(ff(fix_vmode(as.POSIXct(.+.1))))),map(vecs_e,~as.POSIXct(.+.1)))
+  expect_equal(map(vecs_na,~as.ram2(ff(fix_vmode(as.POSIXct(.+.1))))),map(vecs_e_na,~as.POSIXct(.+.1)))
+  expect_equal(map(vecs_1,~as.ram2(ff(fix_vmode(as.POSIXct(.+.1))))),map(vecs_e_1,~as.POSIXct(.+.1)))
 })
 
 test_that("fix_vmode doesn't destroy doubles when passing through ff", {
-  expect_equal(as.ram2(ff(fix_vmode(vec.bool+.1))),(vec.bool+.1))
-  expect_equal(as.ram2(ff(fix_vmode(vec.quad+.1))),(vec.quad+.1))
-  expect_equal(as.ram2(ff(fix_vmode(vec.nibble+.1))),(vec.nibble+.1))
-  expect_equal(as.ram2(ff(fix_vmode(vec.ubyte+.1))),(vec.ubyte+.1))
-  expect_equal(as.ram2(ff(fix_vmode(vec.ushort+.1))),(vec.ushort+.1))
-  expect_equal(as.ram2(ff(fix_vmode(vec.double+.1))),(vec.double+.1))
+  local_create_vec()
+  expect_equal(map(vecs,~as.ram2(ff(fix_vmode(.+.1)))),map(vecs_e,~(.+.1)))
+  expect_equal(map(vecs_na,~as.ram2(ff(fix_vmode(.+.1)))),map(vecs_e_na,~(.+.1)))
+  expect_equal(map(vecs_1,~as.ram2(ff(fix_vmode(.+.1)))),map(vecs_e_1,~(.+.1)))
+})
+
+test_that("fix_vmode works with things that already have vmode set", {
+  local_create_vec()
+  expect_equal(map(vecs,~vmode(fix_vmode(as.ram(ff(.))))),map(vecs_e,~vmode(fix_vmode(.))))
+  expect_equal(map(vecs_na,~vmode(fix_vmode(as.ram(ff(.))))),map(vecs_e_na,~vmode(fix_vmode(.))))
+  expect_equal(map(vecs_1,~vmode(fix_vmode(as.ram(ff(.))))),map(vecs_e_1,~vmode(fix_vmode(.))))
+})
+
+test_that("fix_vmode works with things that are in the right storage mode but wrong vmode", {
+  local_create_vec()
+  expect_equal(map(vecs,~vmode(fix_vmode(setattr(.,"vmode","integer")))),map(vecs_e,~vmode(fix_vmode(.))))
+  expect_equal(map(vecs,~vmode(fix_vmode(setattr(.,"vmode","double")))),map(vecs_e,~vmode(fix_vmode(.))))
+})
+
+
+test_that("fix_vmode assigns in-place things that don't need conversion", {
+  local_create_vec()
+  expect_equal(map(vecs,~rlang::is_reference(fix_vmode(.),.)),as.list(c(rep(F,31),
+                                                                        rep(T,33))))
+  vecs[1:31] = map(vecs[1:31],as.integer)
+  expect_equal(map(vecs[1:31],~rlang::is_reference(fix_vmode(.),.)),as.list(c(F,rep(T,30))))
 })
