@@ -1,50 +1,4 @@
-tessiTables =
-  rbindlist(list(
-        list(shortName="accounts",  longName="T_ACCOUNT_DATA",	baseTable="T_ACCOUNT_DATA",	primaryKeys=c("id")),
-        list(shortName="activities",	longName="BI.VT_CUST_ACTIVITY",	baseTable="T_CUST_ACTIVITY",	primaryKeys=c("activity_no")),
-        list(shortName="addresses",	longName="BI.VT_ADDRESS",	baseTable="T_ADDRESS",	primaryKeys=c("address_no")),
-        list(shortName="appeals",	longName="BI.VT_APPEAL",	baseTable="T_APPEAL",	primaryKeys=c("appeal_no")),
-        list(shortName="audit",	longName="TA_AUDIT_TRAIL",	baseTable="TA_AUDIT_TRAIL",	primaryKeys=c("")),
-        list(shortName="emails",	longName="T_EADDRESS",	baseTable="T_EADDRESS",	primaryKeys=c("eaddress_no")),
-        list(shortName="affiliations",	longName="BI.VT_AFFILIATION",	baseTable="T_AFFILIATION",	primaryKeys=c("affiliation_no")),
-        list(shortName="attributes",	longName="BI.VT_ATTRIBUTE",	baseTable="TX_CUST_KEYWORD",	primaryKeys=c("cust_keyword_no")),
-        list(shortName="campaigns",	longName="BI.VT_CAMPAIGN",	baseTable="T_CAMPAIGN",	primaryKeys=c("campaign_no")),
-        list(shortName="constituencies",	longName="TX_CONST_CUST",	baseTable="TX_CONST_CUST",	primaryKeys=c("constituency",	"customer_no")),
-        list(shortName="contributions",	longName="BI.VT_CONTRIBUTION",	baseTable="T_CONTRIBUTION",	primaryKeys=c("ref_no")),
-        list(shortName="creditees",	longName="T_CREDITEE",	baseTable="T_CREDITEE",	primaryKeys=c("creditee_no",	"ref_no")),
-        list(shortName="customers",	longName="BI.VT_CUSTOMER",	baseTable="T_CUSTOMER",	primaryKeys=c("customer_no")),
-        list(shortName="facility",	longName="BI.VT_FACILITY",	baseTable="T_FACILITY",	primaryKeys=c("facil_no")),
-        list(shortName="fee",	longName="BI.VT_FEE",	baseTable="T_FEE",	primaryKeys=c("fee_no")),
-        list(shortName="feeDetail",	longName="BI.VT_FEE_DETAIL",	baseTable="T_SLI_FEE",	primaryKeys=c("id")),
-        list(shortName="funds",	longName="BI.VT_FUND",	baseTable="T_FUND",	primaryKeys=c("fund_no")),
-        list(shortName="holds",	longName="T_HC",	baseTable="T_HC",	primaryKeys=c("hc_no")),
-        list(shortName="iwave",	longName="LT_IWAVE_CUSTOMER_SCORE_DATA",	baseTable="LT_IWAVE_CUSTOMER_SCORE_DATA",	primaryKeys=c("Id")),
-        list(shortName="listContents",	longName="T_LIST_CONTENTS",	baseTable="T_LIST_CONTENTS",	primaryKeys=c("customer_no",	"list_no")),
-        list(shortName="lists",	longName="T_LIST",	baseTable="T_LIST",	primaryKeys=c("list_no")),
-        list(shortName="memberships",	longName="BI.VT_MEMBERSHIP",	baseTable="TX_CUST_MEMBERSHIP",	primaryKeys=c("cust_memb_no")),
-        list(shortName="orders",	longName="BI.VT_ORDER",	baseTable="T_ORDER",	primaryKeys=c("order_no")),
-        list(shortName="orderDetail",	longName="BI.VT_ORDER_DETAIL_AT_PRICE_LAYER",	baseTable="T_LINEITEM",	primaryKeys=c("li_seq_no")),
-        list(shortName="payments",	longName="BI.VT_PAYMENT",	baseTable="T_PAYMENT",	primaryKeys=c("payment_no",	"sequence_no")),
-        list(shortName="performances",	longName="BI.VT_PERFORMANCE_DETAIL",	baseTable="",	primaryKeys=c("")),
-        list(shortName="performanceKeywords",	longName="BI.VT_DW_PERFORMANCE_KEYWORDS",	baseTable="",	primaryKeys=c("")),
-        list(shortName="plans",	longName="BI.VT_PLAN",	baseTable="T_PLAN",	primaryKeys=c("plan_no")),
-        list(shortName="planStatus",	longName="TR_PLAN_STATUS",	baseTable="TR_PLAN_STATUS",	primaryKeys=c("id")),
-        list(shortName="planWorkers",	longName="BI.VT_PLAN_WORKER",	baseTable="TX_CUST_PLAN",	primaryKeys=c("id")),
-        list(shortName="pricing",	longName="BI.VT_PERFORMANCE_PRICING_AT_PRICE_LAYER",	baseTable="T_PERF_PRICE_TYPE",	primaryKeys=c("id")),
-        list(shortName="promotions",	longName="T_PROMOTION",	baseTable="T_PROMOTION",	primaryKeys=c("customer_no",   "source_no")),
-        list(shortName="promotionResponses",	longName="T_EPROMOTION_RESPONSE_HISTORY",	baseTable="T_EPROMOTION_RESPONSE_HISTORY",	primaryKeys=c("ID")),
-        list(shortName="seasons",	longName="BI.VT_SEASON",	baseTable="TR_SEASON",	primaryKeys=c("id")),
-        list(shortName="seats",	longName="BI.VT_PERFORMANCE_SEATING",	baseTable="TX_PERF_SEAT",	primaryKeys=c("perf_no",	"pkg_no",	"seat_no")),
-        list(shortName="seatHistory",	longName="T_ORDER_SEAT_HIST",	baseTable="T_ORDER_SEAT_HIST",	primaryKeys=c("")),
-        list(shortName="sources",	longName="BI.VT_SOURCE",	baseTable="TX_APPEAL_MEDIA_TYPE",	primaryKeys=c("source_no")),
-        list(shortName="specialActivities",	longName="BI.VT_SPECIAL_ACTIVITY",	baseTable="T_SPECIAL_ACTIVITY",	primaryKeys=c("sa_no")),
-        list(shortName="steps",	longName="BI.VT_STEP",	baseTable="T_STEP",	primaryKeys=c("step_no")),
-        list(shortName="stepTypes",	longName="TR_STEP_TYPE",	baseTable="TR_STEP_TYPE",	primaryKeys=c("id")),
-        list(shortName="subscriptions",	longName="BI.VT_DW_SUBSCRIPTION_SUMMARY",	baseTable="T_CUST_SUBSCRIPTION_SUMMARY",	primaryKeys=c("customer_no",	"season")),
-        list(shortName="tickets",	longName="BI.VT_TICKET_HISTORY",	baseTable="T_TICKET_HISTORY",	primaryKeys=c("tck_hist_no")),
-        list(shortName="transactions",	longName="T_TRANSACTION",	baseTable="T_TRANSACTION",	primaryKeys=c("sequence_no")),
-        list(shortName="transactionTypes",	longName="TR_TRANSACTION_TYPE",	baseTable="TR_TRANSACTION_TYPE",	primaryKeys=c("id"))
-))
+tessiTables = read_yaml(system.file("extdata","tessiTables.yml",package="tessilake")) %>% rbindlist(idcol="shortName")
 
 #' is.error
 #' helper function to use errorable expressions in stopifnot
@@ -60,7 +14,7 @@ is.error = function(expr) {
 
 #' list_tessi_tables
 #'
-#' @return named list of tables
+#' @return named list of tables. Tables are defined in a yaml file stored in extdata/tessiTables.yml
 #' @export
 #'
 #' @examples
@@ -126,7 +80,7 @@ read_tessi_db = function(tableName) {
 
   # map string tableName to SQL tableName
   if(tableName %in% tessiTables$shortName) {
-    longName = tessiTables[shortName==tableName,longName]
+    longName = tessiTables[shortName==tableName,longName[1]]
     primaryKeys = tessiTables[shortName==tableName,primaryKeys]
   } else {longName = tableName}
   # add dbo schema if no schema present
