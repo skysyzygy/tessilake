@@ -28,6 +28,7 @@ Imports:
     odbc,
     Rfast,
     rlang,
+    stringr,
     yaml
 Suggests: 
     purrr,

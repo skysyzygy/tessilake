@@ -1,6 +1,3 @@
-library(withr)
-library(dplyr)
-
 dir.create(file.path(tempdir(),"shallow"))
 dir.create(file.path(tempdir(),"deep"))
 defer({
@@ -8,7 +5,7 @@ defer({
   unlink(file.path(tempdir(),"deep"),recursive=T)
 })
 
-local_options(tessilake.shallow=file.path(tempdir(),"shallow"),
+withr::local_options(tessilake.shallow=file.path(tempdir(),"shallow"),
               tessilake.deep=file.path(tempdir(),"deep"),
               tessilake.tessitura="Tessitura") #TODO: dummy database for tests without Tessitura present
 
@@ -52,30 +49,6 @@ test_that("read_tessi_db complains if asked for a table it doesn't know about an
   expect_gt(collect(count(read_tessi_db("BI.VT_SEASON")))[[1]],100)
 })
 
-test_that("read_cache create the cache directories if they don't exist", {
-  read_cache("seasons","tessi","deep")
-  dirName = file.path(.Options$tessilake.deep,"tessi")
-  expect_true(dir.exists(dirName))
-  unlink(dirName,recursive = T)
-  read_cache("seasons","tessi","shallow")
-  dirName = file.path(.Options$tessilake.shallow,"tessi")
-  expect_true(dir.exists(dirName))
-  unlink(dirName,recursive = T)
-})
-
-test_that("update_data.table updates data.tables incrementally", {
-  local_package("lubridate")
-  local_timezone("America/New_York")
-  from = data.table(date=seq(today()-dyears(10),now(),by="days"))
-  from[,`:=`(I=.I,data=runif(.N))]
-  to = copy(from)
-  to = to[runif(.N)>.1]
-  to[runif(.N)<.1,`:=`(date=date-ddays(1),
-                       data=runif(.N))]
-
-  expect_equal(from,setorderv(update_data.table(from,to,date,c(I)),"I"))
-
-})
 
 test_that("read_stream handles merges",{
   expect_equal(2 * 2, 4)
