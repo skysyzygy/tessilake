@@ -7,8 +7,8 @@
 read_tessi(tableName, subset, select, ...)
 }
 \arguments{
-\item{tableName}{character name of the table to read from Tessitura, either one of the available tables (see "list_tessi_tables") or a
-table that exists in Tessitura. The default schema is "dbo"}
+\item{tableName}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=list_tessi_tables]{list_tessi_tables()}}) or the
+name of a SQL table that exists in Tessitura. The default SQL table schema is \code{dbo}.}
 
 \item{subset}{logical expression indicating elements or rows to keep}
 
@@ -17,12 +17,12 @@ table that exists in Tessitura. The default schema is "dbo"}
 \item{...}{further arguments to be passed to or from other methods}
 }
 \value{
-an Apache Arrow Table, see the "arrow" package for more information
+an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
 }
 \description{
-Read a table from Tessitura and cache it locally as a Parquet file.
-Cache storage is managed by "tessilake.shallow" option.
-Tessitura database connection defined by an ODBC profile with the name set by the "tessilake.Tessitura" option.
+Read a table from Tessitura and cache it locally as a Feather file and remotely as a Parquet file.
+Cache storage locations are managed by \code{tessilake.shallow} and \code{tessilake.deep} options.
+Tessitura database connection defined by an ODBC profile with the name set by the \code{tessilake.tessitura} option.
 }
 \examples{
 

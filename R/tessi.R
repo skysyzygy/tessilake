@@ -1,41 +1,41 @@
-tessiTables = read_yaml(system.file("extdata","tessiTables.yml",package="tessilake")) %>% rbindlist(idcol="shortName")
-
-#' is.error
-#' helper function to use errorable expressions in stopifnot
-#' @param expr expression to run (in the parent frame)
+#' tessi_list_tables
 #'
-#' @return boolean, TRUE if the expression causes an error, FALSE if not
+#' The list of tessitura tables is configured in the extdata/tessiTables.yml file in the package directory
 #'
+#' ## yml format
+#' ```
+#' {shortName}:
+#'    longName: {name of table/view to be loaded}
+#'    baseTable: {the underlying table being queried that has primaryKeys}
+#'    primaryKeys: {the primary key(s) as a value or a list of values}
+#' ````
+#' @return  data.table of configured tessitura tables with columns shortName, longName, baseTable and primaryKeys
 #' @examples
-is.error = function(expr) {
-  inherits(try(expr,silent=T),"try-error")
-}
+#' #customers:
+#' #   longName: BI.VT_CUSTOMER
+#' #   baseTable: T_CUSTOMER
+#' #   primaryKeys: customer_no
+#'
+#' list_tessi_tables()[shortName=="customers"]
+#'
+tessi_list_tables = function() { tessiTables }
 
-
-#' list_tessi_tables
-#'
-#' @return named list of tables. Tables are defined in a yaml file stored in extdata/tessiTables.yml
-#' @export
-#'
-#' @examples
-#'
-#' list_tessi_tables()
-#'
-list_tessi_tables = function() { tessiTables }
+#' @rdname tessi_list_tables
+tessiTables = yaml::read_yaml(system.file("extdata","tessiTables.yml",package="tessilake")) %>% rbindlist(idcol="shortName")
 
 #' read_tessi
 #'
-#' Read a table from Tessitura and cache it locally as a Parquet file.
-#' Cache storage is managed by "tessilake.shallow" option.
-#' Tessitura database connection defined by an ODBC profile with the name set by the "tessilake.Tessitura" option.
+#' Read a table from Tessitura and cache it locally as a Feather file and remotely as a Parquet file.
+#' Cache storage locations are managed by `tessilake.shallow` and `tessilake.deep` options.
+#' Tessitura database connection defined by an ODBC profile with the name set by the `tessilake.tessitura` option.
 #'
-#' @param tableName character name of the table to read from Tessitura, either one of the available tables (see "list_tessi_tables") or a
-#' table that exists in Tessitura. The default schema is "dbo"
+#' @param tableName character name of the table to read from Tessitura, either one of the available tables (see [list_tessi_tables()]) or the
+#' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
 #' @param subset logical expression indicating elements or rows to keep
 #' @param select character vector indicating columns to select from stream file
 #' @param ... further arguments to be passed to or from other methods
 #'
-#' @return an Apache Arrow Table, see the "arrow" package for more information
+#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @export
 #'
 #' @examples
@@ -57,7 +57,7 @@ read_tessi = function(tableName,subset,select,...) {
   head(table,1000) %>% collect
 }
 
-#' read_tessi_db
+#' tessi_read_db
 #' internal function to return a Tessitura table based on a name
 #' @param tableName string
 #'
@@ -67,7 +67,7 @@ read_tessi = function(tableName,subset,select,...) {
 #' @importFrom dbplyr in_schema
 #' @examples
 #'
-read_tessi_db = function(tableName) {
+tessi_read_db = function(tableName) {
   shortName = TABLE_SCHEMA = TABLE_NAME = NULL
 
   stopifnot(
@@ -109,82 +109,3 @@ read_tessi_db = function(tableName) {
   table
 }
 
-#' read_tessi_cache
-#' internal function to read cached tessi files
-#' @param tableName string
-#' @param type string, either "tessi" or "stream"
-#' @param depth string, either "deep" or "shallow"
-#'
-#' @return environment containing the deep and shallow caches as arrow Datasets
-#' @importFrom arrow open_dataset write_dataset
-#' @examples
-read_cache = function(tableName,type=c("tessi","stream"),depth=c("deep","shallow")) {
-
-
-  stopifnot("tableName is required" = !missing(tableName),
-            "'depth' must be either 'deep' or 'shallow'" = depth %in% c("deep","shallow"))
-  tessilake.option = paste0("tessilake.",depth)
-  if(is.null(getOption(tessilake.option)) || !dir.exists(getOption(tessilake.option)))
-    stop(paste0("Please set the tessilake.",depth," option to define the local cache location"))
-
-  # build the cache query with arrow
-  cachePath = file.path(getOption(tessilake.option),type,paste(tableName,collapse="."))
-  if(!dir.exists(cachePath)) dir.create(cachePath,recursive=T)
-
-  cache = open_dataset(cachePath,format=ifelse(depth=="deep","parquet","arrow"))
-
-}
-
-#' update_data.table
-#' updates the data.table-like object "to" based on the data.frame-like "from" object,
-#' using "dateColumn" to determine which rows have been updated
-#' and updating only those with matching "primaryKey".
-#'
-#' @param from the source object
-#' @param to the object to be updated
-#' @param dateColumn string or tidyselected column identifying the date column to use to determine which rows to update
-#' @param primaryKeys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
-#'
-#' @importFrom dplyr collect semi_join select_at
-#' @importFrom rlang as_name call_args
-#' @return an updated data.table updated in-place
-#' @export
-#'
-#' @examples
-update_data.table = function(from,to,dateColumn,primaryKeys) {
-   # convert to a string
-
-  stopifnot("'from' and 'to' are required" = !missing(from) & !missing(to),
-            "Column names in 'from' must be in 'to'" = all(colnames(from) %in% colnames(to)),
-            "'to' must be a data.table" = inherits(to,"data.table"),
-            "'from' must be data.frame-like" = inherits(to,"data.frame"))
-
-  if(missing(dateColumn) || missing(primaryKeys)) {to[] = collect(from[])} # just copy everything from from into to
-
-  if(!missing(dateColumn)) {
-    stopifnot(
-            "dateColumn must be a string or a tidy-selected column" =
-              !is.error(dateColumn <- as_name(enquo(dateColumn))),
-            "dateColumn must exist in 'from' and 'to'" =
-              dateColumn %in% colnames(from) && dateColumn %in% colnames(to))
-  }
-  if(!missing(primaryKeys)) {
-    stopifnot(
-            "primaryKeys must be a vector of strings or a vector of tidy-selected columns" =
-              !is.error(primaryKeys <- sapply(call_args(enquo(primaryKeys)),as_name)),
-            "primaryKeys must exist in 'from' and 'to'" =
-              all(primaryKeys %in% colnames(from)) && all(primaryKeys %in% colnames(to)))
-  }
-
-  cols.from = select_at(from,c(dateColumn,primaryKeys)) %>% collect %>% setDT
-  cols.to = to[,mget(c(dateColumn,primaryKeys))]
-  cols.diff = cols.from[!cols.to,on=c(dateColumn,primaryKeys)]
-
-  if(cols.diff[,.N]>0) {
-    update = semi_join(from,cols.diff,by=primaryKeys,copy=T) %>% collect %>% setDT
-    to[update,(colnames(to)):=mget(paste0("i.",colnames(to))),on=primaryKeys]
-    to = rbind(to,update[!to,on=primaryKeys])
-  }
-
-  to
-}

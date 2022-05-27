@@ -79,3 +79,67 @@ setleftjoin = function(l,r,by=NULL) {
   setkeyv(l,by.l)
   l
 }
+
+
+#' update_table
+#'
+#' updates the data.table-like object `to` based on the data.frame-like `from` object,
+#' using `dateColumn` to determine which rows have been updated and updating only those with matching `primaryKeys`.
+#'
+#' @param from the source object
+#' @param to the object to be updated
+#' @param dateColumn string or tidyselected column identifying the date column to use to determine which rows to update
+#' @param primaryKeys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
+#'
+#' @importFrom dplyr collect semi_join select
+#' @importFrom rlang as_name call_args eval_tidy
+#' @importFrom bit setattributes
+#' @return an updated data.table updated in-place
+#' @export
+#'
+#' @examples
+#' from = data.frame()
+#'
+#'
+update_table = function(from,to,dateColumn=NULL,primaryKeys=NULL) {
+  stopifnot("'from' and 'to' are required" = !missing(from) & !missing(to),
+            "Column names in 'from' must be in 'to'" = all(colnames(from) %in% colnames(to)),
+            "'to' must be a data.table" = inherits(to,"data.table"),
+            "'from' must be data.frame-like" = inherits(to,"data.frame"))
+
+  if(missing(primaryKeys)) {to[] = collect(from[])} # just copy everything from from into to
+
+  if(!missing(dateColumn)) {
+    dateColumn = as_name(enquo(dateColumn))
+    if(!dateColumn %in% colnames(from) || !dateColumn %in% colnames(to))
+      stop(sprintf("dateColumn (%s) must exist in 'from' and 'to'.",dateColumn))
+  }
+  if(!missing(primaryKeys)) {
+    primaryKeys = enquo(primaryKeys)
+    if(is.call(primaryKeys) && is.error(primaryKeys <- sapply(call_args(primaryKeys),as_name)))
+      stop(sprintf("primaryKeys must be a vector of strings or tidy-selected columns"))
+    if(!is.vector(primaryKeys) && is.error(primaryKeys <- as_name(primaryKeys)))
+      stop(sprintf("primaryKeys must be a vector of strings or tidy-selected columns"))
+    if(!all(primaryKeys %in% colnames(from)) || !all(primaryKeys %in% colnames(to)))
+      stop(sprintf("primaryKeys (%s) must exist in 'from' and 'to'.",primaryKeys))
+  }
+
+  cols.from = select(from,!!c(dateColumn,primaryKeys)) %>% collect %>% setDT
+  cols.to = to[,mget(c(dateColumn,primaryKeys))]
+
+  # rows that match in from and to
+  update = cols.to[cols.from,on=primaryKeys]
+  # optionally filtered by date
+  if(!missing(dateColumn))
+    update = update[get(dateColumn)!=get(paste0("i.",dateColumn))]
+  # update, only querying the data needed in from
+  to[update,(colnames(from)):=
+       semi_join(from,update,by=primaryKeys,copy=T) %>% collect,
+     on=primaryKeys]
+
+  # rows that don't yet exist in to
+  new = cols.from[!cols.to,on=primaryKeys]
+  to = rbindlist(list(to,semi_join(from,new,by=primaryKeys,copy=T) %>% collect))
+
+  to
+}
