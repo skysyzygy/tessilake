@@ -1,7 +1,7 @@
 
 #' cache_create
 #'
-#' Internal function to create cached for arrow files. Simple wrapper on write_datset that points to a directory defined by
+#' Internal function to create cache directory, simply defined by
 #' `tessilake.{depth}/{type}`
 #'
 #' @param tableName string
@@ -9,7 +9,6 @@
 #' @param type string, either "tessi" or "stream"
 #'
 #' @return string for the configured cache path
-#' @importFrom arrow write_dataset
 #' @examples
 cache_create = function(tableName,depth=c("deep","shallow"),type=c("tessi","stream")) {
 
@@ -52,6 +51,42 @@ cache_read = function(tableName,depth=c("deep","shallow"),type=c("tessi","stream
   cache
 }
 
+#' cache_get_partitioning
+#'
+#' Internal function to read/generate partition information from an Arrow Dataset.
+#'
+#' @param x
+#'
+#' @return string column name of partition
+#'
+#' @examples
+cache_get_partitioning = function(x) {
+
+  stopifnot("x must be an Arrow Dataset" = inherits(x,"Dataset"))
+
+  files = (if(inherits(dataset,"arrow_dplyr_query")) x$.data else x)$files
+  partitioning = stringr::str_match(files,"(?<var>\\w+)=\\w+")[1,2]
+
+}
+
+#' cache_make_partitioning
+#'
+#' Builds suggested partitioning from the primary keys of the table.
+#'
+#' @param x
+#' @param primaryKeys
+#'
+#' @return
+#' @export
+#'
+#' @examples
+cache_make_partitioning = function(x,primaryKeys=attr(x,"primaryKeys")) {
+
+  stopifnot("First primary key must be numeric" = !is.numeric(x[primaryKeys[[1]]]))
+
+  x[,partition=floor(get(primaryKeys[[1]]) / 10000)]
+}
+
 #' cache_write
 #'
 #' Internal function to write cached arrow files. Simple wrapper on write_dataset that points to a directory defined by
@@ -73,15 +108,15 @@ cache_write = function(x,tableName,depth=c("deep","shallow"),type=c("tessi","str
   cachePath = cache_create(tableName,depth,type)
 
   if(!is.null(primaryKeys)) {
-    # if(inherits(x,"data.table")) {
-    #   x[,partition:=get(primaryKeys[[1]]) %>% substr(1,3) %>% as.integer]
-    # } else {
+    if(inherits(x,"data.table")) {
+      x[,partition:=get(primaryKeys[[1]]) %>% substr(1,3) %>% as.integer]
+    } else {
       x = mutate(x,partition=substr(get(primaryKeys[[1]]),1,3) %>% as.integer)
-#    }
+    }
     write_dataset(x,cachePath,format=ifelse(depth=="deep","parquet","arrow"),
                           partitioning="partition",...)
 
- #   x$partition=NULL
+    if(inherits(x,"data.table")) x[,partition:=NULL]
 
   } else {
     write_dataset(x,cachePath,format=ifelse(depth=="deep","parquet","arrow"),...)

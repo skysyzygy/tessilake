@@ -107,7 +107,10 @@ update_table = function(from,to,dateColumn=NULL,primaryKeys=NULL) {
             "'to' must be a data.table" = inherits(to,"data.table"),
             "'from' must be data.frame-like" = inherits(to,"data.frame"))
 
-  if(missing(primaryKeys)) {to[] = collect(from[])} # just copy everything from from into to
+  primaryKeys = enquo(primaryKeys)
+  dateColumn = enquo(dateColumn)
+
+  if(missing(primaryKeys)) {return(to[] <- collect(from[]))} # just copy everything from from into to
 
   if(!missing(dateColumn)) {
     dateColumn = as_name(enquo(dateColumn))
