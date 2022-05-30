@@ -9,19 +9,21 @@
 #' @param type string, either "tessi" or "stream"
 #'
 #' @return string for the configured cache path
+#' @importFrom checkmate assert_character assert_choice test_character test_directory
 #' @examples
-cache_create = function(tableName,depth=c("deep","shallow"),type=c("tessi","stream")) {
+cache_create <- function(tableName, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+  assert_character(tableName)
+  assert_choice(depth,c("deep","shallow"))
+  assert_choice(type,c("tessi","stream"))
 
-  stopifnot("tableName is required" = !missing(tableName),
-            "depth must be either 'deep' or 'shallow'" = depth %in% c("deep","shallow"),
-            "type must be either 'tessi' or 'stream'" = type %in% c("tessi","stream"))
-  cacheRoot = getOption(paste0("tessilake.",depth))
-  if(is.null(cacheRoot) || !dir.exists(cacheRoot))
-    stop(paste0("Please set the tessilake.",depth," option to point to an existing cache path."))
+  cacheRoot <- config::get(paste0("tessilake.", depth))
+  if (!(test_character(cacheRoot) && test_directory(cacheRoot,"rwx"))) {
+    stop(paste0("Please set the tessilake.", depth, " option in config.yml to point to a cache path where you have read/write access."))
+  }
   # build the cache query with arrow
-  cachePath = file.path(cacheRoot,type,tableName)
+  cachePath <- file.path(cacheRoot, type, tableName)
 
-  if(!dir.exists(cachePath)) dir.create(cachePath,recursive=T)
+  if (!dir.exists(cachePath)) dir.create(cachePath, recursive = T)
   cachePath
 }
 
@@ -38,15 +40,15 @@ cache_create = function(tableName,depth=c("deep","shallow"),type=c("tessi","stre
 #' @return [`arrow::Dataset`]
 #' @importFrom arrow open_dataset
 #' @examples
-cache_read = function(tableName,depth=c("deep","shallow"),type=c("tessi","stream"),
-                      include.partition=F,...) {
+cache_read <- function(tableName, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+                       include.partition = F, ...) {
+  cachePath <- cache_create(tableName, depth, type)
 
-  cachePath = cache_create(tableName,depth,type)
+  cache <- open_dataset(cachePath, format = ifelse(depth == "deep", "parquet", "arrow"), ...)
 
-  cache = open_dataset(cachePath,format=ifelse(depth=="deep","parquet","arrow"),...)
-
-  if("partition" %in% names(cache) && include.partition==F)
-    cache = select(cache,-partition)
+  if ("partition" %in% names(cache) && include.partition == F) {
+    cache <- select(cache, -partition)
+  }
 
   cache
 }
@@ -55,17 +57,18 @@ cache_read = function(tableName,depth=c("deep","shallow"),type=c("tessi","stream
 #'
 #' Internal function to read/generate partition information from an Arrow Dataset.
 #'
-#' @param x
+#' @param x Arrow Dataset
 #'
 #' @return string column name of partition
-#'
+#' @importFrom checkmate assert check_class
 #' @examples
-cache_get_partitioning = function(x) {
+cache_get_partitioning <- function(x) {
+  assert(check_class(x,"Dataset"),check_class(x,"arrow_dplyr_query"))
 
-  stopifnot("x must be an Arrow Dataset" = inherits(x,"Dataset"))
+  dataset <- (if (inherits(x, "arrow_dplyr_query")) x$.data else x)
+  partitioning = unserialize(charToRaw(dataset$metadata$r))$attributes$partitioning
 
-  files = (if(inherits(dataset,"arrow_dplyr_query")) x$.data else x)$files
-  partitioning = stringr::str_match(files,"(?<var>\\w+)=\\w+")[1,2]
+  if(!is.null(partitioning)) rlang::parse_expr(partitioning)
 
 }
 
@@ -73,18 +76,44 @@ cache_get_partitioning = function(x) {
 #'
 #' Builds suggested partitioning from the primary keys of the table.
 #'
-#' @param x
-#' @param primaryKeys
+#' @param x data.frame
+#' @param primaryKeys primary keys to set partitioning with
 #'
-#' @return
+#' @return un-evaluated R expression to be used in creating the partitioning by
 #' @export
-#'
+#' @importFrom checkmate assert_character check_character assert_names check_numeric assert test_numeric test_character
+#' @importFrom rlang expr
 #' @examples
-cache_make_partitioning = function(x,primaryKeys=attr(x,"primaryKeys")) {
+#' x = data.frame(a=c(1,2,3),b=c("a","b","c"))
+#'
+#' cache_make_partitioning(x,primaryKeys="a")
+#' # expression a/10000
+#'
+#' x %>% mutate(partition = eval(cache_make_partitioning(x,primaryKeys="a")))
+#'
+cache_make_partitioning <- function(x, primaryKeys = attr(x, "primaryKeys")) {
+  assert_data_frame(x)
+  assert_character(primaryKeys,min.len=1)
+  assert_names(colnames(x),must.include=primaryKeys)
 
-  stopifnot("First primary key must be numeric" = !is.numeric(x[primaryKeys[[1]]]))
+  if(is.data.table(x)) {
+    primaryKey = x[,primaryKeys[[1]],with=F][[1]]
+  } else {
+    primaryKey = x[,primaryKeys[[1]]]
+  }
 
-  x[,partition=floor(get(primaryKeys[[1]]) / 10000)]
+  assert(check_character(primaryKey,any.missing=F,unique=T),
+         check_numeric(primaryKey,any.missing=F,unique=T))
+
+  primaryKey = sort(primaryKey)
+
+  if (test_numeric(primaryKey,any.missing = F,unique = T)) {
+    offset = 10000 * median(primaryKey[-1]-primaryKey[-length(primaryKey)])
+    return(expr(floor(!!sym(primaryKeys[[1]]) / !!offset)))
+  } else if (test_character(primaryKey,any.missing = F,unique = T)) {
+    return(expr(substr(tolower(!!sym(primaryKeys[[1]])),1,2)))
+  }
+
 }
 
 #' cache_write
@@ -101,25 +130,30 @@ cache_make_partitioning = function(x,primaryKeys=attr(x,"primaryKeys")) {
 #' @return invisible
 #' @importFrom arrow write_dataset
 #' @importFrom dplyr select mutate
+#' @importFrom bit setattr
 #' @examples
-cache_write = function(x,tableName,depth=c("deep","shallow"),type=c("tessi","stream"),
-                       primaryKeys=attr(x,"primaryKeys"),...) {
+cache_write <- function(x, tableName, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+                        primaryKeys = attr(x, "primaryKeys"), ...) {
+  cachePath <- cache_create(tableName, depth, type)
 
-  cachePath = cache_create(tableName,depth,type)
+  if (!is.null(primaryKeys)) {
+    partitioning = cache_make_partitioning(x,primaryKeys=primaryKeys)
+    setattr(x,"partitioning",rlang::expr_deparse(partitioning))
 
-  if(!is.null(primaryKeys)) {
-    if(inherits(x,"data.table")) {
-      x[,partition:=get(primaryKeys[[1]]) %>% substr(1,3) %>% as.integer]
+    if (inherits(x, "data.table")) {
+      x[, partition := eval(partitioning)]
     } else {
-      x = mutate(x,partition=substr(get(primaryKeys[[1]]),1,3) %>% as.integer)
+      x <- mutate(x, partition = eval(partitioning))
     }
-    write_dataset(x,cachePath,format=ifelse(depth=="deep","parquet","arrow"),
-                          partitioning="partition",...)
+    write_dataset(x, cachePath,
+      format = ifelse(depth == "deep", "parquet", "arrow"),
+      partitioning = "partition", ...
+    )
 
-    if(inherits(x,"data.table")) x[,partition:=NULL]
+    if (inherits(x, "data.table")) x[, partition := NULL]
 
   } else {
-    write_dataset(x,cachePath,format=ifelse(depth=="deep","parquet","arrow"),...)
+    write_dataset(x, cachePath, format = ifelse(depth == "deep", "parquet", "arrow"), ...)
   }
 
   invisible()
@@ -139,32 +173,34 @@ cache_write = function(x,tableName,depth=c("deep","shallow"),type=c("tessi","str
 #' @importFrom dplyr select filter_at
 #' @importFrom rlang sym
 #' @examples
-cache_update = function(x,tableName,depth=c("deep","shallow"),type=c("tessi","stream"),
-                       primaryKeys=attr(x,"primaryKeys"),...) {
+cache_update <- function(x, tableName, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+                         primaryKeys = attr(x, "primaryKeys"), ...) {
+  dataset <- cache_read(tableName, depth, type, include.partition = T, ...)
 
-  dataset = cache_read(tableName,depth,type,include.partition=T,...)
+  assert_data_frame(x)
 
-  files = (if(inherits(dataset,"arrow_dplyr_query")) dataset$.data else dataset)$files
-  dataset.partitioning = stringr::str_match(files,"(?<var>\\w+)=\\w+")[1,2]
-  primaryKey = primaryKeys[[1]]
+  partitioning = cache_get_partitioning(dataset)
+  primaryKey <- primaryKeys[[1]]
 
-  if(!is.na(dataset.partitioning) && is.null(primaryKeys))
-    stop(sprintf("Dataset has partitioning (%s) but dataset doesn't have a primary key to develop partition with. Cowardly refusing to continue.",
-                 dataset.partitioning))
-  if(!is.na(dataset.partitioning) && !is.numeric(select(x,primaryKey)[[1]]))
-    stop(sprintf("First primary key (%s) isn't a numeric column, so I don't know how to partition this.",
-                 primaryKey))
+  if (!is.null(partitioning)) {
+    if(is.null(primaryKeys)) {
+      stop(sprintf(
+        "Dataset has partitioning (%s) but dataset doesn't have a primary key to develop partition with. Cowardly refusing to continue.",
+        as.character(partitioning)
+      ))
+    }
 
-  if(!is.na(dataset.partitioning)) {
-    partitions = select(x, !!primaryKey)[[1]] %>% substr(1,3) %>% as.integer
+    partitions = eval_tidy(partitioning,x)
 
     # load only the dataset partitions that need to get updated
-    dataset = dataset %>% filter(partition %in% partitions) %>% select(-partition) %>% collect %>% setDT
+    dataset <- dataset %>%
+      filter(partition %in% partitions) %>%
+      select(-partition) %>%
+      collect() %>%
+      setDT()
 
-    x = update_table(x,dataset,primaryKeys=c(!!primaryKeys))
+    x <- update_table(x, dataset, primaryKeys = c(!!primaryKeys))
   }
 
-  cache_write(x,tableName,depth,type,primaryKeys=primaryKeys,...)
+  cache_write(x, tableName, depth, type, primaryKeys = primaryKeys, ...)
 }
-
-

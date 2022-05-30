@@ -21,6 +21,6 @@ cache_create(
 string for the configured cache path
 }
 \description{
-Internal function to create cached for arrow files. Simple wrapper on write_datset that points to a directory defined by
+Internal function to create cache directory, simply defined by
 \verb{tessilake.\{depth\}/\{type\}}
 }

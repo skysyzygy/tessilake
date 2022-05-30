@@ -40,7 +40,7 @@ tessiTables = yaml::read_yaml(system.file("extdata","tessiTables.yml",package="t
 #'
 #' @examples
 #'
-#' \dontrun{read_tessi("memberships",
+#' if(FALSE){read_tessi("memberships",
 #'          init_dt>=as.Date("2021-07-01"),
 #'          c("memb_level","customer_no")}
 #'

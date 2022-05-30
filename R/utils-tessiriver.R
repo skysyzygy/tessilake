@@ -16,7 +16,7 @@
 #'
 #' @examples
 #'
-#' \dontrun{read_stream("addressStream",
+#' if(FALSE){read_stream("addressStream",
 #'          timestamp>=as.Date("2021-07-01"),
 #'          c("group_customer_no","timestamp")}
 #'

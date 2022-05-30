@@ -18,21 +18,23 @@ BugReports: https://github.com/skysyzygy/tessilake/issues
 Imports: 
     arrow,
     bit,
+    checkmate,
+    config,
     data.table,
     DBI,
     dbplyr,
     dplyr,
-    ff,
-    ffbase,
     glue,
     magrittr,
+    mockery,
     odbc,
-    Rfast,
     rlang,
-    stringr,
-    yaml
+    stringr
 Suggests: 
     purrr,
     covr,
-    testthat (>= 3.0.0)
+    testthat (>= 3.0.0),
+    spelling,
+    testthis
 Config/testthat/edition: 3
+Language: en-US

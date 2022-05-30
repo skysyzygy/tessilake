@@ -26,10 +26,10 @@ Fast left join for data.table that simply adds r's columns to l by reference.
 
 library(data.table)
 
-l = data.table(a=c(1,2,3),b=c(3,4,NA))
-r = data.table(b=c(3,7,NA),c=c(1,2,4))
+l <- data.table(a = c(1, 2, 3), b = c(3, 4, NA))
+r <- data.table(b = c(3, 7, NA), c = c(1, 2, 4))
 
-setleftjoin(l,r,by="b")
-setleftjoin(l,r,by=c("b"="c"))
+setleftjoin(l, r, by = "b")
+setleftjoin(l, r, by = c("b" = "c"))
 
 }

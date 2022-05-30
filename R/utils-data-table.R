@@ -30,53 +30,55 @@ NULL
 #'
 #' library(data.table)
 #'
-#' l = data.table(a=c(1,2,3),b=c(3,4,NA))
-#' r = data.table(b=c(3,7,NA),c=c(1,2,4))
+#' l <- data.table(a = c(1, 2, 3), b = c(3, 4, NA))
+#' r <- data.table(b = c(3, 7, NA), c = c(1, 2, 4))
 #'
-#' setleftjoin(l,r,by="b")
-#' setleftjoin(l,r,by=c("b"="c"))
+#' setleftjoin(l, r, by = "b")
+#' setleftjoin(l, r, by = c("b" = "c"))
 #'
-setleftjoin = function(l,r,by=NULL) {
+setleftjoin <- function(l, r, by = NULL) {
   N <- NULL
-  stopifnot(is.data.frame(l),is.data.frame(r))
+  stopifnot(is.data.frame(l), is.data.frame(r))
 
   setDT(r)
   setDT(l)
-  index.r = indices(r)
-  if(is.null(by)) {
-    by = intersect(colnames(l),colnames(r))
+  index.r <- indices(r)
+  if (is.null(by)) {
+    by <- intersect(colnames(l), colnames(r))
     message(glue("Joining on {paste(by,collapse=',')}"))
   }
 
   # build by.l and by.r from by
-  by.l=names(by) %||% by
-  by.r=unname(by)
+  by.l <- names(by) %||% by
+  by.r <- unname(by)
   by.l[by.l == ""] <- by.r[by.l == ""]
-  setkeyv(l,by.l)
-  setindexv(r,by.r)
+  setkeyv(l, by.l)
+  setindexv(r, by.r)
 
   # fail if there's too many matching rows in r
-  if( r[,.N,by=by.r][N>1,.N] > 0 ) stop(glue("{deparse(substitute(r))} must have no more than one row per join column."))
+  if (r[, .N, by = by.r][N > 1, .N] > 0) stop(glue("{deparse(substitute(r))} must have no more than one row per join column."))
 
   # build out column names
-  on=setNames(by.l,by.r)
-  collisions = intersect(setdiff(colnames(l),by.l),
-                         setdiff(colnames(r),by.r))
-  cols.r = setdiff(colnames(r),by.r)
-  cols.l = colnames(l)
-  cols.r[cols.r %in% collisions] = paste0(cols.r[cols.r %in% collisions],".y")
-  cols.l[cols.l %in% collisions] = paste0(cols.l[cols.l %in% collisions],".x")
+  on <- setNames(by.l, by.r)
+  collisions <- intersect(
+    setdiff(colnames(l), by.l),
+    setdiff(colnames(r), by.r)
+  )
+  cols.r <- setdiff(colnames(r), by.r)
+  cols.l <- colnames(l)
+  cols.r[cols.r %in% collisions] <- paste0(cols.r[cols.r %in% collisions], ".y")
+  cols.l[cols.l %in% collisions] <- paste0(cols.l[cols.l %in% collisions], ".x")
 
-  if(length(collisions)) {
+  if (length(collisions)) {
     # rename columns in l
-    l[,(cols.l):=.SD]
-    l[,(setdiff(colnames(l),cols.l)):=NULL]
+    l[, (cols.l) := .SD]
+    l[, (setdiff(colnames(l), cols.l)) := NULL]
   }
   # and set columns from r
-  l[,(cols.r):=r[l,setdiff(colnames(r),by.r),on=on,with=F]]
+  l[, (cols.r) := r[l, setdiff(colnames(r), by.r), on = on, with = F]]
 
-  setindexv(r,index.r)
-  setkeyv(l,by.l)
+  setindexv(r, index.r)
+  setkeyv(l, by.l)
   l
 }
 
@@ -94,55 +96,73 @@ setleftjoin = function(l,r,by=NULL) {
 #' @importFrom dplyr collect semi_join select
 #' @importFrom rlang as_name call_args eval_tidy
 #' @importFrom bit setattributes
+#' @importFrom checkmate assert_data_frame assert_subset
 #' @return an updated data.table updated in-place
 #' @export
 #'
 #' @examples
-#' from = data.frame()
+#' from <- data.frame()
 #'
-#'
-update_table = function(from,to,dateColumn=NULL,primaryKeys=NULL) {
-  stopifnot("'from' and 'to' are required" = !missing(from) & !missing(to),
-            "Column names in 'from' must be in 'to'" = all(colnames(from) %in% colnames(to)),
-            "'to' must be a data.table" = inherits(to,"data.table"),
-            "'from' must be data.frame-like" = inherits(to,"data.frame"))
+update_table <- function(from, to, dateColumn = NULL, primaryKeys = NULL) {
+  assert_data_frame(from)
+  assert_data_frame(to)
+  assert_subset(colnames(from),colnames(to))
 
-  primaryKeys = enquo(primaryKeys)
-  dateColumn = enquo(dateColumn)
+  if (missing(primaryKeys)) {
+    return(to = collect(from))
+  } # just copy everything from from into to
 
-  if(missing(primaryKeys)) {return(to[] <- collect(from[]))} # just copy everything from from into to
-
-  if(!missing(dateColumn)) {
-    dateColumn = as_name(enquo(dateColumn))
-    if(!dateColumn %in% colnames(from) || !dateColumn %in% colnames(to))
-      stop(sprintf("dateColumn (%s) must exist in 'from' and 'to'.",dateColumn))
+  if (!missing(dateColumn)) {
+    dateColumn <- as_name(enquo(dateColumn))
+    if (!dateColumn %in% colnames(from) || !dateColumn %in% colnames(to)) {
+      stop(sprintf("dateColumn (%s) must exist in 'from' and 'to'.", dateColumn))
+    }
   }
-  if(!missing(primaryKeys)) {
-    primaryKeys = enquo(primaryKeys)
-    if(is.call(primaryKeys) && is.error(primaryKeys <- sapply(call_args(primaryKeys),as_name)))
+  if (!missing(primaryKeys)) {
+    primaryKeys <- enquo(primaryKeys)
+    if (!is.error(call_args(primaryKeys)) && is.error(primaryKeys <- sapply(call_args(primaryKeys), as_name))) {
       stop(sprintf("primaryKeys must be a vector of strings or tidy-selected columns"))
-    if(!is.vector(primaryKeys) && is.error(primaryKeys <- as_name(primaryKeys)))
+    }
+    if (!is.vector(primaryKeys) && is.error(primaryKeys <- as_name(primaryKeys))) {
       stop(sprintf("primaryKeys must be a vector of strings or tidy-selected columns"))
-    if(!all(primaryKeys %in% colnames(from)) || !all(primaryKeys %in% colnames(to)))
-      stop(sprintf("primaryKeys (%s) must exist in 'from' and 'to'.",primaryKeys))
+    }
+    if (!all(primaryKeys %in% colnames(from)) || !all(primaryKeys %in% colnames(to))) {
+      stop(sprintf("primaryKeys (%s) must exist in 'from' and 'to'.", primaryKeys))
+    }
+  }
+  if(missing(primaryKeys) && !is.null(dateColumn)) {
+    stop(sprintf("primaryKeys must be given if dateColumn is given"))
   }
 
-  cols.from = select(from,!!c(dateColumn,primaryKeys)) %>% collect %>% setDT
-  cols.to = to[,mget(c(dateColumn,primaryKeys))]
+  if(is.data.table(from)) {
+    cols.from = from[,c(dateColumn,primaryKeys),with=F]
+  } else {
+    cols.from <- select(from, !!c(dateColumn, primaryKeys)) %>%
+      collect() %>%
+      setDT()
+  }
+  cols.to <- to[, mget(c(dateColumn, primaryKeys))]
 
   # rows that match in from and to
-  update = cols.to[cols.from,on=primaryKeys]
+  update <- cols.to[cols.from, on = primaryKeys]
   # optionally filtered by date
-  if(!missing(dateColumn))
-    update = update[get(dateColumn)!=get(paste0("i.",dateColumn))]
-  # update, only querying the data needed in from
-  to[update,(colnames(from)):=
-       semi_join(from,update,by=primaryKeys,copy=T) %>% collect,
-     on=primaryKeys]
+  if (!missing(dateColumn)) {
+    update <- update[get(dateColumn) != get(paste0("i.", dateColumn))]
+  }
 
   # rows that don't yet exist in to
-  new = cols.from[!cols.to,on=primaryKeys]
-  to = rbindlist(list(to,semi_join(from,new,by=primaryKeys,copy=T) %>% collect))
+  new <- cols.from[!cols.to, on = primaryKeys]
+
+  if(is.data.table(from)) {
+    from.update = from[update,colnames(from),on = primaryKeys,with=F]
+    from.new = from[new,colnames(from),on=primaryKeys,with=F]
+  } else {
+    from.update = semi_join(from, update, by = primaryKeys, copy = T) %>% collect()
+    from.new = semi_join(from, new, by = primaryKeys, copy = T) %>% collect()
+  }
+
+  to[update,(colnames(from)):=from.update,on=primaryKeys]
+  to <- rbindlist(list(to, from.new))
 
   to
 }

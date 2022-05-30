@@ -9,6 +9,6 @@
 #' @examples
 #' is.error(stop("Error"))
 #'
-is.error = function(expr) {
-  inherits(try(expr,silent=T),"try-error")
+is.error <- function(expr) {
+  inherits(try(expr, silent = T), "try-error")
 }

@@ -18,15 +18,15 @@
 #' test.ram <- as.ram2(test)
 #' file.exists(filename(test)) # FALSE
 #'
-
-as.ram2 = function(obj) {
-  if(is.ffdf(obj))
-    r = setDT(obj[,])
-  else
-    r = obj[]
+as.ram2 <- function(obj) {
+  if (is.ffdf(obj)) {
+    r <- setDT(obj[, ])
+  } else {
+    r <- obj[]
+  }
   delete(obj)
   # fix_vmode sets vmode in a way that persists after loading from ff
-  setattr(r,"vmode",NULL)
+  setattr(r, "vmode", NULL)
   r
 }
 
@@ -54,53 +54,77 @@ as.ram2 = function(obj) {
 #' test <- fix_vmode(test[1:3])
 #' vmode(test) # "quad"
 #'
-
-fix_vmode = function(vec) {
-  if(is.ff(vec)) {
+fix_vmode <- function(vec) {
+  if (is.ff(vec)) {
     stop("ff objects can't be coerced")
   }
-  if(is.character(vec)) {
+  if (is.character(vec)) {
     message("Converting character to factor...")
     return(as.factor(vec))
-  } else if(is.factor(vec)) {
+  } else if (is.factor(vec)) {
     message("Already a factor")
     return(vec)
   }
 
-  minVec = min(vec,na.rm=TRUE)
-  maxVec = max(vec,na.rm=TRUE)
-  isDate = inherits(vec,"Date")
-  hasDec = !isDate && !Rfast::is_integer(vec[which(!is.na(vec))])
-  hasNA = any(is.na(vec))
-  signed = minVec<0 || isDate
-  bits = ceiling(log2(abs(as.numeric(maxVec))+.01))
+  minVec <- min(vec, na.rm = TRUE)
+  maxVec <- max(vec, na.rm = TRUE)
+  isDate <- inherits(vec, "Date")
+  hasDec <- !isDate && !Rfast::is_integer(vec[which(!is.na(vec))])
+  hasNA <- any(is.na(vec))
+  signed <- minVec < 0 || isDate
+  bits <- ceiling(log2(abs(as.numeric(maxVec)) + .01))
 
-  vmode =
-    if(hasDec) {"double" 	#64 bit float
-    } else if(!signed & !hasNA) {
-      if(!isDate & bits==1) {"boolean"} # 1 bit logical without NA
-      else if(bits<=2) {"quad"} # 2 bit unsigned integer without NA
-      else if(bits<=4) {"nibble"} # 4 bit unsigned integer without NA
-      else if(bits<=8) {"ubyte"} # 8 bit unsigned integer without NA
-      else if(bits<=16) {"ushort"} # 16 bit unsigned integer without NA
-      else if(bits<=32) {"integer"} # 32 bit unsigned integer without NA
-      else {"double"}
+  vmode <-
+    if (hasDec) {
+      "double" # 64 bit float
+    } else if (!signed & !hasNA) {
+      if (!isDate & bits == 1) {
+        "boolean"
+      } # 1 bit logical without NA
+      else if (bits <= 2) {
+        "quad"
+      } # 2 bit unsigned integer without NA
+      else if (bits <= 4) {
+        "nibble"
+      } # 4 bit unsigned integer without NA
+      else if (bits <= 8) {
+        "ubyte"
+      } # 8 bit unsigned integer without NA
+      else if (bits <= 16) {
+        "ushort"
+      } # 16 bit unsigned integer without NA
+      else if (bits <= 32) {
+        "integer"
+      } # 32 bit unsigned integer without NA
+      else {
+        "double"
+      }
     } else {
-      if(!isDate & bits==1 & !signed) {"logical"} # 2 bit logical with NA
-      else if(bits<=7) {"byte"} # 8 bit signed integer with NA
-      else if(bits<=15) {"short"} # 16 bit signed integer with NA
-      else if(bits<=31) {"integer"} # 32 bit signed integer with NA
-      else {"double"}
+      if (!isDate & bits == 1 & !signed) {
+        "logical"
+      } # 2 bit logical with NA
+      else if (bits <= 7) {
+        "byte"
+      } # 8 bit signed integer with NA
+      else if (bits <= 15) {
+        "short"
+      } # 16 bit signed integer with NA
+      else if (bits <= 31) {
+        "integer"
+      } # 32 bit signed integer with NA
+      else {
+        "double"
+      }
     }
 
 
-  setattr(vec,"vmode",NULL)
-  if(.rammode[vmode]!=storage.mode(vec)) {
+  setattr(vec, "vmode", NULL)
+  if (.rammode[vmode] != storage.mode(vec)) {
     message(glue("Converting to {vmode}..."))
     vmode(vec) <- vmode
   } else {
     message(glue("Assigning vmode attribute to {vmode}..."))
-    setattr(vec,"vmode",vmode)
+    setattr(vec, "vmode", vmode)
   }
   vec
 }

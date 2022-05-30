@@ -23,7 +23,6 @@ updates the data.table-like object \code{to} based on the data.frame-like \code{
 using \code{dateColumn} to determine which rows have been updated and updating only those with matching \code{primaryKeys}.
 }
 \examples{
-from = data.frame()
-
+from <- data.frame()
 
 }

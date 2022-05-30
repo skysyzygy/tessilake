@@ -26,7 +26,7 @@ Tessitura database connection defined by an ODBC profile with the name set by th
 }
 \examples{
 
-\dontrun{read_tessi("memberships",
+if(FALSE){read_tessi("memberships",
          init_dt>=as.Date("2021-07-01"),
          c("memb_level","customer_no")}
 
