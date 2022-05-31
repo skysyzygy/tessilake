@@ -1,0 +1,200 @@
+#
+# tessiTables
+#
+# shortName:
+#    long_name: {name of table/view to be loaded}
+#    base_table: {the underlying table being queried that has primary keys}
+#    primary_keys: {the primary key(s) as a value or a list of values}
+#
+#
+accounts:
+  long_name: T_ACCOUNT_DATA
+  base_table: T_ACCOUNT_DATA
+  primary_keys: id
+activities:
+  long_name: BI.VT_CUST_ACTIVITY
+  base_table: T_CUST_ACTIVITY
+  primary_keys: activity_no
+addresses:
+  long_name: BI.VT_ADDRESS
+  base_table: T_ADDRESS
+  primary_keys: address_no
+appeals:
+  long_name: BI.VT_APPEAL
+  base_table: T_APPEAL
+  primary_keys: appeal_no
+audit:
+  long_name: TA_AUDIT_TRAIL
+  base_table: TA_AUDIT_TRAIL
+  primary_keys: ''
+emails:
+  long_name: T_EADDRESS
+  base_table: T_EADDRESS
+  primary_keys: eaddress_no
+affiliations:
+  long_name: BI.VT_AFFILIATION
+  base_table: T_AFFILIATION
+  primary_keys: affiliation_no
+attributes:
+  long_name: BI.VT_ATTRIBUTE
+  base_table: TX_CUST_KEYWORD
+  primary_keys: cust_keyword_no
+campaigns:
+  long_name: BI.VT_CAMPAIGN
+  base_table: T_CAMPAIGN
+  primary_keys: campaign_no
+constituencies:
+  long_name: TX_CONST_CUST
+  base_table: TX_CONST_CUST
+  primary_keys:
+  - constituency
+  - customer_no
+contributions:
+  long_name: BI.VT_CONTRIBUTION
+  base_table: T_CONTRIBUTION
+  primary_keys: ref_no
+creditees:
+  long_name: T_CREDITEE
+  base_table: T_CREDITEE
+  primary_keys:
+  - creditee_no
+  - ref_no
+customers:
+  long_name: BI.VT_CUSTOMER
+  base_table: T_CUSTOMER
+  primary_keys: customer_no
+facility:
+  long_name: BI.VT_FACILITY
+  base_table: T_FACILITY
+  primary_keys: facil_no
+fee:
+  long_name: BI.VT_FEE
+  base_table: T_FEE
+  primary_keys: fee_no
+feeDetail:
+  long_name: BI.VT_FEE_DETAIL
+  base_table: T_SLI_FEE
+  primary_keys: id
+funds:
+  long_name: BI.VT_FUND
+  base_table: T_FUND
+  primary_keys: fund_no
+holds:
+  long_name: T_HC
+  base_table: T_HC
+  primary_keys: hc_no
+iwave:
+  long_name: LT_IWAVE_CUSTOMER_SCORE_DATA
+  base_table: LT_IWAVE_CUSTOMER_SCORE_DATA
+  primary_keys: Id
+listContents:
+  long_name: T_LIST_CONTENTS
+  base_table: T_LIST_CONTENTS
+  primary_keys:
+  - customer_no
+  - list_no
+lists:
+  long_name: T_LIST
+  base_table: T_LIST
+  primary_keys: list_no
+memberships:
+  long_name: BI.VT_MEMBERSHIP
+  base_table: TX_CUST_MEMBERSHIP
+  primary_keys: cust_memb_no
+orders:
+  long_name: BI.VT_ORDER
+  base_table: T_ORDER
+  primary_keys: order_no
+orderDetail:
+  long_name: BI.VT_ORDER_DETAIL_AT_PRICE_LAYER
+  base_table: T_LINEITEM
+  primary_keys: li_seq_no
+payments:
+  long_name: BI.VT_PAYMENT
+  base_table: T_PAYMENT
+  primary_keys:
+  - payment_no
+  - sequence_no
+performances:
+  long_name: BI.VT_PERFORMANCE_DETAIL
+  base_table: ''
+  primary_keys: ''
+performanceKeywords:
+  long_name: BI.VT_DW_PERFORMANCE_KEYWORDS
+  base_table: ''
+  primary_keys: ''
+plans:
+  long_name: BI.VT_PLAN
+  base_table: T_PLAN
+  primary_keys: plan_no
+planStatus:
+  long_name: TR_PLAN_STATUS
+  base_table: TR_PLAN_STATUS
+  primary_keys: id
+planWorkers:
+  long_name: BI.VT_PLAN_WORKER
+  base_table: TX_CUST_PLAN
+  primary_keys: id
+pricing:
+  long_name: BI.VT_PERFORMANCE_PRICING_AT_PRICE_LAYER
+  base_table: T_PERF_PRICE_TYPE
+  primary_keys: id
+promotions:
+  long_name: T_PROMOTION
+  base_table: T_PROMOTION
+  primary_keys:
+  - customer_no
+  - source_no
+promotionResponses:
+  long_name: T_EPROMOTION_RESPONSE_HISTORY
+  base_table: T_EPROMOTION_RESPONSE_HISTORY
+  primary_keys: ID
+seasons:
+  long_name: BI.VT_SEASON
+  base_table: TR_SEASON
+  primary_keys: id
+seats:
+  long_name: BI.VT_PERFORMANCE_SEATING
+  base_table: TX_PERF_SEAT
+  primary_keys:
+  - perf_no
+  - pkg_no
+  - seat_no
+seatHistory:
+  long_name: T_ORDER_SEAT_HIST
+  base_table: T_ORDER_SEAT_HIST
+  primary_keys: ''
+sources:
+  long_name: BI.VT_SOURCE
+  base_table: TX_APPEAL_MEDIA_TYPE
+  primary_keys: source_no
+specialActivities:
+  long_name: BI.VT_SPECIAL_ACTIVITY
+  base_table: T_SPECIAL_ACTIVITY
+  primary_keys: sa_no
+steps:
+  long_name: BI.VT_STEP
+  base_table: T_STEP
+  primary_keys: step_no
+stepTypes:
+  long_name: TR_STEP_TYPE
+  base_table: TR_STEP_TYPE
+  primary_keys: id
+subscriptions:
+  long_name: BI.VT_DW_SUBSCRIPTION_SUMMARY
+  base_table: T_CUST_SUBSCRIPTION_SUMMARY
+  primary_keys:
+  - customer_no
+  - season
+tickets:
+  long_name: BI.VT_TICKET_HISTORY
+  base_table: T_TICKET_HISTORY
+  primary_keys: tck_hist_no
+transactions:
+  long_name: T_TRANSACTION
+  base_table: T_TRANSACTION
+  primary_keys: sequence_no
+transactionTypes:
+  long_name: TR_TRANSACTION_TYPE
+  base_table: TR_TRANSACTION_TYPE
+  primary_keys: id

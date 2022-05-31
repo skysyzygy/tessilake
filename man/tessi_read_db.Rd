@@ -5,10 +5,10 @@
 \title{tessi_read_db
 internal function to return a Tessitura table based on a name}
 \usage{
-tessi_read_db(tableName)
+tessi_read_db(table_name)
 }
 \arguments{
-\item{tableName}{string}
+\item{table_name}{string}
 }
 \value{
 dplyr database query
@@ -16,7 +16,4 @@ dplyr database query
 \description{
 tessi_read_db
 internal function to return a Tessitura table based on a name
-}
-\examples{
-
 }

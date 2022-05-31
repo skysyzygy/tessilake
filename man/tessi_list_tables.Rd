@@ -3,7 +3,7 @@
 \docType{data}
 \name{tessi_list_tables}
 \alias{tessi_list_tables}
-\alias{tessiTables}
+\alias{tessi_tables}
 \title{tessi_list_tables}
 \format{
 An object of class \code{data.table} (inherits from \code{data.frame}) with 52 rows and 4 columns.
@@ -11,29 +11,29 @@ An object of class \code{data.table} (inherits from \code{data.frame}) with 52 r
 \usage{
 tessi_list_tables()
 
-tessiTables
+tessi_tables
 }
 \value{
-data.table of configured tessitura tables with columns shortName, longName, baseTable and primaryKeys
+data.table of configured tessitura tables with columns short_name, long_name, baseTable and primary_keys
 }
 \description{
-The list of tessitura tables is configured in the extdata/tessiTables.yml file in the package directory
+The list of tessitura tables is configured in the extdata/tessi_tables.yml file in the package directory
 }
 \details{
-\subsection{yml format}{\preformatted{\{shortName\}:
-   longName: \{name of table/view to be loaded\}
-   baseTable: \{the underlying table being queried that has primaryKeys\}
-   primaryKeys: \{the primary key(s) as a value or a list of values\}
+\subsection{yml format}{\preformatted{\{short_name\}:
+   long_name: \{name of table/view to be loaded\}
+   baseTable: \{the underlying table being queried that has primary_keys\}
+   primary_keys: \{the primary key(s) as a value or a list of values\}
 }
 }
 }
 \examples{
-#customers:
-#   longName: BI.VT_CUSTOMER
+# customers:
+#   long_name: BI.VT_CUSTOMER
 #   baseTable: T_CUSTOMER
-#   primaryKeys: customer_no
+#   primary_keys: customer_no
 
-list_tessi_tables()[shortName=="customers"]
+list_tessi_tables()[short_name == "customers"]
 
 }
 \keyword{datasets}

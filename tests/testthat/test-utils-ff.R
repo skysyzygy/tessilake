@@ -1,5 +1,3 @@
-
-library(ffbase)
 library(data.table)
 library(purrr)
 

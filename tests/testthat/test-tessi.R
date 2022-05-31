@@ -1,3 +1,7 @@
+library(withr)
+
+local_envvar(R_CONFIG_FILE=file.path("~/config.yml"))
+
 dir.create(file.path(tempdir(), "shallow"))
 dir.create(file.path(tempdir(), "deep"))
 defer({
@@ -5,50 +9,29 @@ defer({
   unlink(file.path(tempdir(), "deep"), recursive = T)
 })
 
-withr::local_options(
-  tessilake.shallow = file.path(tempdir(), "shallow"),
-  tessilake.deep = file.path(tempdir(), "deep"),
-  tessilake.tessitura = "Tessitura"
-) # TODO: dummy database for tests without Tessitura present
-
-test_that("list_tessi_tables returns the ... list of tessi tables", {
-  expect_equal(list_tessi_tables(), tessilake:::tessiTables)
+test_that("tessi_list_tables returns the list of tessi tables", {
+  expect_equal(tessi_list_tables(), tessilake:::tessi_tables)
 })
 
-
-test_that("read_tessi complains if the tessilake.shallow option isn't set", {
-  local_options(tessilake.shallow = NULL)
-  expect_error(read_tessi("memberships"), "Please.+tessilake.shallow")
+test_that("read_tessi, tessi_read_db, and read_cache complains if noF table_name is given", {
+  expect_error(read_tessi(), "table_name")
+  expect_error(tessi_read_db(), "table_name")
 })
 
-test_that("read_tessi complains if the tessilake.tessitura option isn't set or doesn't work", {
-  local_options(tessilake.tessitura = NULL)
-  expect_error(read_tessi("memberships"), "Please.+tessilake.tessitura")
-  local_options(tessilake.tessitura = "Broken")
-  expect_error(read_tessi("memberships"), "Please.+working ODBC")
+test_that("tessi_read_db retuns primary key info", {
+  expect_equal(attr(tessi_read_db("customers"), "primary_keys"), "customer_no")
+  expect_equal(attr(tessi_read_db("T_CUSTOMER"), "primary_keys"), "customer_no")
 })
 
-test_that("read_tessi, read_tessi_db, and read_cache complains if no tableName is given", {
-  expect_error(read_tessi(), "tableName")
-  expect_error(read_tessi_db(), "tableName")
-  expect_error(read_cache(), "tableName")
-})
-
-test_that("read_tessi_db retuns primary key info", {
-  expect_equal(attr(read_tessi_db("customers"), "primaryKeys"), "customer_no")
-  expect_equal(attr(read_tessi_db("T_CUSTOMER"), "primaryKeys"), "customer_no")
-})
-
-
-test_that("read_tessi_db complains if asked for a table it doesn't know about and that doesn't exist in Tessitura", {
-  expect_error(read_tessi_db("tableThatDoesntExist"), "Table dbo.tableThatDoesntExist doesn't exist")
-  expect_error(read_tessi_db("BI.tableThatDoesntExist"), "Table BI.tableThatDoesntExist doesn't exist")
-  expect_error(read_tessi_db("select * from T_CUSTOMER"))
+test_that("tessi_read_db complains if asked for a table it doesn't know about and that doesn't exist in Tessitura", {
+  expect_error(tessi_read_db("tableThatDoesntExist"), "Table dbo.tableThatDoesntExist doesn't exist")
+  expect_error(tessi_read_db("BI.tableThatDoesntExist"), "Table BI.tableThatDoesntExist doesn't exist")
+  expect_error(tessi_read_db("select * from T_CUSTOMER"))
   tessiTables <- list(dummy = "dummy")
-  expect_error(read_tessi_db("dummy"), "Table dbo.dummy doesn't exist")
-  expect_gt(collect(count(read_tessi_db("seasons")))[[1]], 100)
-  expect_gt(collect(count(read_tessi_db("TR_SEASON")))[[1]], 100)
-  expect_gt(collect(count(read_tessi_db("BI.VT_SEASON")))[[1]], 100)
+  expect_error(tessi_read_db("dummy"), "Table dbo.dummy doesn't exist")
+  expect_gt(collect(dplyr::count(tessi_read_db("seasons")))[[1]], 100)
+  expect_gt(collect(dplyr::count(tessi_read_db("TR_SEASON")))[[1]], 100)
+  expect_gt(collect(dplyr::count(tessi_read_db("BI.VT_SEASON")))[[1]], 100)
 })
 
 
@@ -79,3 +62,4 @@ test_that("read_stream selects like subset()", {
 # })
 
 deferred_run()
+

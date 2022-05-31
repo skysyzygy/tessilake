@@ -4,15 +4,15 @@
 \alias{read_tessi}
 \title{read_tessi}
 \usage{
-read_tessi(tableName, subset, select, ...)
+read_tessi(table_name, subset = NULL, select = NULL, ...)
 }
 \arguments{
-\item{tableName}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=list_tessi_tables]{list_tessi_tables()}}) or the
+\item{table_name}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=list_tessi_tables]{list_tessi_tables()}}) or the
 name of a SQL table that exists in Tessitura. The default SQL table schema is \code{dbo}.}
 
 \item{subset}{logical expression indicating elements or rows to keep}
 
-\item{select}{character vector indicating columns to select from stream file}
+\item{select}{vector of strings or symbols indicating columns to select from stream file}
 
 \item{...}{further arguments to be passed to or from other methods}
 }
@@ -25,9 +25,11 @@ Cache storage locations are managed by \code{tessilake.shallow} and \code{tessil
 Tessitura database connection defined by an ODBC profile with the name set by the \code{tessilake.tessitura} option.
 }
 \examples{
-
-if(FALSE){read_tessi("memberships",
-         init_dt>=as.Date("2021-07-01"),
-         c("memb_level","customer_no")}
+\dontrun{
+  read_tessi("memberships",
+    subset = init_dt >= as.Date("2021-07-01"),
+    select = c("memb_level", "customer_no")
+  )
+}
 
 }

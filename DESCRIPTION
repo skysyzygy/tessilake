@@ -24,17 +24,19 @@ Imports:
     DBI,
     dbplyr,
     dplyr,
+    ff,
+    ffbase,
     glue,
     magrittr,
-    mockery,
     odbc,
-    rlang,
-    stringr
+    Rfast,
+    rlang
 Suggests: 
     purrr,
     covr,
     testthat (>= 3.0.0),
     spelling,
+    mockery,
     testthis
 Config/testthat/edition: 3
 Language: en-US
