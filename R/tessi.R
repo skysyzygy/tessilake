@@ -9,6 +9,7 @@
 #'    baseTable: {the underlying table being queried that has primary_keys}
 #'    primary_keys: {the primary key(s) as a value or a list of values}
 #' ````
+#'
 #' @return  data.table of configured tessitura tables with columns short_name, long_name, baseTable and primary_keys
 #' @examples
 #' # customers:
@@ -16,7 +17,7 @@
 #' #   baseTable: T_CUSTOMER
 #' #   primary_keys: customer_no
 #'
-#' list_tessi_tables()[short_name == "customers"]
+#' tessi_list_tables()[short_name == "customers"]
 #'
 tessi_list_tables <- function() {
   tessi_tables
@@ -35,9 +36,12 @@ tessi_tables <- yaml::read_yaml(system.file("extdata", "tessi_tables.yml", packa
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
 #' @param subset logical expression indicating elements or rows to keep
 #' @param select vector of strings or symbols indicating columns to select from stream file
+#' @param freshness the returned data will be at least this fresh
 #' @param ... further arguments to be passed to or from other methods
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @importFrom dplyr summarise
+#' @importFrom arrow arrow_table
 #' @export
 #'
 #' @examples
@@ -48,17 +52,47 @@ tessi_tables <- yaml::read_yaml(system.file("extdata", "tessi_tables.yml", packa
 #'   )
 #' }
 #'
-read_tessi <- function(table_name, subset = NULL, select = NULL, ...) {
+read_tessi <- function(table_name, subset = NULL, select = NULL,
+                       freshness = as.difftime(7,units="days"), ...) {
+
   subset <- enquo(subset)
-  select <- expr_get_names(select)
+  select <- enquo(select)
 
   assert_character(table_name)
 
-  table <- tessi_read_db(table_name)
-  cache_deep <- cache_read(table_name, "deep", "tessi")
-  cache_shallow <- cache_read(table_name, "shallow", "tessi")
+  sources = list(table = expr(tessi_read_db(table_name)),
+                 deep = expr(cache_read(table_name, "deep", "tessi")),
+                 shallow = expr(cache_read(table_name, "shallow", "tessi")))
 
-  head(table, 1000) %>% collect()
+  test_time = Sys.time() - freshness
+
+  for(i in seq_along(sources[-1])) {
+    source = eval(sources[[i]])
+    cache_name = names(sources[i+1])
+    cache = suppressMessages(eval(sources[[i+1]]))
+
+    if(cache == FALSE) {
+      # new cache!
+      primary_keys = if(inherits(source,"ArrowObject") || inherits(source,"arrow_dplyr_query")) {
+        cache_get_attributes(source)$primary_keys
+      } else {
+        attr(source,"primary_keys")
+      }
+      cache_write(setattr(collect(source),"primary_keys",primary_keys),
+                  table_name,cache_name,"tessi",partition=FALSE)
+    } else {
+      if(!is.null(cache$files)) {
+        cache_mtime = max(file.mtime(cache$files))
+      } else {
+        cache_mtime = max(file.mtime(paste0(cache_path(table_name,cache_name,"tessi"),c(".parquet",".feather"))),na.rm = TRUE)
+      }
+      if(cache_mtime < test_time) {
+        cache_update(source,table_name,cache_name,"tessi")
+      }
+    }
+  }
+
+  cache_read(table_name,"shallow","tessi")
 }
 
 #' tessi_read_db
@@ -66,20 +100,17 @@ read_tessi <- function(table_name, subset = NULL, select = NULL, ...) {
 #' @param table_name string
 #'
 #' @return dplyr database query
-#' @import odbc DBI
 #' @importFrom dplyr tbl filter
 #' @importFrom dbplyr in_schema
 #' @examples
 tessi_read_db <- function(table_name) {
-  short_name <- TABLE_SCHEMA <- TABLE_NAME <- NULL
 
-  stopifnot(
-    "table_name is required" = !missing(table_name),
-    "Please set the tessilake.tessitura option to define the Tessitura ODBC DSN" =
-      !is.null(config::get("tessilake.tessitura")),
-    "Please define an working ODBC data source to connect to Tessitura" =
-      !is.error(db <- DBI::dbConnect(odbc::odbc(), config::get("tessilake.tessitura"), encoding = "latin1"))
-  )
+  assert_character(table_name)
+  assert_character(config::get("tessilake.tessitura"))
+
+  if(is_error(sql_connect())) {
+    stop("Please define an working ODBC data source to connect to Tessitura")
+  }
 
   # map string table_name to SQL table_name
   if (table_name %in% tessi_tables$short_name) {

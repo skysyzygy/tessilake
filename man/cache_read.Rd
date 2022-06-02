@@ -27,8 +27,8 @@ cache_read(
 \code{\link[arrow:Dataset]{arrow::Dataset}}
 }
 \description{
-Internal function to read cached arrow files. Simple wrapper on open_dataset that points to a directory defined by
-\verb{tessilake.\{depth\}/\{type\}}. Optionally returns the partition information.
+Internal function to read cached arrow files. Simple wrapper on open_dataset.
+Optionally returns the partition information as a dataset column.
 }
 \examples{
 \dontrun{

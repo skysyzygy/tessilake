@@ -20,11 +20,13 @@ data.table of configured tessitura tables with columns short_name, long_name, ba
 The list of tessitura tables is configured in the extdata/tessi_tables.yml file in the package directory
 }
 \details{
-\subsection{yml format}{\preformatted{\{short_name\}:
+\subsection{yml format}{
+
+\if{html}{\out{<div class="sourceCode">}}\preformatted{\{short_name\}:
    long_name: \{name of table/view to be loaded\}
    baseTable: \{the underlying table being queried that has primary_keys\}
    primary_keys: \{the primary key(s) as a value or a list of values\}
-}
+}\if{html}{\out{</div>}}
 }
 }
 \examples{
@@ -33,7 +35,7 @@ The list of tessitura tables is configured in the extdata/tessi_tables.yml file 
 #   baseTable: T_CUSTOMER
 #   primary_keys: customer_no
 
-list_tessi_tables()[short_name == "customers"]
+tessi_list_tables()[short_name == "customers"]
 
 }
 \keyword{datasets}

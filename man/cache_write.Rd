@@ -10,7 +10,7 @@ cache_write(
   depth = c("deep", "shallow"),
   type = c("tessi", "stream"),
   primary_keys = attr(x, "primary_keys"),
-  partition = TRUE,
+  partition = !is.null(primary_keys),
   ...
 )
 }

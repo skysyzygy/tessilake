@@ -152,7 +152,7 @@ promotionResponses:
 seasons:
   long_name: BI.VT_SEASON
   base_table: TR_SEASON
-  primary_keys: id
+  primary_keys: season_no
 seats:
   long_name: BI.VT_PERFORMANCE_SEATING
   base_table: TX_PERF_SEAT

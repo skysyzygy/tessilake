@@ -4,7 +4,13 @@
 \alias{read_tessi}
 \title{read_tessi}
 \usage{
-read_tessi(table_name, subset = NULL, select = NULL, ...)
+read_tessi(
+  table_name,
+  subset = NULL,
+  select = NULL,
+  freshness = as.difftime(7, units = "days"),
+  ...
+)
 }
 \arguments{
 \item{table_name}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=list_tessi_tables]{list_tessi_tables()}}) or the
@@ -13,6 +19,8 @@ name of a SQL table that exists in Tessitura. The default SQL table schema is \c
 \item{subset}{logical expression indicating elements or rows to keep}
 
 \item{select}{vector of strings or symbols indicating columns to select from stream file}
+
+\item{freshness}{the returned data will be at least this fresh}
 
 \item{...}{further arguments to be passed to or from other methods}
 }

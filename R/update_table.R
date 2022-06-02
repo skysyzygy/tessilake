@@ -31,7 +31,6 @@ expr_get_names <- function(expr) {
   expr
 }
 
-
 #' update_table
 #'
 #' updates the data.table-like object `to` based on the data.frame-like `from` object,
@@ -45,7 +44,7 @@ expr_get_names <- function(expr) {
 #' @importFrom dplyr collect semi_join select
 #' @importFrom rlang as_name call_args eval_tidy
 #' @importFrom bit setattributes
-#' @importFrom checkmate assert_data_frame assert_subset check_subset assert
+#' @importFrom checkmate assert_class assert_subset check_subset assert
 #' @return an updated data.table updated in-place
 #' @export
 #'
@@ -53,8 +52,9 @@ expr_get_names <- function(expr) {
 #' from <- data.frame()
 #'
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
-  assert_data_frame(from)
-  assert_data_frame(to)
+
+  assert_dataframeish(from)
+  assert_class(to,"data.table")
   assert_subset(colnames(from), colnames(to))
 
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
@@ -73,7 +73,6 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
     check_subset(date_column, colnames(to)),
     combine = "and"
   )
-
 
   if (is.data.table(from)) {
     cols_from <- from[, c(date_column, primary_keys), with = F]
