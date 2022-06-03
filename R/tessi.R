@@ -71,7 +71,7 @@ read_tessi <- function(table_name, subset = NULL, select = NULL,
     cache_name = names(sources[i+1])
     cache = suppressMessages(eval(sources[[i+1]]))
 
-    if(cache == FALSE) {
+    if(is.logical(cache) && cache==FALSE) {
       # new cache!
       primary_keys = if(inherits(source,"ArrowObject") || inherits(source,"arrow_dplyr_query")) {
         cache_get_attributes(source)$primary_keys
@@ -87,7 +87,11 @@ read_tessi <- function(table_name, subset = NULL, select = NULL,
         cache_mtime = max(file.mtime(paste0(cache_path(table_name,cache_name,"tessi"),c(".parquet",".feather"))),na.rm = TRUE)
       }
       if(cache_mtime < test_time) {
-        cache_update(source,table_name,cache_name,"tessi")
+        date_column = NULL
+        if("last_update_dt" %in% colnames(source) && "last_update_dt" %in% colnames(cache))
+          date_column = "last_update_dt"
+
+        cache_update(source,table_name,cache_name,"tessi",date_column = date_column)
       }
     }
   }

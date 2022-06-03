@@ -108,23 +108,28 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
   cache_path <- cache_path(table_name, depth, type)
   assert_dataframeish(x)
 
+  attributes <- cache_get_attributes(x)
+  primary_keys <- primary_keys %||% attributes$primary_keys
+
   if(partition == TRUE) {
     if(is.null(primary_keys)) {
       stop("Cannot partition without primary key information.")
     }
 
     partitioning <- cache_make_partitioning(x, primary_keys = primary_keys)
-    setattr(x, "partitioning", rlang::expr_deparse(partitioning))
-    setattr(x, "primary_keys", primary_keys)
     partition_name <- paste0("partition_",primary_keys[[1]])
 
     if (inherits(x, "data.table")) {
       x[, (partition_name) := eval(partitioning)]
     } else {
-      x <- mutate(x, !!partition_name := eval(partitioning))
+      x <- mutate(x, !!partition_name := eval(partitioning)) %>% collect
     }
 
     if(!dir.exists(cache_path)) dir.create(cache_path,recursive = T)
+
+    attributes$partitioning = rlang::expr_deparse(partitioning)
+    attributes$primary_keys = primary_keys
+    cache_set_attributes(x,attributes)
 
     write_dataset(x, cache_path,
       format = ifelse(depth == "deep", "parquet", "feather"),
@@ -135,6 +140,8 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
 
   } else {
     if(!dir.exists(dirname(cache_path))) dir.create(dirname(cache_path))
+    attributes$primary_keys = primary_keys
+    cache_set_attributes(x,attributes)
 
     writer = ifelse(depth=="deep",write_parquet,write_feather)
     writer(x, paste0(cache_path,".",ifelse(depth == "deep", "parquet", "feather")), ...)
@@ -166,7 +173,8 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
 #' cache_update(y,"test","deep","stream")
 #' }
 cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
-                         primary_keys = attr(x, "primary_keys"), ...) {
+                         primary_keys = attr(x, "primary_keys"),
+                         date_column = NULL, ...) {
 
   dataset <- cache_read(table_name, depth, type, include_partition = T, ...)
   if(is.logical(dataset))
@@ -174,23 +182,23 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
 
   assert_dataframeish(x)
 
-  # assert(check_data_frame(x),
-  #        check_class(x,"Dataset"),
-  #        check_class(x,"tbl"))
+  x_attributes <- cache_get_attributes(x)
+  dataset_attributes <- cache_get_attributes(dataset)
+  primary_keys = primary_keys %||% x_attributes$primary_keys
+  partition = !is.null(dataset_attributes$partitioning)
 
-  attributes <- cache_get_attributes(dataset)
-
-  if (!is.null(attributes$partitioning)) {
-    if (is.null(primary_keys) || attributes$primary_keys != primary_keys) {
+  if (partition == TRUE) {
+    if (is.null(primary_keys) || dataset_attributes$primary_keys != primary_keys) {
       stop(sprintf(
-        "Dataset has primary keys (%s) but dataset primary keys are (%s). Cowardly refusing to continue.",
-        attributes$primary_keys %||% "NULL",
+        "Dataset has primary keys (%s) but x's primary keys are (%s). Cowardly refusing to continue.",
+        dataset_attributes$primary_keys %||% "NULL",
         primary_keys %||% "NULL"
       ))
     }
 
-    partition_name <- paste0("partition_",primary_keys[[1]])
-    partitions <- eval_tidy(rlang::parse_expr(attributes$partitioning), x)
+    partition_name <- paste0("partition_",dataset_attributes$primary_keys[[1]])
+    x_primary_keys <- select(x,primary_keys) %>% collect()
+    partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys)
 
     # load only the dataset partitions that need to get updated
     dataset <- dataset %>%
@@ -199,10 +207,10 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
   }
 
   dataset <- dataset %>% collect()
-  setattributes(dataset,attributes)
+  cache_set_attributes(dataset,dataset_attributes)
   setDT(dataset)
 
-  x <- update_table(x, dataset, primary_keys = !!primary_keys)
+  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column)
 
-  cache_write(x, table_name, depth, type, primary_keys = primary_keys, ...)
+  cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, ...)
 }

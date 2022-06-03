@@ -55,9 +55,12 @@ test_that("read_tessi preserves primary_keys",{
   expect_equal(collect(cache_read("data_with_attr","shallow","tessi")),data)
 })
 
+data_old <- data.frame(x=c(1,2,3),last_update_dt=now("UTC") - ddays(10)) %>% setDT
+data_new <- data.frame(x=c(1,2,3),last_update_dt=now("UTC")) %>% setDT
+setattr(data_old,"primary_keys","x")
+setattr(data_new,"primary_keys","x")
+
 test_that("read_tessi updates deep + shallow store from db iff not fresh enough",{
-  data_old <- data.frame(x=c(1,2,3),last_update_dt=now("UTC") - ddays(10))
-  data_new <- data.frame(x=c(1,2,3),last_update_dt=now("UTC"))
   stub(read_tessi,"tessi_read_db",mock(data_old,data_new,data_new))
 
   read_tessi("data")
@@ -72,28 +75,44 @@ test_that("read_tessi updates deep + shallow store from db iff not fresh enough"
 })
 
 test_that("read_tessi updates shallow store from deep store iff fresh enough",{
-  data_old <- data.frame(x=c(1,2,3),last_update_dt=now("UTC") - ddays(10))
-  data_new <- data.frame(x=c(1,2,3),last_update_dt=now("UTC"))
-  stub(read_tessi,"tessi_read_db",mock(data_old,data_new,data_new))
+  stub(read_tessi,"tessi_read_db",mock(data_new,data_old))
 
   read_tessi("data2")
-  cache_write(data.frame(1),"data2","shallow","tessi")
-  expect_equal(collect(cache_read("data2","deep","tessi")),data_old)
-  expect_equal(collect(cache_read("data2","shallow","tessi")),data.frame(1))
+  cache_write(data_old,"data2","shallow","tessi",partition = FALSE)
+  expect_equal(collect(cache_read("data2","deep","tessi")),data_new)
+  expect_equal(collect(cache_read("data2","shallow","tessi")),data_old)
 
   stub(read_tessi,"file.mtime",mock(now(),now()-ddays(10))) #make it think that deep is fresh but shallow is old
   read_tessi("data2")
-  expect_equal(collect(cache_read("data2","deep","tessi")),data_old)
-  expect_equal(collect(cache_read("data2","shallow","tessi")),data_old)
+  expect_equal(collect(cache_read("data2","deep","tessi")),data_new)
+  expect_equal(collect(cache_read("data2","shallow","tessi")),data_new)
 })
 
-test_that("read_tessi loads from DB incrementally",{
-  seasons = read_tessi("seasons")
-  cache_write(seasons[1,],"seasons","deep","tessi")
+test_that("read_tessi loads from DB incrementally, row-wise",{
+  seasons <- read_tessi("seasons")
+  seasons <- collect(seasons[-1,])
+  seasons[1:2,"last_update_dt"] <- ymd("1900-01-01")
+  cache_write(seasons,"seasons","deep","tessi",partition = F)
+  stub(read_tessi,"collect.tbl_sql",function(.){
+    print(dplyr::collect(dplyr::summarize(.,n()))[[1]])
+    dbplyr:::collect.tbl_sql(.)
+  },depth=2)
+  # this was super hard to do with a mock for some reason -- but this writes out 2 and then 1 because 2 rows are updated and 1 row is added
+  expect_output(read_tessi("seasons",freshness = 0),"2\\n\\[1\\] 1$")
+})
 
-  stub(read_tessi,"collect.tbl_sql",function(.){stop(dbplyr::show_query(.))})
 
-  read_tessi("seasons",freshness = 0)
+test_that("read_tessi loads from deep cache incrementally",{
+  seasons <- read_tessi("seasons")
+  seasons <- collect(seasons[-c(1,2),])
+  seasons[1:3,"last_update_dt"] <- ymd("1900-01-01")
+  cache_write(seasons,"seasons","deep","tessi",partition = F)
+  stub(read_tessi,"arrow::collect.arrow_dplyr_query",function(.){
+    print(dplyr::collect(dplyr::summarize(.,n()))[[1]])
+    dbplyr:::collect.tbl_sql(.)
+  },depth=2)
+  # this was super hard to do with a mock for some reason -- but this writes out 3 and then 2 because 3 rows are updated and 2 row is added
+  expect_output(read_tessi("seasons",freshness = 0),"3\\n\\[1\\] 2$")
 })
 
 test_that("read_tessi handles merges", {
@@ -104,16 +123,8 @@ test_that("read_tessi appends group_customer_no based on customer_no and credite
   expect_equal(2 * 2, 4)
 })
 
-test_that("read_tessi returns a Dataset", {
-  expect_class(read_tessi("seasons"),"Dataset")
-})
-
-test_that("read_tessi subsets like subset()", {
-  expect_equal(2 * 2, 4)
-})
-
-test_that("read_tessi selects like subset()", {
-  expect_equal(2 * 2, 4)
+test_that("read_tessi returns a Table", {
+  expect_class(read_tessi("seasons"),"Table")
 })
 
 
