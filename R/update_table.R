@@ -52,9 +52,8 @@ expr_get_names <- function(expr) {
 #' from <- data.frame()
 #'
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
-
   assert_dataframeish(from)
-  assert_class(to,"data.table")
+  assert_class(to, "data.table")
   assert_subset(colnames(from), colnames(to))
 
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
@@ -103,6 +102,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
 
   to[update, (colnames(from)) := from_update, on = primary_keys]
   to <- rbindlist(list(to, from_new))
+  setorderv(to, primary_keys)
 
   to
 }

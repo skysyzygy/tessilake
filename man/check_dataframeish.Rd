@@ -22,7 +22,14 @@ see the \link{checkmate} package for more information on check/assert/test funct
 Tests if an object has data.frame methods \code{select}, \code{filter}, \code{mutate}, and \code{collect} defined so that we can treat it
 like a data.frame.
 }
+\section{Functions}{
+\itemize{
+\item \code{assert_dataframeish}: checkmate assert function for check_dataframeish
+
+\item \code{test_dataframeish}: checkmate test function for check_dataframeish
+}}
+
 \examples{
 check_dataframeish(list())
-test_dataframeish(data.frame())
+# FALSE
 }

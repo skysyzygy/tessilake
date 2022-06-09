@@ -43,7 +43,7 @@ as.ram2 <- function(obj) {
 #' @importFrom Rfast is_integer
 #' @importFrom glue glue
 #' @importFrom data.table setattr
-#' @import ff
+#' @importFrom ff is.ff vmode .rammode
 #'
 #' @examples
 #'

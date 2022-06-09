@@ -23,11 +23,12 @@ read_stream
 }
 \examples{
 
-if(FALSE){read_stream("addressStream",
-         timestamp>=as.Date("2021-07-01"),
-         c("group_customer_no","timestamp")
-         )
-         }
-
+if (FALSE) {
+  read_stream(
+    "addressStream",
+    timestamp >= as.Date("2021-07-01"),
+    c("group_customer_no", "timestamp")
+  )
+}
 
 }

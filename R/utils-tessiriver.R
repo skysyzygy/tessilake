@@ -16,26 +16,26 @@
 #'
 #' @examples
 #'
-#' if(FALSE){read_stream("addressStream",
-#'          timestamp>=as.Date("2021-07-01"),
-#'          c("group_customer_no","timestamp")
-#'          )
-#'          }
+#' if (FALSE) {
+#'   read_stream(
+#'     "addressStream",
+#'     timestamp >= as.Date("2021-07-01"),
+#'     c("group_customer_no", "timestamp")
+#'   )
+#' }
 #'
-#'
+read_stream <- function(streamName, subset, select, ...) {
+  subset <- enquo(subset)
+  streamDir <- .GlobalEnv$streamDir
 
-read_stream = function(streamName,subset,select,...) {
-  subset = enquo(subset)
-  streamDir = .GlobalEnv$streamDir
-
-  streamFile = file.path(streamDir,paste0(streamName,c("",".gz")))
-  streamFile = if(file.exists(streamFile[1])) streamFile[1] else streamFile[2]
+  streamFile <- file.path(streamDir, paste0(streamName, c("", ".gz")))
+  streamFile <- if (file.exists(streamFile[1])) streamFile[1] else streamFile[2]
   stopifnot(file.exists(streamFile))
 
-  ffdf = unpack.ffdf(streamFile)
+  ffdf <- unpack.ffdf(streamFile)
 
-  i = ffwhich(ffdf,subset)
-  DT = setDT(ffdf[i,select])
+  i <- ffwhich(ffdf, subset)
+  DT <- setDT(ffdf[i, select])
 
   delete(ffdf)
 

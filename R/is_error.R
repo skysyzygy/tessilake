@@ -11,6 +11,6 @@
 #' is_error(stop("Error"))
 #'
 is_error <- function(expr) {
-  expr = enexpr(expr)
-  inherits(try(eval(expr,env=parent.frame()), silent = T), "try-error")
+  expr <- enexpr(expr)
+  inherits(try(eval(expr, envir = parent.frame()), silent = T), "try-error")
 }

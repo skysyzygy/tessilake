@@ -10,7 +10,6 @@
 #' @importFrom glue glue
 #' @importFrom  rlang %||%
 #' @importFrom stats setNames
-#' @import data.table
 #' @export
 #'
 #' @examples

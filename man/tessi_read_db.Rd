@@ -17,3 +17,8 @@ dplyr database query
 tessi_read_db
 internal function to return a Tessitura table based on a name
 }
+\examples{
+\dontrun{
+tessi_read_db("seasons")
+}
+}

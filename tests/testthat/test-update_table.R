@@ -1,18 +1,19 @@
+library(mockery)
 
 # expr_get_names ----------------------------------------------------------
 
-test_that("expr_get_names throws error with anything that doesn't work",{
-  expect_error(expr_get_names(expr(mean(x))),"list or vector")
-  expect_error(expr_get_names(1),"language")
+test_that("expr_get_names throws error with anything that doesn't work", {
+  expect_error(expr_get_names(expr(mean(x))), "list or vector")
+  expect_error(expr_get_names(1), "language")
 })
 
 test_that("expr_get_names works with strings and symbols", {
-  expect_equal(expr_get_names(expr("a")),expr_get_names(expr(a)))
+  expect_equal(expr_get_names(expr("a")), expr_get_names(expr(a)))
 })
 
-test_that("expr_get_names works with vectors and lists",{
-  expect_equal(expr_get_names(expr(c(a,b="c"))),c("a",b="c"))
-  expect_equal(expr_get_names(expr(list("a",b=c))),c("a",b="c"))
+test_that("expr_get_names works with vectors and lists", {
+  expect_equal(expr_get_names(expr(c(a, b = "c"))), c("a", b = "c"))
+  expect_equal(expr_get_names(expr(list("a", b = c))), c("a", b = "c"))
 })
 
 # update_table ------------------------------------------------------------
@@ -52,19 +53,19 @@ test_that("update_table simply copies from into to when date_column and primary_
   # and mung it up
   to[1:5000, data := runif(.N)]
 
-  expect_equal(from, update_table(from, to))
+  expect_equal(update_table(from, to), from)
 })
 
 test_that("update_table updates data.tables incrementally when given primary_keys", {
-  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
   # divide the data
   from <- copy(expect)[1:9000]
   to <- copy(expect)[1000:10000]
   # and mung it up
   to[1:5000, data := runif(.N)]
 
-  expect_equal(expect, setorderv(update_table(from, to, primary_keys = c("x", "y")), c("y", "x")))
-  expect_equal(expect, setorderv(update_table(from, to, primary_keys = c(x, y)), c("y", "x")))
+  expect_equal(update_table(from, to, primary_keys = c("x", "y")), expect)
+  expect_equal(update_table(from, to, primary_keys = c(x, y)), expect)
 })
 
 test_that("update_table updates data.tables incrementally when given date_column and primary_keys", {
@@ -79,7 +80,35 @@ test_that("update_table updates data.tables incrementally when given date_column
     data = runif(.N)
   )]
 
-  expect_equal(from, setorderv(update_table(from, to, date_column = date, primary_keys = c(I)), "I"))
+  expect_equal(from, update_table(from, to, date_column = date, primary_keys = c(I)))
+})
+
+test_that("update_table loads from DB incrementally", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  load("seasons.Rds")
+  seasons <- dplyr::mutate_if(seasons, ~ lubridate::is.POSIXct(.), as.numeric)
+  seasons_tbl <- dplyr::copy_to(con, seasons)
+  seasons <- setDT(seasons)[-1, ]
+  seasons[1:2, "last_update_dt"] <- lubridate::ymd("1900-01-01")
+  stub(update_table, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., n()))[[1]])
+    dplyr::collect(.)
+  })
+  # this writes out 2 and then 1 because 2 rows are updated and 1 row is added
+  expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "2\\n\\[1\\] 1$")
+})
+
+test_that("read_tessi loads from arrow table incrementally", {
+  load("seasons.Rds")
+  seasons_arrow <- arrow::arrow_table(seasons)
+  seasons <- setDT(seasons)[-c(1, 2), ]
+  seasons[1:3, "last_update_dt"] <- lubridate::ymd("1900-01-01")
+  stub(update_table, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., n()))[[1]])
+    dplyr::collect(.)
+  })
+  # this writes out 3 and then 2 because 3 rows are updated and 2 row is added
+  expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "3\\n\\[1\\] 2$")
 })
 
 test_that("update_table doesn't copy from when from is a data.table", {

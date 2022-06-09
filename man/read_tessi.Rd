@@ -6,17 +6,14 @@
 \usage{
 read_tessi(
   table_name,
-  subset = NULL,
   select = NULL,
   freshness = as.difftime(7, units = "days"),
   ...
 )
 }
 \arguments{
-\item{table_name}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=list_tessi_tables]{list_tessi_tables()}}) or the
+\item{table_name}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=tessi_list_tables]{tessi_list_tables()}}) or the
 name of a SQL table that exists in Tessitura. The default SQL table schema is \code{dbo}.}
-
-\item{subset}{logical expression indicating elements or rows to keep}
 
 \item{select}{vector of strings or symbols indicating columns to select from stream file}
 
@@ -34,10 +31,10 @@ Tessitura database connection defined by an ODBC profile with the name set by th
 }
 \examples{
 \dontrun{
-  read_tessi("memberships",
-    subset = init_dt >= as.Date("2021-07-01"),
-    select = c("memb_level", "customer_no")
-  )
+read_tessi("memberships",
+  subset = init_dt >= as.Date("2021-07-01"),
+  select = c("memb_level", "customer_no")
+)
 }
 
 }
