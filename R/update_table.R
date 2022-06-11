@@ -1,4 +1,3 @@
-
 #' expr_get_names
 #'
 #' Extract (symbol) names from an expression. The expression must be a list or vector of strings and/or symbols
@@ -9,12 +8,13 @@
 #' @importFrom checkmate assert check_true
 #' @importFrom rlang call_args as_name call_name
 #' @examples
+#' \dontrun{
 #' expr_get_names(expr("a")) == expr_get_names(expr(a))
 #' expr_get_names(expr(c("a", b)))
 #' # c("a","b")
 #' expr_get_names(expr(list("a", b = c)))
 #' # c("a",b="c")
-#'
+#' }
 expr_get_names <- function(expr) {
   assert(check_true(is.language(expr) || is.character(expr) || is.null(expr)))
 
@@ -49,8 +49,16 @@ expr_get_names <- function(expr) {
 #' @export
 #'
 #' @examples
-#' from <- data.frame()
+#' library(data.table)
+#' expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+#' # divide the data
+#' from <- copy(expect)[1:9000]
+#' to <- copy(expect)[1000:10000]
+#' # and mung it up
+#' to[1:5000, data := runif(.N)]
 #'
+#' update_table(from, to, primary_keys = c(x,y)) == expect
+#' # TRUE
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
   assert_dataframeish(from)
   assert_class(to, "data.table")

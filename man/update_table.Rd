@@ -23,6 +23,14 @@ updates the data.table-like object \code{to} based on the data.frame-like \code{
 using \code{date_column} to determine which rows have been updated and updating only those with matching \code{primary_keys}.
 }
 \examples{
-from <- data.frame()
+library(data.table)
+expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+# divide the data
+from <- copy(expect)[1:9000]
+to <- copy(expect)[1000:10000]
+# and mung it up
+to[1:5000, data := runif(.N)]
 
+update_table(from, to, primary_keys = c(x,y)) == expect
+# TRUE
 }

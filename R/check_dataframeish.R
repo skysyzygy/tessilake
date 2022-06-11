@@ -8,7 +8,6 @@
 #' @return see the [checkmate] package for more information on check/assert/test functions
 #' @importFrom utils methods
 #' @export
-#'
 #' @examples
 #' check_dataframeish(list())
 #' # FALSE

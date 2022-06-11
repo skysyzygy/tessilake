@@ -12,7 +12,7 @@ test_read_write <- setattr(data.table(x = 1:100000, y = runif(1000)), "key", "va
 
 # cache_update -------------------------------------------------------------
 
-test_new <- data.table(x = 1:100000, y = runif(1000))
+test_new <- copy(test_read_write)
 
 test_that("cache_update writes the whole table when there's nothing there to begin with", {
   cache_update(test_new, "test_new", "deep", "tessi")

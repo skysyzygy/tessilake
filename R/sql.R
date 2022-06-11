@@ -8,18 +8,23 @@
 #' @importFrom rlang ns_env env_bind
 #'
 #' @examples
-#' tessilake:::db
+#' \dontrun{
+#' tessilake:::db$db
 #' sql_connect()
-#' tessilake:::db
+#' tessilake:::db$db
 #' sql_disconnect()
+#' }
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
       db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "latin1"))
+
       callbacks <- getTaskCallbackNames()
       db$db <- eval(db_expr)
       removeTaskCallback(setdiff(getTaskCallbackNames(), callbacks))
-      odbc:::on_connection_opened(db$db, deparse(db_expr))
+
+      if("odbc.version" %in% names(attributes(db$db)))
+        odbc:::on_connection_opened(db$db, deparse(db_expr))
     },error=function(e) {
       message(e$message)
       stop("Database connection failed, please set the `tessilake.tessitura` configuration in config.yml to a valid database DSN.")
@@ -30,6 +35,7 @@ sql_connect <- function() {
 
 #' @describeIn sql_connect Tear down the SQL connection
 sql_disconnect <- function() {
+  DBI::dbDisconnect(db$db)
   db$db <- NULL
 }
 
@@ -48,10 +54,11 @@ db <- new.env(parent = emptyenv())
 #' @param freshness the returned data will be at least this fresh
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
-#' @importFrom dplyr summarise
 #' @importFrom arrow arrow_table
 #' @importFrom checkmate assert_character
-#' @importFrom dplyr tbl sql
+#' @importFrom dplyr tbl sql across summarise
+#' @importFrom dbplyr tbl_sql
+#' @importFrom digest sha1
 #' @export
 #'
 #' @examples
@@ -71,7 +78,6 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
   sql_connect()
   # build the query with dplyr
   table <- tbl(db$db, sql(query))
-  attr(table, "primary_keys") <- primary_keys
 
   sql_mtime <- if(!is.null(date_column)) {
     table %>% summarise(across(!!date_column,max)) %>% collect() %>% .[[1]]
@@ -82,11 +88,11 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
   test_mtime <- Sys.time() - freshness
 
   if (!cache_exists(name, "deep", "tessi")) {
-    cache_write(collect(table), name, "deep", "tessi", partition = FALSE)
+    cache_write(collect(table), name, "deep", "tessi", partition = FALSE, primary_keys = primary_keys)
     deep_mtime <- cache_get_mtime(name, "deep", "tessi")
   } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime &&
              sql_mtime > deep_mtime) {
-    cache_update(table, name, "deep", "tessi",
+    cache_update(table, name, "deep", "tessi", primary_keys = primary_keys,
                  date_column = date_column
     )
   }
@@ -115,6 +121,7 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
 #' Defaults to "last_update_dt" if it exists in the table.
 #' @param freshness the returned data will be at least this fresh
 #' @describeIn read_sql Reads a table or view from a SQL database and caches it locally using read_sql.
+#' @importFrom dplyr filter select collect
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @export
 #'
@@ -125,7 +132,7 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
 read_sql_table <- function(table_name, schema="dbo", primary_keys = NULL, date_column = NULL,
                            freshness = as.difftime(7, units = "days")) {
 
-  . <- NULL
+  . <- TABLE_SCHEMA <- TABLE_NAME <- COLUMN_NAME <- NULL
 
   assert_character(table_name,max.len=1)
   assert_character(schema,max.len=1,null.ok=TRUE)
@@ -160,7 +167,7 @@ read_sql_table <- function(table_name, schema="dbo", primary_keys = NULL, date_c
   }
 
   # build the table query
-  read_sql(query = paste("select * from",DBI::dbQuoteIdentifier(db$db,Id(schema = schema, table = table_name))),
+  read_sql(query = paste("select * from",DBI::dbQuoteIdentifier(db$db,DBI::Id(schema = schema, table = table_name))),
            name = paste(c(schema,table_name),collapse="."),
            primary_keys = primary_keys,
            date_column = date_column,

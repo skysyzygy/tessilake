@@ -10,8 +10,8 @@
 #' @importFrom ffbase as.ram.ffdf
 #' @importFrom data.table setDT setattr
 #' @examples
-#'
 #' library(ff)
+#' library(tessilake)
 #'
 #' test <- ff(1:5)
 #' file.exists(filename(test)) # TRUE

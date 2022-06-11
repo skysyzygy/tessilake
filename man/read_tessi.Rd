@@ -25,14 +25,11 @@ name of a SQL table that exists in Tessitura. The default SQL table schema is \c
 an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
 }
 \description{
-Read a table from Tessitura and cache it locally as a Feather file and remotely as a Parquet file.
-Cache storage locations are managed by \code{tessilake.shallow} and \code{tessilake.deep} options.
-Tessitura database connection defined by an ODBC profile with the name set by the \code{tessilake.tessitura} option.
+Thin wrapper on read_sql_table using the tables configured in \code{list_tessi_tables}
 }
 \examples{
 \dontrun{
 read_tessi("memberships",
-  subset = init_dt >= as.Date("2021-07-01"),
   select = c("memb_level", "customer_no")
 )
 }

@@ -16,10 +16,11 @@ vector of strings, the names referred to in the expression
 Extract (symbol) names from an expression. The expression must be a list or vector of strings and/or symbols
 }
 \examples{
+\dontrun{
 expr_get_names(expr("a")) == expr_get_names(expr(a))
 expr_get_names(expr(c("a", b)))
 # c("a","b")
 expr_get_names(expr(list("a", b = c)))
 # c("a",b="c")
-
+}
 }

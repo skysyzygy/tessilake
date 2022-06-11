@@ -2,11 +2,20 @@
 % Please edit documentation in R/sql.R
 \name{read_sql}
 \alias{read_sql}
+\alias{read_sql_table}
 \title{read_sql}
 \usage{
 read_sql(
   query,
   name = digest::sha1(query),
+  primary_keys = NULL,
+  date_column = NULL,
+  freshness = as.difftime(7, units = "days")
+)
+
+read_sql_table(
+  table_name,
+  schema = "dbo",
   primary_keys = NULL,
   date_column = NULL,
   freshness = as.difftime(7, units = "days")
@@ -17,17 +26,40 @@ read_sql(
 
 \item{name}{name of the query, defaults to the SHA1 hash of the query.}
 
-\item{primary_keys}{primary keys of the query to be used for incremental updates}
+\item{primary_keys}{character vector, primary keys of the table. \code{read_sql_table} will attempt to identify the primary keys using
+SQL metadata.}
 
-\item{date_column}{update date column of the query to be used for incremental updates}
+\item{date_column}{character, date column of the table showing the last date the row was updated.
+Defaults to "last_update_dt" if it exists in the table.}
 
 \item{freshness}{the returned data will be at least this fresh}
+
+\item{table_name}{character, table name without schema.}
+
+\item{schema}{character, database schema. Default is \code{dbo}}
 }
 \value{
+an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
+
 an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
 }
 \description{
 Execute a database query and cache it locally as a Feather file and remotely as a Parquet file.
 Cache storage locations are managed by \code{tessilake.shallow} and \code{tessilake.deep} options.
 Database connection defined by an ODBC profile with the name set by the \code{tessilake.tessitura} option.
+}
+\section{Functions}{
+\itemize{
+\item \code{read_sql_table}: Reads a table or view from a SQL database and caches it locally using read_sql.
+}}
+
+\examples{
+\dontrun{
+read_sql("select * from T_CUSTOMER","t_customer",
+  primary_keys = "customer_no",
+  date_column = "last_update_dt"
+)}
+\dontrun{
+read_sql_table("T_CUSTOMER")
+}
 }

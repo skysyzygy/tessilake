@@ -12,7 +12,7 @@
 #'
 #' @return invisible
 #' @importFrom arrow open_dataset
-#' @importFrom dplyr select filter_at
+#' @importFrom dplyr select filter all_of
 #' @importFrom rlang sym
 #' @examples
 #' \dontrun{
@@ -47,7 +47,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
     }
 
     partition_name <- paste0("partition_", dataset_attributes$primary_keys[[1]])
-    x_primary_keys <- select(x, primary_keys) %>% collect()
+    x_primary_keys <- select(x, all_of(primary_keys)) %>% collect()
     partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys)
 
     # load only the dataset partitions that need to get updated

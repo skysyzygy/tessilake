@@ -18,8 +18,8 @@ as.ram2
 wrapper for ff:as.ram that also deletes the underlying ff/ffdf to reduce temp space
 }
 \examples{
-
 library(ff)
+library(tessilake)
 
 test <- ff(1:5)
 file.exists(filename(test)) # TRUE

@@ -1,17 +1,17 @@
 library(mockery)
 library(checkmate)
-library(dittodb)
 
 dir.create(file.path(tempdir(), "shallow"))
 dir.create(file.path(tempdir(), "deep"))
 withr::defer({
   gc()
-  sql_disconnect()
   unlink(file.path(tempdir(), "shallow"), recursive = T)
   unlink(file.path(tempdir(), "deep"), recursive = T)
 })
 
 # sql_connect -------------------------------------------------------------
+stub(sql_connect,"odbc::odbc",RSQLite::SQLite())
+stub(sql_connect,"config::get",":memory:")
 
 test_that("sql_connect connects to the database", {
   expect_true(is.null(tessilake:::db$db))
@@ -28,19 +28,20 @@ test_that("sql_connect only connects once", {
   expect_equal(ptr1, ptr2)
 })
 
+rm(sql_connect)
 test_that("sql_connect throws an error when it can't connect", {
   sql_disconnect()
   stub(sql_connect, "config::get", "not a database")
   expect_error(suppressMessages(sql_connect()), "DSN")
 })
 
-
 # read_sql ----------------------------------------------------------------
-data <- data.table(x = 1:1000, y = runif(1000), last_update_dt = lubridate::now(tzone = "EST"))
+data <- data.table(x = 1:1000, y = runif(1000), last_update_dt = lubridate::now(tzone = "EST") + lubridate::ddays(1))
 
-test_that("read_sql preserves attributes", {
-  setattr(data, "key", "value")
-  stub(read_sql, "tbl", mock(data, cycle = T))
+test_that("read_sql preserves primary_key across runs", {
+  data = copy(data)
+  stub(read_sql, "tbl", data)
+  setattr(data,"primary_keys", "x")
 
   read_sql("data_with_attr")
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
@@ -51,16 +52,15 @@ test_that("read_sql preserves attributes", {
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
 })
 
-test_that("read_sql works with dplyr::tbl", {
-  con <- DBI::dbConnect(RSQLite::SQLite(),":memory:")
-  data <- dplyr::copy_to(con,data)
-  stub(read_sql, "tbl", data)
+test_that("read_sql works with database", {
+  db$db <- DBI::dbConnect(RSQLite::SQLite(),":memory:")
+  data <- dplyr::copy_to(db$db,data,"data_with_tbl")
 
-  read_sql("data_with_tbl", "data_with_tbl")
+  read_sql("select * from data_with_tbl", "data_with_tbl")
   expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), collect(data))
   expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), collect(data))
 
-  read_sql("data_with_tbl",freshness=0)
+  read_sql("select * from data_with_tbl", "data_with_tbl", freshness=0)
   expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), collect(data))
   expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), collect(data))
 })
@@ -118,18 +118,45 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 
 test_that("read_sql_table throws an error when a table doesn't exist",{
   expect_error(read_sql_table("table_doesnt_exist"),"doesnt_exist doesn't exist")
-  expect_error(read_sql_table("VT_SEASON"),"VT_SEASON doesn't exist")
 })
 
+test_that("read_sql_table works with database", {
+  db$db = DBI::dbConnect(RSQLite::SQLite(),":memory:")
+  dplyr::copy_to(db$db,data,"TR_SEASON")
+  m = mock(data)
+  stub(read_sql_table,"tbl",m,depth=2)
+  read_sql_table("TR_SEASON",primary_keys="id",date_column = "last_update_dt")
+  expect_equal(as.character(mock_args(m)[[1]][[2]]),"select * from `dbo`.`TR_SEASON`")
+  sql_disconnect()
+})
 
+pks = data.table(TABLE_SCHEMA="dbo",TABLE_NAME="TR_SEASON",COLUMN_NAME="blah")
+dts = data.table(TABLE_SCHEMA="dbo",TABLE_NAME="TR_SEASON",COLUMN_NAME="last_update_dt")
 test_that("read_sql_table reads a table from the database in `dbo` and `BI` schemas and caches it",{
+  stub(read_sql_table,"DBI::dbListTables",mock("TR_SEASON","VT_SEASON",cycle=TRUE))
+  m_read = mock(pks,dts,NULL,cycle=T)
+  stub(read_sql_table,"read_sql",m_read)
+
   read_sql_table("TR_SEASON")
   read_sql_table("VT_SEASON","BI")
 
-  expect_true(cache_exists("dbo.TR_SEASON","deep","tessi"))
-  expect_true(cache_exists("dbo.TR_SEASON","shallow","tessi"))
-
-  expect_true(cache_exists("BI.VT_SEASON","shallow","tessi"))
-  expect_true(cache_exists("BI.VT_SEASON","shallow","tessi"))
+  expect_equal(mock_args(m_read)[[3]][["name"]],"dbo.TR_SEASON")
+  expect_equal(mock_args(m_read)[[5]][["name"]],"BI.VT_SEASON")
 })
 
+test_that("read_sql_table finds the primary keys and last_update_dt columns",{
+  m_read = mock(pks,dts,NULL,cycle=T)
+  stub(read_sql_table,"read_sql",m_read)
+
+  read_sql_table("TR_SEASON")
+
+  expect_equal(mock_args(m_read)[[3]][["primary_keys"]],"blah")
+  expect_equal(mock_args(m_read)[[3]][["date_column"]],"last_update_dt")
+
+  dts = data.table(TABLE_SCHEMA="dbo",TABLE_NAME="TR_SEASON",COLUMN_NAME="blah")
+
+  read_sql_table("TR_SEASON")
+
+  expect_equal(mock_args(m_read)[[6]][["primary_keys"]],"blah")
+  expect_equal(mock_args(m_read)[[6]][["date_column"]],NULL)
+})

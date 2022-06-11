@@ -22,8 +22,10 @@ updates the Rstudio connection pane
 }}
 
 \examples{
-tessilake:::db
+\dontrun{
+tessilake:::db$db
 sql_connect()
-tessilake:::db
+tessilake:::db$db
 sql_disconnect()
+}
 }
