@@ -40,6 +40,7 @@ expr_get_names <- function(expr) {
 #' @param to the object to be updated
 #' @param date_column string or tidyselected column identifying the date column to use to determine which rows to update
 #' @param primary_keys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
+#' @param delete whether to delete rows in `to` missing from `from`, default is not to delete the rows
 #'
 #' @importFrom dplyr collect semi_join select
 #' @importFrom rlang as_name call_args eval_tidy
@@ -59,7 +60,7 @@ expr_get_names <- function(expr) {
 #'
 #' update_table(from, to, primary_keys = c(x,y)) == expect
 #' # TRUE
-update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
+update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
   assert_dataframeish(from)
   assert_class(to, "data.table")
   assert_subset(colnames(from), colnames(to))
@@ -99,6 +100,12 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL) {
 
   # rows that don't yet exist in to
   new <- cols_from[!cols_to, on = primary_keys]
+
+  # rows that are missing in from
+  if(delete == TRUE) {
+    remove <- cols_to[!cols_from, on = primary_keys]
+    to <- to[!remove, on = primary_keys]
+  }
 
   if (is.data.table(from)) {
     from_update <- from[update, colnames(from), on = primary_keys, with = F]

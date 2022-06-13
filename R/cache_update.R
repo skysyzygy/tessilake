@@ -8,11 +8,12 @@
 #' @param type string, either "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param date_column character name of the column to be used for determining the date of last row update
+#' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
 #' @param ... extra arguments passed on to [`arrow::open_dataset`] and [`arrow::write_dataset`]
 #'
 #' @return invisible
 #' @importFrom arrow open_dataset
-#' @importFrom dplyr select filter all_of
+#' @importFrom dplyr select filter all_of anti_join distinct
 #' @importFrom rlang sym
 #' @examples
 #' \dontrun{
@@ -23,12 +24,12 @@
 #' }
 cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
                          primary_keys = attr(x, "primary_keys"),
-                         date_column = NULL, ...) {
+                         date_column = NULL, delete = FALSE, ...) {
   if (!cache_exists(table_name, depth, type)) {
     return(cache_write(x, table_name, depth, type, primary_keys = primary_keys))
   }
 
-  dataset <- cache_read(table_name, depth, type, include_partition = T, ...)
+  dataset <- cache_read(table_name, depth, type, include_partition = TRUE, ...)
 
   assert_dataframeish(x)
 
@@ -47,8 +48,14 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
     }
 
     partition_name <- paste0("partition_", dataset_attributes$primary_keys[[1]])
-    x_primary_keys <- select(x, all_of(primary_keys)) %>% collect()
-    partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys)
+    x_primary_keys <- select(x, all_of(primary_keys)) %>% collect
+    if(delete == TRUE) {
+      dataset_primary_keys <- select(dataset, all_of(primary_keys))
+      x_primary_keys <- rbind(x_primary_keys,
+                              anti_join(dataset_primary_keys, x_primary_keys, by = primary_keys) %>% collect)
+    }
+
+    partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys) %>% unique
 
     # load only the dataset partitions that need to get updated
     dataset <- dataset %>%
@@ -62,7 +69,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
   cache_set_attributes(dataset, dataset_attributes)
   setDT(dataset)
 
-  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column)
+  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete)
 
-  cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = T, ...)
+  cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = TRUE, ...)
 }

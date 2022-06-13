@@ -66,6 +66,7 @@ test_that("update_table updates data.tables incrementally when given primary_key
 
   expect_equal(update_table(from, to, primary_keys = c("x", "y")), expect)
   expect_equal(update_table(from, to, primary_keys = c(x, y)), expect)
+  expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), from)
 })
 
 test_that("update_table updates data.tables incrementally when given date_column and primary_keys", {
@@ -80,7 +81,9 @@ test_that("update_table updates data.tables incrementally when given date_column
     data = runif(.N)
   )]
 
-  expect_equal(from, update_table(from, to, date_column = date, primary_keys = c(I)))
+  expect_equal(update_table(from, to, date_column = date, primary_keys = c(I)), from)
+  expect_equal(update_table(from[1:1000], to, date_column = date, primary_keys = c(I), delete = TRUE), from[1:1000])
+
 })
 
 test_that("update_table loads from DB incrementally", {
@@ -123,6 +126,7 @@ test_that("update_table doesn't copy from when from is a data.table", {
 
   expect_silent(update_table(from, to))
   expect_silent(update_table(from, to, primary_keys = c(x, y)))
+  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
 })
 
 test_that("update_table doesn't copy to when to is a data.table", {
@@ -137,4 +141,5 @@ test_that("update_table doesn't copy to when to is a data.table", {
 
   expect_silent(update_table(from, to))
   expect_silent(update_table(from, to, primary_keys = c(x, y)))
+  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
 })

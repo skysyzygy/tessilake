@@ -1,3 +1,22 @@
+#' cache_get_mtime
+#'
+#' Get the last modification time of the cache by querying the mtime of all of the files that make up the cache
+#'
+#' @param table_name string
+#' @param depth string, either "deep" or "shallow"
+#' @param type string, either "tessi" or "stream"
+#'
+#' @return POSIXct modification time
+#'
+cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+  cache_files <- c(
+    dir(cache_path(table_name, depth, type), full.names = TRUE, recursive = TRUE),
+    dir(dirname(cache_path(table_name, depth, type)), full.names = TRUE, recursive = TRUE)
+  )
+
+  cache_mtime <- max(file.mtime(cache_files), na.rm = TRUE)
+}
+
 #' cache_path
 #'
 #' Internal function to build cache directory/path and check that we have read/write access
@@ -51,3 +70,4 @@ cache_exists <- function(table_name, depth = c("deep", "shallow"), type = c("tes
 
   dir.exists(cache_path) || file.exists(paste0(cache_path, ".feather")) || file.exists(paste0(cache_path, ".parquet"))
 }
+

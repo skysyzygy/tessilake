@@ -11,6 +11,7 @@ cache_update(
   type = c("tessi", "stream"),
   primary_keys = attr(x, "primary_keys"),
   date_column = NULL,
+  delete = FALSE,
   ...
 )
 }
@@ -26,6 +27,8 @@ cache_update(
 \item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
 
 \item{date_column}{character name of the column to be used for determining the date of last row update}
+
+\item{delete}{whether to delete rows in cache missing from \code{x}, default is not to delete the rows}
 
 \item{...}{extra arguments passed on to \code{\link[arrow:open_dataset]{arrow::open_dataset}} and \code{\link[arrow:write_dataset]{arrow::write_dataset}}}
 }

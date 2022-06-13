@@ -1,14 +1,7 @@
-library(checkmate)
+withr::local_package("checkmate")
+local_cache_dirs()
 
-dir.create(file.path(tempdir(), "deep"))
-dir.create(file.path(tempdir(), "shallow"))
-withr::defer({
-  gc()
-  unlink(file.path(tempdir(), "deep"), recursive = T)
-  unlink(file.path(tempdir(), "shallow"), recursive = T)
-})
-
-test_read_write <- setattr(data.table(x = 1:100000, y = runif(1000)), "key", "value")
+test_read_write <- data.table::setattr(data.table(x = 1:100000, y = runif(1000)), "key", "value")
 
 # cache_update -------------------------------------------------------------
 
@@ -60,10 +53,30 @@ test_that("cache_update updates rows incrementally, and only in the required par
   expect_equal(length(cache_files) - length(updated_cache_files), 10)
 })
 
+test_that("cache_update updates rows incrementally, and only in the required partitions when delete == TRUE", {
+  cache_write(test_incremental, "test_incremental", "deep", "tessi", primary_keys = "x", overwrite = TRUE)
+  time <- Sys.time()
+  cache_update(update_incremental, "test_incremental", "deep", "tessi", primary_keys = "x", delete = TRUE)
+
+  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>%
+    setorderv("x") %>%
+    setattr("partitioning", NULL) %>%
+    setattr("primary_keys", NULL)
+  updated_table <- update_table(update_incremental, test_incremental, primary_keys = c("x"), delete = TRUE)
+
+  expect_equal(updated_cache, updated_table)
+
+  cache_files <- sapply(dir(cache_path("test_incremental", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
+  updated_cache_files <- purrr::keep(cache_files, ~ . > time)
+  expect_equal(length(updated_cache_files), 1)
+  expect_equal(length(cache_files) - length(updated_cache_files), 0)
+})
+
 test_that("cache_update updates rows incrementally and doesn't copy from", {
   tracemem(update_incremental)
   cache_write(test_incremental, "test_incremental2", "deep", "tessi", primary_keys = "x")
   expect_silent(cache_update(update_incremental, "test_incremental2", "deep", "tessi", primary_keys = "x"))
+  expect_silent(cache_update(update_incremental, "test_incremental2", "deep", "tessi", primary_keys = "x", delete = TRUE))
   untracemem(update_incremental)
 })
 

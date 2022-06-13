@@ -1,12 +1,5 @@
-library(checkmate)
-
-dir.create(file.path(tempdir(), "deep"))
-dir.create(file.path(tempdir(), "shallow"))
-withr::defer({
-  gc()
-  unlink(file.path(tempdir(), "deep"), recursive = T)
-  unlink(file.path(tempdir(), "shallow"), recursive = T)
-})
+withr::local_package("checkmate")
+local_cache_dirs()
 
 # cache_write -------------------------------------------------------------
 

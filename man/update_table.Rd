@@ -4,7 +4,7 @@
 \alias{update_table}
 \title{update_table}
 \usage{
-update_table(from, to, date_column = NULL, primary_keys = NULL)
+update_table(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
 }
 \arguments{
 \item{from}{the source object}
@@ -14,6 +14,8 @@ update_table(from, to, date_column = NULL, primary_keys = NULL)
 \item{date_column}{string or tidyselected column identifying the date column to use to determine which rows to update}
 
 \item{primary_keys}{vector of strings or tidyselected columns identifying the primary keys to determine which rows to update}
+
+\item{delete}{whether to delete rows in \code{to} missing from \code{from}, default is not to delete the rows}
 }
 \value{
 an updated data.table updated in-place
