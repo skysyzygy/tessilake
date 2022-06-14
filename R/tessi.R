@@ -132,10 +132,10 @@ read_tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days"
 
   map = customers %>%
     full_join(merge_recursive(merges),by=c("customer_no"="delete_id")) %>%
-    full_join(affiliations,by=c("customer_no"="individual_customer_no")) %>%
     rename(kept_customer_no = kept_id) %>%
-    mutate(kept_customer_no = coalesce(kept_customer_no,customer_no),
-           group_customer_no = coalesce(group_customer_no,kept_customer_no)) %>%
+    mutate(kept_customer_no = coalesce(kept_customer_no,customer_no)) %>%
+    left_join(affiliations,by=c("kept_customer_no"="individual_customer_no")) %>%
+    mutate(group_customer_no = coalesce(group_customer_no,kept_customer_no)) %>%
     collect(as_data_frame = FALSE)
 
 }

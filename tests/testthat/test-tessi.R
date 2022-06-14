@@ -62,12 +62,29 @@ stub(read_tessi_customer_no_map,"read_sql",mock(select(customers,customer_no),
 map <- read_tessi_customer_no_map() %>% collect()
 
 test_that("read_tessi_customer_no_map correctly maps all merges", {
-  # all deleted customers are old
+  self_maps = filter(map,customer_no==kept_customer_no)
+  diff_maps = filter(map,customer_no!=kept_customer_no)
+  true_keeps = filter(merges,!kept_id %in% merges$delete_id)
+  temp_keeps = filter(merges,kept_id %in% merges$delete_id)
+
+  # deleted + temp_keeps <--> customer_no
   expect_true(all(merges$delete_id %in% map$customer_no))
-  # no kept customers are deleted
-  expect_true(!any(map$kept_customer_no %in% merges$delete_id))
-  # no deleted customers are kept
   expect_true(!any(merges$delete_id %in% map$kept_customer_no))
+  expect_true(all(temp_keeps$kept_id %in% map$customer_no))
+  expect_true(!any(temp_keeps$kept_id %in% map$kept_customer_no))
+  expect_true(!any(map$kept_customer_no %in% merges$delete_id))
+  expect_true(!any(map$kept_customer_no %in% temp_keeps$kept_id))
+  # true_keep <--> kept_customer_no
+  expect_true(all(true_keeps$kept_id %in% map$kept_customer_no))
+  expect_true(!any(true_keeps$kept_id %in% diff_maps$customer_no))
+  expect_true(all(diff_maps$kept_customer_no %in% true_keeps$kept_id))
+  expect_true(!any(diff_maps$customer_no %in% true_keeps$kept_id))
+  # true_keeps in customer_no are self_maps
+  expect_true(all(true_keeps$kept_id %in% self_maps$customer_no))
+  expect_true(!any(true_keeps$kept_id %in% diff_maps$customer_no))
+  # temp_keeps and deletes are diff_maps
+  expect_true(all(diff_maps$customer_no %in% c(merges$delete_id, temp_keeps$kept_id)))
+  expect_true(!any(self_maps$customer_no %in% c(merges$delete_id, temp_keeps$kept_id)))
 })
 
 test_that("read_tessi_customer_no_map puts merged customers in customer_no", {
@@ -84,7 +101,7 @@ test_that("read_tessi_customer_no_map includes all affiliations in group_custome
   expect_true(all(affiliations$group_customer_no %in% map$group_customer_no))
 })
 
-test_that("read_tessi_customer_no_map includes all households in group_customer_no", {
+test_that("read_tessi_customer_no_map includes all non-merged households in group_customer_no", {
   households = filter(customers,cust_type==13 & inactive != 5)
   expect_true(all(households$customer_no %in% map$group_customer_no))
 })
