@@ -7,6 +7,8 @@
 local_cache_dirs(..., envir = parent.frame())
 }
 \arguments{
+\item{...}{other arguments for compatibility with testthat?}
+
 \item{envir}{parent.frame()}
 }
 \description{

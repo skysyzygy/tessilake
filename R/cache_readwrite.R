@@ -8,6 +8,7 @@
 #' @param depth string, either "deep" or "shallow"
 #' @param type string, either "tessi" or "stream"
 #' @param include_partition boolean, whether or not to return the partition information as a column
+#' @param select vector of strings indicating columns to select from database
 #' @param ... extra arguments to pass on to arrow::open_dataset
 #'
 #' @return [`arrow::Dataset`]
@@ -17,13 +18,19 @@
 #' cache_read("test", "deep", "stream")
 #' }
 cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
-                       include_partition = FALSE, ...) {
+                       include_partition = FALSE, select = NULL, ...) {
   cache_path <- cache_path(table_name, depth, type)
 
   if (dir.exists(cache_path)) {
     cache <- open_dataset(cache_path, format = ifelse(depth == "deep", "parquet", "arrow"), ...)
 
+    if(!is.null(select)) {
+      assert_names(select,subset.of=colnames(cache))
+      cache = select(cache,!!select)
+    }
+
     attributes <- cache_get_attributes(cache)
+
     if (!is.null(attributes$partitioning)) {
       partition_name <- paste0("partition_", attributes$primary_keys)
 
@@ -32,14 +39,16 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
       }
     }
   } else if (file.exists(paste0(cache_path, ".feather"))) {
-    cache <- read_feather(paste0(cache_path, ".feather"), as_data_frame = F)
+    cache <- read_feather(paste0(cache_path, ".feather"), as_data_frame = F, col_select = !!select, ...)
   } else if (file.exists(paste0(cache_path, ".parquet"))) {
-    cache <- read_parquet(paste0(cache_path, ".parquet"), as_data_frame = F)
+    cache <- read_parquet(paste0(cache_path, ".parquet"), as_data_frame = F, col_select = !!select, ...)
   } else {
     message(paste("Cache file not found at", cache_path))
     cache <- FALSE
   }
 
+  # repair colnames in r attributes
+  #cache_set_attributes(cache,list(names=NULL))
   cache
 }
 

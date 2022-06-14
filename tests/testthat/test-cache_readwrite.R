@@ -41,6 +41,8 @@ test_that("cache_write with works with anything data.frameish", {
   expect_true(file.exists(paste0(cache_path("test_read_write_arrow", "deep", "tessi"), ".parquet")))
   cache_write(test_read_write, "test_read_write_tbl", "deep", "tessi")
   expect_true(file.exists(paste0(cache_path("test_read_write_tbl", "deep", "tessi"), ".parquet")))
+
+  DBI::dbDisconnect(con)
 })
 
 test_that("cache_write doesn't copy x", {
@@ -71,4 +73,12 @@ test_that("cache_read returns data to the original form including attributes", {
     setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
 })
 
-withr::deferred_run()
+test_that("cache_read can select particular columns", {
+  expect_equal(cache_read("test_read_write", "deep", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])
+  expect_equal(cache_read("test_read_write", "shallow", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])
+  expect_equal(cache_read("test_read_write_arrow", "deep", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])
+  expect_equal(cache_read("test_read_write_tbl", "deep", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])
+  expect_equal(cache_read("test_partitioning", "deep", "tessi", select = "y") %>% collect() %>% .[[1]] %>% sort, test_read_write[,y] %>% sort)
+  expect_equal(cache_read("test_partitioning", "shallow", "tessi", select = "y") %>% collect() %>% .[[1]] %>% sort, test_read_write[,y] %>% sort)
+})
+

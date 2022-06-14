@@ -1,4 +1,4 @@
-library(mockery)
+withr::local_package("mockery")
 
 # expr_get_names ----------------------------------------------------------
 

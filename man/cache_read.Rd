@@ -9,6 +9,7 @@ cache_read(
   depth = c("deep", "shallow"),
   type = c("tessi", "stream"),
   include_partition = FALSE,
+  select = NULL,
   ...
 )
 }
@@ -20,6 +21,8 @@ cache_read(
 \item{type}{string, either "tessi" or "stream"}
 
 \item{include_partition}{boolean, whether or not to return the partition information as a column}
+
+\item{select}{vector of strings indicating columns to select from database}
 
 \item{...}{extra arguments to pass on to arrow::open_dataset}
 }

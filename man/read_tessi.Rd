@@ -15,11 +15,11 @@ read_tessi(
 \item{table_name}{character name of the table to read from Tessitura, either one of the available tables (see \code{\link[=tessi_list_tables]{tessi_list_tables()}}) or the
 name of a SQL table that exists in Tessitura. The default SQL table schema is \code{dbo}.}
 
-\item{select}{vector of strings or symbols indicating columns to select from stream file}
+\item{select}{vector of strings indicating columns to select from database}
 
 \item{freshness}{the returned data will be at least this fresh}
 
-\item{...}{further arguments to be passed to or from other methods}
+\item{...}{further arguments to be passed to other methods}
 }
 \value{
 an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.

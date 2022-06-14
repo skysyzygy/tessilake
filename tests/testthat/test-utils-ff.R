@@ -1,5 +1,4 @@
-library(data.table)
-library(purrr)
+withr::local_package("purrr")
 
 # as.ram2 -----------------------------------------------------------------
 

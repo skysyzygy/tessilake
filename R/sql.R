@@ -49,6 +49,7 @@ db <- new.env(parent = emptyenv())
 #'
 #' @param query character query to run on the database.
 #' @param name name of the query, defaults to the SHA1 hash of the query.
+#' @param select vector of strings indicating columns to select from database
 #' @param primary_keys primary keys of the query to be used for incremental updates
 #' @param date_column update date column of the query to be used for incremental updates
 #' @param freshness the returned data will be at least this fresh
@@ -67,7 +68,9 @@ db <- new.env(parent = emptyenv())
 #'   primary_keys = "customer_no",
 #'   date_column = "last_update_dt"
 #' )}
-read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, date_column = NULL,
+read_sql <- function(query, name = digest::sha1(query),
+                     select = NULL,
+                     primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days")) {
   . <- NULL
 
@@ -107,7 +110,7 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
     )
   }
 
-  cache_read(name, "shallow", "tessi")
+  cache_read(name, "shallow", "tessi", select = select)
 
 }
 
@@ -115,6 +118,7 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
 #'
 #' @param schema character, database schema. Default is `dbo`
 #' @param table_name character, table name without schema.
+#' @param select vector of strings indicating columns to select from database
 #' @param primary_keys character vector, primary keys of the table. `read_sql_table` will attempt to identify the primary keys using
 #' SQL metadata.
 #' @param date_column character, date column of the table showing the last date the row was updated.
@@ -129,7 +133,9 @@ read_sql <- function(query, name = digest::sha1(query), primary_keys = NULL, dat
 #' \dontrun{
 #' read_sql_table("T_CUSTOMER")
 #' }
-read_sql_table <- function(table_name, schema="dbo", primary_keys = NULL, date_column = NULL,
+read_sql_table <- function(table_name, schema="dbo",
+                           select = NULL,
+                           primary_keys = NULL, date_column = NULL,
                            freshness = as.difftime(7, units = "days")) {
 
   . <- TABLE_SCHEMA <- TABLE_NAME <- COLUMN_NAME <- NULL
@@ -147,6 +153,13 @@ read_sql_table <- function(table_name, schema="dbo", primary_keys = NULL, date_c
     .N]==0)
     stop(paste("Table", paste(schema, table_name, collapse = "."), "doesn't exist."))
 
+  available_columns <- read_sql("select TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS",
+                                "available_columns",freshness=freshness) %>%
+    filter(TABLE_SCHEMA==schema & TABLE_NAME==table_name) %>%
+    select(COLUMN_NAME) %>% collect() %>% .[[1]]
+
+  if (!is.null(select)) assert_names(select,subset.of = available_columns)
+
   # get primary key info
   if (is.null(primary_keys)) {
     pk_table = read_sql("select cc.TABLE_SCHEMA, cc.TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc
@@ -157,18 +170,14 @@ read_sql_table <- function(table_name, schema="dbo", primary_keys = NULL, date_c
   }
 
   if (is.null(date_column) & length(primary_keys)>0) {
-    available_columns <- read_sql("select TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS",
-                                  "available_columns",freshness=freshness)
-
-    if("last_update_dt" %in% (
-      filter(available_columns,TABLE_SCHEMA==schema & TABLE_NAME==table_name) %>%
-      select(COLUMN_NAME) %>% collect() %>% .[[1]]))
+    if("last_update_dt" %in% available_columns)
       date_column = "last_update_dt"
   }
 
   # build the table query
   read_sql(query = paste("select * from",DBI::dbQuoteIdentifier(db$db,DBI::Id(schema = schema, table = table_name))),
            name = paste(c(schema,table_name),collapse="."),
+           select = select,
            primary_keys = primary_keys,
            date_column = date_column,
            freshness = freshness)

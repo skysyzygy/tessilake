@@ -6,7 +6,7 @@
 #'
 #' @return a data.table
 #' @export
-#' @importFrom ff as.ram delete
+#' @importFrom ff as.ram delete is.ffdf
 #' @importFrom ffbase as.ram.ffdf
 #' @importFrom data.table setDT setattr
 #' @examples
@@ -43,7 +43,7 @@ as.ram2 <- function(obj) {
 #' @importFrom Rfast is_integer
 #' @importFrom glue glue
 #' @importFrom data.table setattr
-#' @importFrom ff is.ff vmode .rammode
+#' @importFrom ff is.ff vmode vmode<- .rammode
 #'
 #' @examples
 #'

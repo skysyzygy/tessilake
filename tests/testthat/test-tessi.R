@@ -1,13 +1,6 @@
-library(mockery)
-library(checkmate)
-
-dir.create(file.path(tempdir(), "shallow"))
-dir.create(file.path(tempdir(), "deep"))
-withr::defer({
-  gc()
-  unlink(file.path(tempdir(), "shallow"), recursive = T)
-  unlink(file.path(tempdir(), "deep"), recursive = T)
-})
+withr::local_package("checkmate")
+withr::local_package("mockery")
+local_cache_dirs()
 
 # tessi_list_tables -------------------------------------------------------
 
@@ -45,5 +38,3 @@ test_that("read_tessi passes all arguments on to read_sql_table", {
                                       primary_keys = "season_no",
                                       freshness = 0))
 })
-
-withr::deferred_run()

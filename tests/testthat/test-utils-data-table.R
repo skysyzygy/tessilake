@@ -1,5 +1,3 @@
-library(data.table)
-
 # setleftjoin -------------------------------------------------------------
 
 setleftjoin <- function(...) {

@@ -1,4 +1,4 @@
-library(withr)
+withr::local_package("withr")
 
 # setleftjoin -------------------------------------------------------------
 

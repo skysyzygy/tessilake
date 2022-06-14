@@ -23,6 +23,44 @@ test_that("cache_get_mtime works with cache_write", {
   expect_lt(cache_get_mtime("test_partitioning", "shallow", "tessi"), timeB)
 })
 
+# cache_delete ------------------------------------------------------------
+
+test_that("cache_delete complains if arguments incorrect", {
+  expect_error(cache_delete(), "table_name")
+  expect_error(cache_delete("seasons", "deep", "blah"), "type")
+  expect_error(cache_delete("seasons", "blah", "tessi"), "depth")
+})
+
+test_that("cache_delete complains if cache doesn't exist", {
+  expect_error(cache_delete("test","deep","tessi"), "doesn't exist")
+})
+
+test_that("cache_delete works with cache_write", {
+
+  expect_true(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"),".parquet")))
+  expect_true(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"),".feather")))
+  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"),recursive = TRUE),11)
+  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"),recursive = TRUE),11)
+
+  cache_delete("test_read_write", "deep", "tessi")
+  cache_delete("test_read_write", "shallow", "tessi")
+
+  expect_false(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"),".parquet")))
+  expect_false(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"),".feather")))
+
+  cache_delete("test_partitioning", "deep", "tessi",partitions=0)
+  cache_delete("test_partitioning", "shallow", "tessi",partitions=c(8,9,10))
+
+  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"),recursive = TRUE),10)
+  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"),recursive = TRUE),8)
+
+  cache_delete("test_partitioning", "deep", "tessi")
+  cache_delete("test_partitioning", "shallow", "tessi")
+
+  expect_false(dir.exists(cache_path("test_read_write", "deep", "tessi")))
+  expect_false(dir.exists(cache_path("test_read_write", "shallow", "tessi")))
+})
+
 # cache_path ------------------------------------------------------------
 
 test_that("cache_path complains if arguments incorrect", {
@@ -60,3 +98,5 @@ test_that("cache_exists looks for directories, feather and parquet files", {
   expect_true(any(grepl("season\\.feather", mockery::mock_args(file.exists))))
   expect_true(any(grepl("season\\.parquet", mockery::mock_args(file.exists))))
 })
+
+

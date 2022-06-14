@@ -47,9 +47,9 @@ tessi_list_tables <- function() {
 #'
 #' @param table_name character name of the table to read from Tessitura, either one of the available tables (see [tessi_list_tables()]) or the
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
-#' @param select vector of strings or symbols indicating columns to select from stream file
+#' @param select vector of strings indicating columns to select from database
 #' @param freshness the returned data will be at least this fresh
-#' @param ... further arguments to be passed to or from other methods
+#' @param ... further arguments to be passed to other methods
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @export
@@ -83,3 +83,27 @@ read_tessi <- function(table_name, select = NULL,
 
 }
 
+read_tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days"), ...) {
+
+  merges = read_sql_table("T_MERGED", freshness = freshness) %>%
+    filter(status=="S") %>% select(kept_id,delete_id) %>% collect
+
+  affiliations = read_sql_table("T_AFFILIATION", select = c("individual_customer_no","group_customer_no",
+                                                            "inactive","primary_ind"), freshness = freshness) %>%
+    filter(primary_ind=="Y" & inactive=="N")
+
+  merge_recursive = function(m) {
+    if(all(is.na(match(collect(m$kept_id),collect(merges$delete_id))))) {
+      return(m)
+    } else {
+      m %>%
+        dplyr::left_join(merges,by=c("kept_id"="delete_id"),suffix=c(".old","")) %>%
+        mutate(kept_id = coalesce(kept_id,kept_id.old)) %>%
+        select(-kept_id.old) %>%
+        merge_recursive
+    }
+  }
+
+  merge_recursive(merges)
+
+}

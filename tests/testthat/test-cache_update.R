@@ -87,6 +87,3 @@ test_that("cache_update returns nothing, invisibly", {
   expect_equal(cache_update(update_incremental, "test_incremental3", "deep", "tessi", primary_keys = "x"), NULL)
   expect_invisible(cache_update(update_incremental, "test_incremental3", "deep", "tessi", primary_keys = "x"))
 })
-
-
-withr::deferred_run()

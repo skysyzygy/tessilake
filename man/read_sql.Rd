@@ -8,6 +8,7 @@
 read_sql(
   query,
   name = digest::sha1(query),
+  select = NULL,
   primary_keys = NULL,
   date_column = NULL,
   freshness = as.difftime(7, units = "days")
@@ -16,6 +17,7 @@ read_sql(
 read_sql_table(
   table_name,
   schema = "dbo",
+  select = NULL,
   primary_keys = NULL,
   date_column = NULL,
   freshness = as.difftime(7, units = "days")
@@ -25,6 +27,8 @@ read_sql_table(
 \item{query}{character query to run on the database.}
 
 \item{name}{name of the query, defaults to the SHA1 hash of the query.}
+
+\item{select}{vector of strings indicating columns to select from database}
 
 \item{primary_keys}{character vector, primary keys of the table. \code{read_sql_table} will attempt to identify the primary keys using
 SQL metadata.}
