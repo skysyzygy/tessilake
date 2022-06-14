@@ -22,19 +22,80 @@ test_that("tessi_list_tables combines tessi_tables.yml with config.yml", {
 
 # read_tessi -----------------------------------------------------------
 
-m = mock(NULL)
-stub(read_tessi,"read_sql_table",m)
 test_that("read_tessi complains if table_name is not given", {
   expect_error(read_tessi(), "table_name")
 })
 
 test_that("read_tessi complains if asked for a table it doesn't know about", {
+  m = mock(data.table(x=1:1000))
+  stub(read_tessi,"read_sql_table",m)
   expect_error(read_tessi("tableThatDoesntExist"), "table_name")
   expect_silent(read_tessi("seasons", freshness = 0))
 })
 
 test_that("read_tessi passes all arguments on to read_sql_table", {
+  m = mock(data.table(x=1:1000))
+  stub(read_tessi,"read_sql_table",m)
+  read_tessi("seasons", freshness = 0)
   expect_equal(mock_args(m)[[1]],list(table_name = "VT_SEASON", schema = "BI",
                                       primary_keys = "season_no",
                                       freshness = 0))
+})
+
+
+test_that("read_tessi merges with read_tessi_customer_no_map when table contains customer_no", {
+  tbl = mock(data.table(customer_no=1:1000))
+  map = mock(data.table(customer_no=1:1000,kept_customer_no=2:1001))
+  stub(read_tessi,"read_sql_table",tbl)
+  stub(read_tessi,"read_tessi_customer_no_map",map)
+
+  expect_equal(read_tessi("seasons", freshness = 0),data.table(customer_no=2:1001))
+})
+
+# read_tessi_customer_no_map ----------------------------------------------
+
+load("affiliations.Rds")
+load("merges.Rds")
+load("customers.Rds")
+stub(read_tessi_customer_no_map,"read_sql",mock(select(customers,customer_no),
+                                                merges,affiliations,cycle = TRUE))
+map <- read_tessi_customer_no_map() %>% collect()
+
+test_that("read_tessi_customer_no_map correctly maps all merges", {
+  # all deleted customers are old
+  expect_true(all(merges$delete_id %in% map$customer_no))
+  # no kept customers are deleted
+  expect_true(!any(map$kept_customer_no %in% merges$delete_id))
+  # no deleted customers are kept
+  expect_true(!any(merges$delete_id %in% map$kept_customer_no))
+})
+
+test_that("read_tessi_customer_no_map puts merged customers in customer_no", {
+  merged_customers = filter(customers,inactive==5)
+  expect_lte(sum(merged_customers$customer_no %in% map$kept_customer_no),1)
+  expect_true(all(merged_customers$customer_no %in% map$customer_no))
+})
+
+test_that("read_tessi_customer_no_map includes all customers", {
+  expect_true(all(customers$customer_no %in% map$customer_no))
+})
+
+test_that("read_tessi_customer_no_map includes all affiliations in group_customer_no", {
+  expect_true(all(affiliations$group_customer_no %in% map$group_customer_no))
+})
+
+test_that("read_tessi_customer_no_map includes all households in group_customer_no", {
+  households = filter(customers,cust_type==13 & inactive != 5)
+  expect_true(all(households$customer_no %in% map$group_customer_no))
+})
+
+test_that("read_tessi_customer_no_map doesn't duplicate customer_no", {
+  expect_true(anyDuplicated(map$customer_no)==0)
+})
+
+test_that("read_tessi_customer_no_map has no nulls or nas", {
+  expect_integer(map$customer_no,any.missing = FALSE)
+  expect_integer(map$kept_customer_no,any.missing = FALSE)
+  expect_integer(map$group_customer_no,any.missing = FALSE)
+  expect_names(colnames(map),permutation.of = c("group_customer_no","kept_customer_no","customer_no"))
 })

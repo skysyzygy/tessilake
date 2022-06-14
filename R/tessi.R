@@ -43,7 +43,8 @@ tessi_list_tables <- function() {
 
 #' read_tessi
 #'
-#' Thin wrapper on read_sql_table using the tables configured in `list_tessi_tables`
+#' Thin wrapper on read_sql_table using the tables configured in `list_tessi_tables` that additionally updates `customer_no` and adds
+#' `group_customer_no` based on [read_tessi_customer_no_map()]
 #'
 #' @param table_name character name of the table to read from Tessitura, either one of the available tables (see [tessi_list_tables()]) or the
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
@@ -64,7 +65,7 @@ tessi_list_tables <- function() {
 read_tessi <- function(table_name, select = NULL,
                        freshness = as.difftime(7, units = "days"), ...) {
 
-  short_name <- NULL
+  short_name <- customer_no <- kept_customer_no <- NULL
 
   select <- enquo(select)
   assert_character(table_name)
@@ -74,36 +75,67 @@ read_tessi <- function(table_name, select = NULL,
 
   table_data$long_name = strsplit(table_data$long_name,".",fixed = TRUE)[[1]]
 
-  if(length(table_data$long_name)==1)
-    return(read_sql_table(table_name = table_data$long_name[[1]],
-                          primary_keys=table_data$primary_keys, freshness = freshness))
+  if(length(table_data$long_name)==1) {
+    table <- read_sql_table(table_name = table_data$long_name[[1]],
+                          primary_keys=table_data$primary_keys, freshness = freshness)
+  } else {
+    table <- read_sql_table(table_name = table_data$long_name[[2]], schema = table_data$long_name[[1]],
+                          primary_keys=table_data$primary_keys, freshness = freshness)
+  }
 
-  return(read_sql_table(table_name = table_data$long_name[[2]], schema = table_data$long_name[[1]],
-                        primary_keys=table_data$primary_keys, freshness = freshness))
+  if("customer_no" %in% names(table))
+    table <- table %>%
+      left_join(read_tessi_customer_no_map(),by="customer_no") %>%
+      select(-customer_no) %>%
+      rename(customer_no = kept_customer_no) %>%
+      collect(as_data_frame = FALSE)
+
+  return(table)
 
 }
 
-read_tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days"), ...) {
+#' read_tessi_customer_no_map
+#'
+#' Return an Arrow table of customer numbers `customer_no_old` mapped to merged `customer_no` and household/primary group
+#' customer numbers `group_customer_no`.
+#'
+#' @param freshness the returned data will be at least this fresh
+#' @importFrom dplyr full_join left_join filter select mutate collect rename coalesce
+#' @importFrom arrow is_in
+#' @return [arrow::Table]
+#' @export
+read_tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
 
-  merges = read_sql_table("T_MERGED", freshness = freshness) %>%
-    filter(status=="S") %>% select(kept_id,delete_id) %>% collect
+  kept_id <- kept_id.old <- kept_customer_no <- customer_no <- group_customer_no <- NULL
 
-  affiliations = read_sql_table("T_AFFILIATION", select = c("individual_customer_no","group_customer_no",
-                                                            "inactive","primary_ind"), freshness = freshness) %>%
-    filter(primary_ind=="Y" & inactive=="N")
+  customers = read_sql("select customer_no from T_CUSTOMER", freshness = freshness)
+
+  merges = read_sql("select kept_id, delete_id from T_MERGED where status='S' and kept_id<>delete_id", freshness = freshness) %>%
+    distinct %>% collect(as_data_frame = FALSE)
+
+  affiliations = read_sql("select individual_customer_no, group_customer_no from T_AFFILIATION where primary_ind='Y' and inactive='N'",
+                                freshness = freshness)
 
   merge_recursive = function(m) {
-    if(all(is.na(match(collect(m$kept_id),collect(merges$delete_id))))) {
+    if(!any(m$kept_id %>% is_in(m$delete_id))$as_vector()) {
       return(m)
     } else {
       m %>%
-        dplyr::left_join(merges,by=c("kept_id"="delete_id"),suffix=c(".old","")) %>%
+        rename(kept_id.old = kept_id) %>%
+        left_join(merges,by=c("kept_id.old"="delete_id")) %>%
         mutate(kept_id = coalesce(kept_id,kept_id.old)) %>%
         select(-kept_id.old) %>%
+        collect(as_data_frame = FALSE) %>%
         merge_recursive
     }
   }
 
-  merge_recursive(merges)
+  map = customers %>%
+    full_join(merge_recursive(merges),by=c("customer_no"="delete_id")) %>%
+    full_join(affiliations,by=c("customer_no"="individual_customer_no")) %>%
+    rename(kept_customer_no = kept_id) %>%
+    mutate(kept_customer_no = coalesce(kept_customer_no,customer_no),
+           group_customer_no = coalesce(group_customer_no,kept_customer_no)) %>%
+    collect(as_data_frame = FALSE)
 
 }
