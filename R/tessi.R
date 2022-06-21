@@ -37,7 +37,9 @@ tessi_list_tables <- function() {
     read_yaml(system.file("extdata", "tessi_tables.yml", package = "tessilake")),
     config_tessi_tables
   ) %>%
-    rbindlist(idcol = "short_name")
+    rbindlist(idcol = "short_name") %>%
+    lapply(function(.){gsub("^$",NA,.)}) %>% setDT
+
 }
 
 

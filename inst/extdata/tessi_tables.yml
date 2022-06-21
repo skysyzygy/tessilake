@@ -66,7 +66,7 @@ customers:
 facility:
   long_name: BI.VT_FACILITY
   base_table: T_FACILITY
-  primary_keys: facil_no
+  primary_keys: facility_no
 fee:
   long_name: BI.VT_FEE
   base_table: T_FEE
@@ -74,7 +74,7 @@ fee:
 feeDetail:
   long_name: BI.VT_FEE_DETAIL
   base_table: T_SLI_FEE
-  primary_keys: id
+  primary_keys: fee_detail_no
 funds:
   long_name: BI.VT_FUND
   base_table: T_FUND
@@ -134,11 +134,11 @@ planStatus:
 planWorkers:
   long_name: BI.VT_PLAN_WORKER
   base_table: TX_CUST_PLAN
-  primary_keys: id
+  primary_keys: plan_worker_no
 pricing:
   long_name: BI.VT_PERFORMANCE_PRICING_AT_PRICE_LAYER
   base_table: T_PERF_PRICE_TYPE
-  primary_keys: id
+  primary_keys: perf_price_type_no
 promotions:
   long_name: T_PROMOTION
   base_table: T_PROMOTION
@@ -171,7 +171,7 @@ sources:
 specialActivities:
   long_name: BI.VT_SPECIAL_ACTIVITY
   base_table: T_SPECIAL_ACTIVITY
-  primary_keys: sa_no
+  primary_keys: special_activity_no
 steps:
   long_name: BI.VT_STEP
   base_table: T_STEP
@@ -185,7 +185,7 @@ subscriptions:
   base_table: T_CUST_SUBSCRIPTION_SUMMARY
   primary_keys:
   - customer_no
-  - season
+  - season_no
 tickets:
   long_name: BI.VT_TICKET_HISTORY
   base_table: T_TICKET_HISTORY

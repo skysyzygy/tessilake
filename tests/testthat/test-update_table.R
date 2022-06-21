@@ -88,7 +88,7 @@ test_that("update_table updates data.tables incrementally when given date_column
 
 test_that("update_table loads from DB incrementally", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
-  load("seasons.Rds")
+  seasons <- readRDS(test_path("seasons.Rds"))
   seasons <- dplyr::mutate_if(seasons, ~ lubridate::is.POSIXct(.), as.numeric)
   seasons_tbl <- dplyr::copy_to(con, seasons)
   seasons <- setDT(seasons)[-1, ]
@@ -102,7 +102,7 @@ test_that("update_table loads from DB incrementally", {
 })
 
 test_that("read_tessi loads from arrow table incrementally", {
-  load("seasons.Rds")
+  seasons <- readRDS(test_path("seasons.Rds"))
   seasons_arrow <- arrow::arrow_table(seasons)
   seasons <- setDT(seasons)[-c(1, 2), ]
   seasons[1:3, "last_update_dt"] <- lubridate::ymd("1900-01-01")

@@ -126,6 +126,7 @@ read_sql <- function(query, name = digest::sha1(query),
 #' @param freshness the returned data will be at least this fresh
 #' @describeIn read_sql Reads a table or view from a SQL database and caches it locally using read_sql.
 #' @importFrom dplyr filter select collect
+#' @importFrom DBI dbListTables
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @export
 #'
@@ -142,10 +143,11 @@ read_sql_table <- function(table_name, schema="dbo",
 
   assert_character(table_name,max.len=1)
   assert_character(schema,max.len=1,null.ok=TRUE)
+  assert_character(date_column,max.len=1,null.ok=TRUE)
   sql_connect()
 
-  available_tables <- list(dbo = list(table_name = DBI::dbListTables(db$db,schema_name="dbo")),
-                            BI = list(table_name = DBI::dbListTables(db$db,schema_name="BI"))) %>%
+  available_tables <- list(dbo = list(table_name = dbListTables(db$db,schema_name="dbo")),
+                            BI = list(table_name = dbListTables(db$db,schema_name="BI"))) %>%
     rbindlist(idcol="schema")
 
   if(available_tables[
@@ -158,10 +160,13 @@ read_sql_table <- function(table_name, schema="dbo",
     filter(TABLE_SCHEMA==schema & TABLE_NAME==table_name) %>%
     select(COLUMN_NAME) %>% collect() %>% .[[1]]
 
-  if (!is.null(select)) assert_names(select,subset.of = available_columns)
+  if (!is.null(select) && !any(is.na(select))) assert_names(select,subset.of = available_columns)
+  if (!is.null(primary_keys) && !any(is.na(primary_keys))) assert_names(primary_keys, subset.of = available_columns)
+  if (!is.null(date_column) && !is.na(date_column)) assert_names(date_column, subset.of = available_columns)
+
 
   # get primary key info
-  if (is.null(primary_keys)) {
+  if (is.null(primary_keys) || any(is.na(primary_keys))) {
     pk_table = read_sql("select cc.TABLE_SCHEMA, cc.TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc
                                    join INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc on tc.CONSTRAINT_NAME=cc.CONSTRAINT_name and
                                    CONSTRAINT_TYPE='PRIMARY KEY'","primary_keys", freshness=freshness)
@@ -169,7 +174,7 @@ read_sql_table <- function(table_name, schema="dbo",
       select(COLUMN_NAME) %>% collect() %>% .[[1]]
   }
 
-  if (is.null(date_column) & length(primary_keys)>0) {
+  if ((is.null(date_column) || is.na(date_column)) & length(primary_keys)>0) {
     if("last_update_dt" %in% available_columns)
       date_column = "last_update_dt"
   }

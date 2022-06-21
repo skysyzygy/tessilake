@@ -111,13 +111,22 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 
 stub(sql_connect,"odbc::odbc",RSQLite::SQLite())
 stub(sql_connect,"config::get",":memory:")
-load("available_columns.Rds")
-load("pk_table.Rds")
+available_columns <- readRDS(test_path("available_columns.Rds"))
+pk_table <- readRDS(test_path("pk_table.Rds"))
 # stub list of tables
-stub(read_sql_table,"DBI::dbListTables",mock("TR_SEASON","VT_SEASON",cycle=TRUE))
+stub(read_sql_table,"dbListTables",mock("TR_SEASON","VT_SEASON",cycle=TRUE))
 
 test_that("read_sql_table throws an error when a table doesn't exist",{
   expect_error(read_sql_table("table_doesnt_exist"),"doesnt_exist doesn't exist")
+})
+
+test_that("read_sql_table complains if asked to select or pk columns that don't exist", {
+  m_read = mock(available_columns, available_columns, pk_table, NULL,cycle=T)
+  stub(read_sql_table,"read_sql",m_read)
+  expect_error(read_sql_table("TR_SEASON", select="columnThatDoesntExist"), "select")
+  expect_silent(read_sql_table("TR_SEASON", select="id"))
+  expect_error(read_sql_table("TR_SEASON", primary_keys="columnThatDoesntExist"), "primary_keys")
+  expect_silent(read_sql_table("TR_SEASON", primary_keys="id"))
 })
 
 test_that("read_sql_table works with database", {
