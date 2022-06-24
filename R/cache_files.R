@@ -37,7 +37,7 @@ cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("
 #' cache_path("test", "deep", "stream")
 #' }
 cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
-  assert_character(table_name)
+  assert_character(table_name,len = 1)
   assert_choice(depth, c("deep", "shallow"))
   assert_choice(type, c("tessi", "stream"))
 

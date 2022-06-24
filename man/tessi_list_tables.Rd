@@ -7,7 +7,7 @@
 tessi_list_tables()
 }
 \value{
-data.table of configured tessitura tables with columns short_name, long_name, baseTable and primary_keys
+data.table of configured tessitura tables with columns short_name, long_name, base_table and primary_keys
 }
 \description{
 The list of tessitura tables is configured in the extdata/tessi_tables.yml file in the package directory

@@ -23,7 +23,7 @@
 #' cache_update(y, "test", "deep", "stream")
 #' }
 cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
-                         primary_keys = attr(x, "primary_keys"),
+                         primary_keys = cache_get_attributes(x)$primary_keys,
                          date_column = NULL, delete = FALSE, ...) {
   . <- NULL
 
@@ -35,9 +35,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
 
   assert_dataframeish(x)
 
-  x_attributes <- cache_get_attributes(x)
   dataset_attributes <- cache_get_attributes(dataset)
-  primary_keys <- primary_keys %||% x_attributes$primary_keys
   partition <- !is.null(dataset_attributes$partitioning)
 
   if (partition == TRUE) {
@@ -53,7 +51,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
     x_primary_keys <- select(x, all_of(primary_keys)) %>% collect
 
     partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys) %>% unique
-    dataset_partitions = select(dataset,!!partition_name) %>% collect %>% .[[1]] %>% unique
+    dataset_partitions = select(dataset,!!partition_name) %>% unique %>% collect %>% .[[1]]
 
     # load only the dataset partitions that need to get updated
     dataset <- dataset %>%
@@ -71,7 +69,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
 
   cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = TRUE, ...)
 
-  if(delete == TRUE) {
+  if(delete == TRUE && partition == TRUE) {
     cache_delete(table_name,depth,type,partitions = setdiff(dataset_partitions,partitions))
   }
 

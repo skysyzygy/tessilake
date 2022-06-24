@@ -83,7 +83,6 @@ test_that("update_table updates data.tables incrementally when given date_column
 
   expect_equal(update_table(from, to, date_column = date, primary_keys = c(I)), from)
   expect_equal(update_table(from[1:1000], to, date_column = date, primary_keys = c(I), delete = TRUE), from[1:1000])
-
 })
 
 test_that("update_table loads from DB incrementally", {

@@ -9,8 +9,6 @@ test_that("cache_make_partitioning requires a data.frame with a valid primary ke
   expect_error(cache_make_partitioning(x, primary_keys = "c"), "names")
   y <- rbind(x, NA)
   expect_error(cache_make_partitioning(y, primary_keys = "a"), "missing")
-  y <- rbind(x, list(a = 3, b = "c"))
-  expect_error(cache_make_partitioning(y, primary_keys = "a"), "duplicated")
 })
 
 test_that("cache_make_partitioning suggests partitioning information for numeric primary keys", {

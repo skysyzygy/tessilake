@@ -9,7 +9,7 @@ cache_write(
   table_name,
   depth = c("deep", "shallow"),
   type = c("tessi", "stream"),
-  primary_keys = attr(x, "primary_keys"),
+  primary_keys = cache_get_attributes(x)$primary_keys,
   partition = !is.null(primary_keys),
   overwrite = FALSE,
   ...

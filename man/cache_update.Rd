@@ -9,7 +9,7 @@ cache_update(
   table_name,
   depth = c("deep", "shallow"),
   type = c("tessi", "stream"),
-  primary_keys = attr(x, "primary_keys"),
+  primary_keys = cache_get_attributes(x)$primary_keys,
   date_column = NULL,
   delete = FALSE,
   ...

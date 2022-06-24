@@ -77,7 +77,7 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
 #' cache_write(x, "test", "deep", "stream", primary_keys = c("a"))
 #' }
 cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
-                        primary_keys = attr(x, "primary_keys"),
+                        primary_keys = cache_get_attributes(x)$primary_keys,
                         partition = !is.null(primary_keys), overwrite = FALSE, ...) {
   if (cache_exists(table_name, depth, type) == TRUE && overwrite == FALSE) {
     stop("Cache already exists, and overwrite is not TRUE")
@@ -89,7 +89,6 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
 
   attributes <- cache_get_attributes(x)
   attributes_old <- attributes
-  primary_keys <- primary_keys %||% attributes$primary_keys
 
   if (partition == TRUE) {
     if (is.null(primary_keys)) {

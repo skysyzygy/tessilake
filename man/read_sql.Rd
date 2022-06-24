@@ -59,10 +59,11 @@ Database connection defined by an ODBC profile with the name set by the \code{te
 
 \examples{
 \dontrun{
-read_sql("select * from T_CUSTOMER","t_customer",
+read_sql("select * from T_CUSTOMER", "t_customer",
   primary_keys = "customer_no",
   date_column = "last_update_dt"
-)}
+)
+}
 \dontrun{
 read_sql_table("T_CUSTOMER")
 }

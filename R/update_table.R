@@ -116,7 +116,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
   }
 
   to[update, (colnames(from)) := from_update, on = primary_keys]
-  to <- rbindlist(list(to, from_new))
+  to <- rbindlist(list(to, from_new),use.names = TRUE)
   setorderv(to, primary_keys)
 
   to

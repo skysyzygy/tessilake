@@ -1,12 +1,38 @@
 #
 # tessiTables
 #
-# shortName:
+# short_name:
 #    long_name: {name of table/view to be loaded}
 #    base_table: {the underlying table being queried that has primary keys}
 #    primary_keys: {the primary key(s) as a value or a list of values}
 #
 #
+
+# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
+# nrow(...) (`actual`) not equal to nrow(get("customers")) (`expected`).
+#
+#   `actual`:  985684
+# `expected`: 1119471
+#
+# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
+# nrow(...) (`actual`) not equal to nrow(get("list_contents")) (`expected`).
+#
+#   `actual`: 175733473
+# `expected`: 176242690
+#
+# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
+# nrow(...) (`actual`) not equal to nrow(get("memberships")) (`expected`).
+#
+#   `actual`: 270712
+# `expected`: 273512
+#
+# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
+# nrow(...) (`actual`) not equal to nrow(get("promotions")) (`expected`).
+#
+#   `actual`: 211886538
+# `expected`: 211887880
+
+
 accounts:
   long_name: T_ACCOUNT_DATA
   base_table: T_ACCOUNT_DATA
@@ -71,7 +97,7 @@ fee:
   long_name: BI.VT_FEE
   base_table: T_FEE
   primary_keys: fee_no
-feeDetail:
+fee_detail:
   long_name: BI.VT_FEE_DETAIL
   base_table: T_SLI_FEE
   primary_keys: fee_detail_no
@@ -87,12 +113,12 @@ iwave:
   long_name: LT_IWAVE_CUSTOMER_SCORE_DATA
   base_table: LT_IWAVE_CUSTOMER_SCORE_DATA
   primary_keys: Id
-listContents:
+list_contents:
   long_name: T_LIST_CONTENTS
   base_table: T_LIST_CONTENTS
   primary_keys:
-  - customer_no
   - list_no
+  - customer_no
 lists:
   long_name: T_LIST
   base_table: T_LIST
@@ -105,10 +131,15 @@ orders:
   long_name: BI.VT_ORDER
   base_table: T_ORDER
   primary_keys: order_no
-orderDetail:
+order_detail:
   long_name: BI.VT_ORDER_DETAIL_AT_PRICE_LAYER
-  base_table: T_LINEITEM
-  primary_keys: li_seq_no
+  base_table: T_SLI_DETAIL
+  primary_keys:
+    - perf_no
+    - seat_no
+    - pkg_no
+    - sli_no
+    - detail_sli_no
 payments:
   long_name: BI.VT_PAYMENT
   base_table: T_PAYMENT
@@ -119,7 +150,7 @@ performances:
   long_name: BI.VT_PERFORMANCE_DETAIL
   base_table: ''
   primary_keys: ''
-performanceKeywords:
+performance_keywords:
   long_name: BI.VT_DW_PERFORMANCE_KEYWORDS
   base_table: ''
   primary_keys: ''
@@ -127,25 +158,28 @@ plans:
   long_name: BI.VT_PLAN
   base_table: T_PLAN
   primary_keys: plan_no
-planStatus:
+plan_status:
   long_name: TR_PLAN_STATUS
   base_table: TR_PLAN_STATUS
   primary_keys: id
-planWorkers:
+plan_workers:
   long_name: BI.VT_PLAN_WORKER
   base_table: TX_CUST_PLAN
   primary_keys: plan_worker_no
 pricing:
   long_name: BI.VT_PERFORMANCE_PRICING_AT_PRICE_LAYER
   base_table: T_PERF_PRICE_TYPE
-  primary_keys: perf_price_type_no
+  primary_keys:
+  - perf_no
+  - zone_no
+  - perf_price_type_no
 promotions:
   long_name: T_PROMOTION
   base_table: T_PROMOTION
   primary_keys:
-  - customer_no
   - source_no
-promotionResponses:
+  - customer_no
+promotion_responses:
   long_name: T_EPROMOTION_RESPONSE_HISTORY
   base_table: T_EPROMOTION_RESPONSE_HISTORY
   primary_keys: ID
@@ -160,7 +194,7 @@ seats:
   - perf_no
   - pkg_no
   - seat_no
-seatHistory:
+seat_history:
   long_name: T_ORDER_SEAT_HIST
   base_table: T_ORDER_SEAT_HIST
   primary_keys: ''
@@ -168,7 +202,7 @@ sources:
   long_name: BI.VT_SOURCE
   base_table: TX_APPEAL_MEDIA_TYPE
   primary_keys: source_no
-specialActivities:
+special_activities:
   long_name: BI.VT_SPECIAL_ACTIVITY
   base_table: T_SPECIAL_ACTIVITY
   primary_keys: special_activity_no
@@ -176,7 +210,7 @@ steps:
   long_name: BI.VT_STEP
   base_table: T_STEP
   primary_keys: step_no
-stepTypes:
+step_types:
   long_name: TR_STEP_TYPE
   base_table: TR_STEP_TYPE
   primary_keys: id
@@ -184,8 +218,8 @@ subscriptions:
   long_name: BI.VT_DW_SUBSCRIPTION_SUMMARY
   base_table: T_CUST_SUBSCRIPTION_SUMMARY
   primary_keys:
-  - customer_no
   - season_no
+  - customer_no
 tickets:
   long_name: BI.VT_TICKET_HISTORY
   base_table: T_TICKET_HISTORY
@@ -194,7 +228,7 @@ transactions:
   long_name: T_TRANSACTION
   base_table: T_TRANSACTION
   primary_keys: sequence_no
-transactionTypes:
+transaction_types:
   long_name: TR_TRANSACTION_TYPE
   base_table: TR_TRANSACTION_TYPE
   primary_keys: id

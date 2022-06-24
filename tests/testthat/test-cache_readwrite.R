@@ -73,6 +73,11 @@ test_that("cache_read returns data to the original form including attributes", {
     setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
 })
 
+test_that("cache_read with include_partition = TRUE returns the hidden partition column", {
+  expect_equal(cache_read("test_partitioning", "deep", "tessi", include_partition = TRUE) %>% names, c("x","y","partition_x"))
+  expect_equal(cache_read("test_partitioning", "shallow", "tessi", include_partition = TRUE) %>% names, c("x","y","partition_x"))
+})
+
 test_that("cache_read can select particular columns", {
   expect_equal(cache_read("test_read_write", "deep", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])
   expect_equal(cache_read("test_read_write", "shallow", "tessi", select = "y") %>% collect() %>% .[[1]], test_read_write[,y])

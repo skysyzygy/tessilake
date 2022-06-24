@@ -17,18 +17,21 @@
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
-      db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "latin1"))
+        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "latin1"))
 
-      callbacks <- getTaskCallbackNames()
-      db$db <- eval(db_expr)
-      removeTaskCallback(setdiff(getTaskCallbackNames(), callbacks))
+        callbacks <- getTaskCallbackNames()
+        db$db <- eval(db_expr)
+        removeTaskCallback(setdiff(getTaskCallbackNames(), callbacks))
 
-      if("odbc.version" %in% names(attributes(db$db)))
-        odbc:::on_connection_opened(db$db, deparse(db_expr))
-    },error=function(e) {
-      message(e$message)
-      stop("Database connection failed, please set the `tessilake.tessitura` configuration in config.yml to a valid database DSN.")
-    })
+        if ("odbc.version" %in% names(attributes(db$db))) {
+          odbc:::on_connection_opened(db$db, deparse(db_expr))
+        }
+      },
+      error = function(e) {
+        message(e$message)
+        stop("Database connection failed, please set the `tessilake.tessitura` configuration in config.yml to a valid database DSN.")
+      }
+    )
   }
   invisible(NULL)
 }
@@ -64,54 +67,67 @@ db <- new.env(parent = emptyenv())
 #'
 #' @examples
 #' \dontrun{
-#' read_sql("select * from T_CUSTOMER","t_customer",
+#' read_sql("select * from T_CUSTOMER", "t_customer",
 #'   primary_keys = "customer_no",
 #'   date_column = "last_update_dt"
-#' )}
+#' )
+#' }
 read_sql <- function(query, name = digest::sha1(query),
                      select = NULL,
                      primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days")) {
   . <- NULL
 
-  assert_character(query)
-  if(!is.null(date_column)) assert_character(date_column,max.len = 1)
-  if(!is.null(primary_keys)) assert_character(primary_keys,min.len = length(date_column))
+  assert_character(query, len = 1)
+  if (!is.null(date_column)) assert_character(date_column, max.len = 1)
+  if (!is.null(primary_keys)) assert_character(primary_keys, min.len = length(date_column))
 
   sql_connect()
   # build the query with dplyr
   table <- tbl(db$db, sql(query))
 
-  sql_mtime <- if(!is.null(date_column)) {
-    table %>% summarise(across(!!date_column,max)) %>% collect() %>% .[[1]]
-  } else {
-    Sys.time()
-  }
+  # sql_mtime <- if (!is.null(date_column)) {
+  #   table %>%
+  #     summarise(across(!!date_column, max)) %>%
+  #     collect() %>%
+  #     .[[1]]
+  # } else {
+  #   Sys.time()
+  # }
 
   test_mtime <- Sys.time() - freshness
 
   if (!cache_exists(name, "deep", "tessi")) {
     cache_write(collect(table), name, "deep", "tessi", partition = FALSE, primary_keys = primary_keys)
     deep_mtime <- cache_get_mtime(name, "deep", "tessi")
-  } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime &&
-             sql_mtime > deep_mtime) {
-    cache_update(table, name, "deep", "tessi", primary_keys = primary_keys,
-                 date_column = date_column
+  } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime){# &&
+    #sql_mtime > deep_mtime) {
+    cache_update(table, name, "deep", "tessi",
+      primary_keys = primary_keys,
+      date_column = date_column,
+      delete = TRUE
     )
   }
 
   if (!cache_exists(name, "shallow", "tessi")) {
     cache_write(cache_read(name, "deep", "tessi"), name, "shallow", "tessi", partition = FALSE)
   } else if ((shallow_mtime <- cache_get_mtime(name, "shallow", "tessi")) < test_mtime &&
-             deep_mtime > shallow_mtime) {
+    deep_mtime > shallow_mtime) {
     cache_update(cache_read(name, "deep", "tessi"),
-                 name, "shallow", "tessi",
-                 date_column = "last_update_dt"
+      name, "shallow", "tessi",
+      primary_keys = primary_keys,
+      date_column = date_column,
+      delete = TRUE
     )
   }
 
-  cache_read(name, "shallow", "tessi", select = select)
+  args = list()
+  args$table_name = name
+  args$depth = "shallow"
+  args$type = "tessi"
+  args$select = select
 
+  do.call(cache_read,args)
 }
 
 #' read_sql_table
@@ -134,56 +150,69 @@ read_sql <- function(query, name = digest::sha1(query),
 #' \dontrun{
 #' read_sql_table("T_CUSTOMER")
 #' }
-read_sql_table <- function(table_name, schema="dbo",
+read_sql_table <- function(table_name, schema = "dbo",
                            select = NULL,
                            primary_keys = NULL, date_column = NULL,
                            freshness = as.difftime(7, units = "days")) {
+  table_schema <- constraint_type <- NULL
 
-  . <- TABLE_SCHEMA <- TABLE_NAME <- COLUMN_NAME <- NULL
-
-  assert_character(table_name,max.len=1)
-  assert_character(schema,max.len=1,null.ok=TRUE)
-  assert_character(date_column,max.len=1,null.ok=TRUE)
+  assert_character(table_name, len = 1)
+  assert_character(schema, len = 1, null.ok = TRUE)
+  assert_character(date_column, len = 1, null.ok = TRUE)
   sql_connect()
 
-  available_tables <- list(dbo = list(table_name = dbListTables(db$db,schema_name="dbo")),
-                            BI = list(table_name = dbListTables(db$db,schema_name="BI"))) %>%
-    rbindlist(idcol="schema")
+  available_tables <- list(
+    dbo = list(table_name = dbListTables(db$db, schema_name = "dbo")),
+    BI = list(table_name = dbListTables(db$db, schema_name = "BI"))
+  ) %>%
+    rbindlist(idcol = "schema")
 
-  if(available_tables[
+  if (available_tables[
     eval(expr(schema == !!schema & table_name == !!table_name)),
-    .N]==0)
+    .N
+  ] == 0) {
     stop(paste("Table", paste(schema, table_name, collapse = "."), "doesn't exist."))
+  }
 
-  available_columns <- read_sql("select TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.COLUMNS",
-                                "available_columns",freshness=freshness) %>%
-    filter(TABLE_SCHEMA==schema & TABLE_NAME==table_name) %>%
-    select(COLUMN_NAME) %>% collect() %>% .[[1]]
+  available_columns <- read_sql(
+    query = "select c.table_schema, c.table_name, c.column_name, cc.constraint_type, c.character_maximum_length from INFORMATION_SCHEMA.COLUMNS c
+            left join (select cc.*,CONSTRAINT_TYPE from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc
+            join INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc on tc.CONSTRAINT_NAME=cc.CONSTRAINT_name and
+            CONSTRAINT_TYPE='PRIMARY KEY') cc on c.TABLE_NAME=cc.TABLE_NAME and c.TABLE_SCHEMA=cc.TABLE_SCHEMA and c.COLUMN_NAME=cc.COLUMN_NAME",
+    name = "available_columns",
+    freshness = freshness
+  ) %>%
+    filter(table_schema == schema & table_name == !!table_name) %>%
+    collect()
 
-  if (!is.null(select) && !any(is.na(select))) assert_names(select,subset.of = available_columns)
-  if (!is.null(primary_keys) && !any(is.na(primary_keys))) assert_names(primary_keys, subset.of = available_columns)
-  if (!is.null(date_column) && !is.na(date_column)) assert_names(date_column, subset.of = available_columns)
+  if (!is.null(select)) assert_names(select, subset.of = available_columns$column_name)
+  if (!is.null(primary_keys)) assert_names(primary_keys, subset.of = available_columns$column_name)
+  if (!is.null(date_column)) assert_names(date_column, subset.of = available_columns$column_name)
 
-
+  args = list()
+  args$primary_keys = primary_keys
+  args$date_column = date_column
   # get primary key info
-  if (is.null(primary_keys) || any(is.na(primary_keys))) {
-    pk_table = read_sql("select cc.TABLE_SCHEMA, cc.TABLE_NAME, COLUMN_NAME from INFORMATION_SCHEMA.CONSTRAINT_COLUMN_USAGE cc
-                                   join INFORMATION_SCHEMA.TABLE_CONSTRAINTS tc on tc.CONSTRAINT_NAME=cc.CONSTRAINT_name and
-                                   CONSTRAINT_TYPE='PRIMARY KEY'","primary_keys", freshness=freshness)
-    primary_keys = filter(pk_table,TABLE_SCHEMA==schema & TABLE_NAME==table_name) %>%
-      select(COLUMN_NAME) %>% collect() %>% .[[1]]
+  if (is.null(primary_keys) && "PRIMARY KEY" %in% available_columns$constraint_type) {
+    args$primary_keys <- filter(available_columns, constraint_type=="PRIMARY KEY")$column_name
   }
 
-  if ((is.null(date_column) || is.na(date_column)) & length(primary_keys)>0) {
-    if("last_update_dt" %in% available_columns)
-      date_column = "last_update_dt"
+  if (is.null(date_column) && !is.null(args$primary_keys) && "last_update_dt" %in% available_columns$column_name) {
+    args$date_column <- "last_update_dt"
   }
+
+  # arrange columns so that the "long data' is at the end
+  # https://stackoverflow.com/questions/60757280/result-fetchresptr-n-nanodbc-nanodbc-cpp2966-07009-microsoftodbc-dri
+
+  max_cols <- available_columns %>% filter(character_maximum_length == -1)
+  non_max_cols <- available_columns %>% filter((character_maximum_length != -1 | is.na(character_maximum_length))
+                                               & !grepl("encrypt",column_name))
+  cols <- paste(c(non_max_cols$column_name,max_cols$column_name),collapse=",")
 
   # build the table query
-  read_sql(query = paste("select * from",DBI::dbQuoteIdentifier(db$db,DBI::Id(schema = schema, table = table_name))),
-           name = paste(c(schema,table_name),collapse="."),
-           select = select,
-           primary_keys = primary_keys,
-           date_column = date_column,
-           freshness = freshness)
+  args$query = paste("select",cols,"from", DBI::dbQuoteIdentifier(db$db, DBI::Id(schema = schema, table = table_name)))
+  args$name = paste(c(schema, table_name), collapse = ".")
+  args$select = select
+  args$freshness = freshness
+  do.call(read_sql,args)
 }

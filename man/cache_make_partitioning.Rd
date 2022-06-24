@@ -4,7 +4,7 @@
 \alias{cache_make_partitioning}
 \title{cache_make_partitioning}
 \usage{
-cache_make_partitioning(x, primary_keys = attr(x, "primary_keys"))
+cache_make_partitioning(x, primary_keys = cache_get_attributes(x)$primary_keys)
 }
 \arguments{
 \item{x}{data.frame}
