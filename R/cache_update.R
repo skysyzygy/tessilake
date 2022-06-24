@@ -51,7 +51,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
     x_primary_keys <- select(x, all_of(primary_keys)) %>% collect
 
     partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys) %>% unique
-    dataset_partitions = select(dataset,!!partition_name) %>% unique %>% collect %>% .[[1]]
+    dataset_partitions = select(dataset,!!partition_name) %>% collect %>% unique %>% .[[1]]
 
     # load only the dataset partitions that need to get updated
     dataset <- dataset %>%

@@ -18,7 +18,6 @@
 #' cache_make_partitioning(x, primary_keys = "a")
 #' # expression a/10000
 cache_make_partitioning <- function(x, primary_keys = cache_get_attributes(x)$primary_keys) {
-  . <- NULL
 
   assert_dataframeish(x)
   assert_character(primary_keys, min.len = 1)
@@ -27,12 +26,13 @@ cache_make_partitioning <- function(x, primary_keys = cache_get_attributes(x)$pr
 
   if (is.data.table(x)) {
     primary_key <- x[, pk, with = F]
-    setkeyv(primary_key,pk)[[1]]
+    setkeyv(primary_key,pk)
   } else {
     primary_key <- select(x, !!pk) %>%
       arrange(!!sym(pk)) %>%
-      collect() %>% .[[pk]]
+      collect()
   }
+  primary_key <- primary_key[[1]]
 
   assert(
     check_character(primary_key, any.missing = F),

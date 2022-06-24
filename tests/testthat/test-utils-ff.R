@@ -1,8 +1,9 @@
 withr::local_package("purrr")
+library(ff)
 
 # as.ram2 -----------------------------------------------------------------
 
-if (FALSE) {
+#if (FALSE) {
   test_that("as.ram2 returns ram objects", {
     test.ff <- ff(1:5)
     expect_equal(as.ram2(test.ff), 1:5)
@@ -143,4 +144,4 @@ if (FALSE) {
     vecs[1:31] <- map(vecs[1:31], as.integer)
     expect_equal(map(vecs[1:31], ~ rlang::is_reference(fix_vmode(.), .)), as.list(c(F, rep(T, 30))))
   })
-}
+#}
