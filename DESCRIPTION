@@ -46,4 +46,4 @@ Suggests:
 Config/testthat/edition: 3
 Language: en-US
 Remotes:  
-    edwindj/ffbase
+    edwindj/ffbase/pkg
