@@ -1,5 +1,5 @@
 Package: tessilake
-Title: helper functions for ingesting and caching data from Tessitura
+Title: tessilake
 Version: 0.0.0.9000
 Authors@R: 
     person(given = "Sky",
@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "sky@skysyzygy.xyz",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: What the package does (one paragraph).
+Description: Ingests data from Tessitura or other SQL database and caches it using Apache Arrow and Parquet formats
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
