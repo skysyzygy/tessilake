@@ -26,7 +26,7 @@ Imports:
     digest,
     dplyr,
     ff,
-    ffbase (>= 0.13.3),
+    ffbase (>= 0.13.2),
     glue,
     magrittr,
     odbc,
@@ -46,4 +46,4 @@ Suggests:
 Config/testthat/edition: 3
 Language: en-US
 Remotes:  
-    github::edwindj/ffbase/pkg
+    edwindj/ffbase/pkg
