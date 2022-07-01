@@ -22,8 +22,9 @@ jobs:
           use-public-rspm: true
 
       - name: install ffbase
-        run: install.packages("remotes")
-        run: devtools::install_github("ffbase=edwindj/ffbase/pkg")
+        run:
+          - install.packages("remotes")
+          - devtools::install_github("ffbase=edwindj/ffbase/pkg")
         shell: Rscript {0}
 
       - uses: r-lib/actions/setup-r-dependencies@v1
