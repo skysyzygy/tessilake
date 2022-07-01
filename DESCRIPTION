@@ -7,7 +7,7 @@ Authors@R:
            role = c("aut", "cre"),
            email = "sky@skysyzygy.xyz",
            comment = c(ORCID = "YOUR-ORCID-ID"))
-Description: Ingests data from Tessitura or other SQL database and caches it using Apache Arrow and Parquet formats
+Description: Tessilake ingests data from Tessitura or other SQL database and caches it using Apache Arrow and Parquet formats.
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true

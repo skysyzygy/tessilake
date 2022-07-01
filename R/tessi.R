@@ -95,11 +95,15 @@ read_tessi <- function(table_name, select = NULL,
   table <- do.call(read_sql_table,args)
 
   if ("customer_no" %in% names(table)) {
-    table <- table %>%
-      left_join(tessi_customer_no_map(), by = "customer_no") %>%
-      select(-customer_no) %>%
-      rename(customer_no = kept_customer_no) %>%
-      collect(as_data_frame = FALSE)
+    # add group_customer_no
+    table <- table %>% left_join(tessi_customer_no_map(), by = "customer_no")
+    # only change customer_no to kept (merged) customer_no if it's not a primary key
+    table <-
+      if (!"customer_no" %in% args$primary_keys) {
+        table %>% select(-customer_no) %>% rename(customer_no = kept_customer_no)
+      } else {
+        table %>% rename(merged_customer_no = kept_customer_no)
+      } %>% collect(as_data_frame = FALSE)
   }
 
   return(table)

@@ -26,7 +26,7 @@ an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} 
 }
 \description{
 Thin wrapper on read_sql_table using the tables configured in \code{list_tessi_tables} that additionally updates \code{customer_no} and adds
-\code{group_customer_no} based on \code{\link[=read_tessi_customer_no_map]{read_tessi_customer_no_map()}}
+\code{group_customer_no} based on \code{\link[=tessi_customer_no_map]{tessi_customer_no_map()}}
 }
 \examples{
 \dontrun{

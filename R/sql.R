@@ -157,7 +157,7 @@ read_sql_table <- function(table_name, schema = "dbo",
                            select = NULL,
                            primary_keys = NULL, date_column = NULL,
                            freshness = as.difftime(7, units = "days")) {
-  table_schema <- constraint_type <- NULL
+  table_schema <- constraint_type <- character_maximum_length <- column_name <- NULL
 
   assert_character(table_name, len = 1)
   assert_character(schema, len = 1, null.ok = TRUE)

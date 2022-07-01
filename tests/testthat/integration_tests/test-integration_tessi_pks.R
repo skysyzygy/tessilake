@@ -4,7 +4,7 @@ local_cache_dirs()
 
 test_that("read_tessi can read the primary keys from all the defined tables", {
 
-  name = "customers"
+  name = "memberships"
   for (name in unique(tessi_list_tables()[!is.na(primary_keys)]$short_name)) {
     primary_keys = tessi_list_tables()[short_name == name]$primary_keys
     long_name <- tessi_list_tables()[short_name == name]$long_name[[1]]
