@@ -49,7 +49,7 @@ tessi_list_tables <- function() {
 #' read_tessi
 #'
 #' Thin wrapper on read_sql_table using the tables configured in `list_tessi_tables` that additionally updates `customer_no` and adds
-#' `group_customer_no` based on [read_tessi_customer_no_map()]
+#' `group_customer_no` based on [tessi_customer_no_map()]
 #'
 #' @param table_name character name of the table to read from Tessitura, either one of the available tables (see [tessi_list_tables()]) or the
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
@@ -96,7 +96,7 @@ read_tessi <- function(table_name, select = NULL,
 
   if ("customer_no" %in% names(table)) {
     table <- table %>%
-      left_join(read_tessi_customer_no_map(), by = "customer_no") %>%
+      left_join(tessi_customer_no_map(), by = "customer_no") %>%
       select(-customer_no) %>%
       rename(customer_no = kept_customer_no) %>%
       collect(as_data_frame = FALSE)
@@ -105,7 +105,7 @@ read_tessi <- function(table_name, select = NULL,
   return(table)
 }
 
-#' read_tessi_customer_no_map
+#' tessi_customer_no_map
 #'
 #' Return an Arrow table of customer numbers `customer_no_old` mapped to merged `customer_no` and household/primary group
 #' customer numbers `group_customer_no`.
@@ -115,16 +115,19 @@ read_tessi <- function(table_name, select = NULL,
 #' @importFrom arrow is_in
 #' @return [arrow::Table]
 #' @export
-read_tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
+tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
   kept_id <- kept_id_old <- kept_customer_no <- customer_no <- group_customer_no <- NULL
 
-  customers <- read_sql("select customer_no from T_CUSTOMER", freshness = freshness)
+  customers <- read_sql("select customer_no from T_CUSTOMER",
+                        "customers", freshness = freshness)
 
-  merges <- read_sql("select kept_id, delete_id from T_MERGED where status='S' and kept_id<>delete_id", freshness = freshness) %>%
+  merges <- read_sql("select kept_id, delete_id from T_MERGED where status='S' and kept_id<>delete_id",
+                     "merges", freshness = freshness) %>%
     distinct() %>%
     collect(as_data_frame = FALSE)
 
   affiliations <- read_sql("select individual_customer_no, group_customer_no from T_AFFILIATION where primary_ind='Y' and inactive='N'",
+    "affiliations",
     freshness = freshness
   )
 

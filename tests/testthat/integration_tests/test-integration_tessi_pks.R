@@ -4,13 +4,13 @@ local_cache_dirs()
 
 test_that("read_tessi can read the primary keys from all the defined tables", {
 
-  name = "list_contents"
+  name = "customers"
   for (name in unique(tessi_list_tables()[!is.na(primary_keys)]$short_name)) {
     primary_keys = tessi_list_tables()[short_name == name]$primary_keys
     long_name <- tessi_list_tables()[short_name == name]$long_name[[1]]
     long_name <- ifelse(!grepl("\\.",long_name),paste0("dbo.",long_name),long_name)
 
-    # only load primary keys and sort by them so that uniqueness test is fast
+    # only load primary keys
     tbl <- function(src,from,...) {
       if(grepl("INFORMATION_SCHEMA|from T",from,perl = TRUE))
         return(dplyr::tbl(src,from))
@@ -19,8 +19,7 @@ test_that("read_tessi can read the primary keys from all the defined tables", {
         select(!!na.omit(c(primary_keys,
                     ifelse(grepl("last_update_dt",from),
                            "last_update_dt",
-                           NA)))) %>%
-        dplyr::arrange(across(!!primary_keys))
+                           NA))))
     }
 
     stub(read_tessi,"tbl",tbl,depth=2)

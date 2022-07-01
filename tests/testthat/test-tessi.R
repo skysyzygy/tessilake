@@ -72,27 +72,27 @@ test_that("read_tessi passes all arguments on to read_sql_table", {
 })
 
 
-test_that("read_tessi merges with read_tessi_customer_no_map when table contains customer_no", {
+test_that("read_tessi merges with tessi_customer_no_map when table contains customer_no", {
   tbl <- mock(data.table(customer_no = 1:1000))
   map <- mock(data.table(customer_no = 1:1000, kept_customer_no = 2:1001))
   stub(read_tessi, "read_sql_table", tbl)
-  stub(read_tessi, "read_tessi_customer_no_map", map)
+  stub(read_tessi, "tessi_customer_no_map", map)
 
   expect_equal(read_tessi("seasons", freshness = 0), data.table(customer_no = 2:1001))
 })
 
-# read_tessi_customer_no_map ----------------------------------------------
+# tessi_customer_no_map ----------------------------------------------
 
 affiliations <- readRDS(test_path("affiliations.Rds"))
 merges <- readRDS(test_path("merges.Rds"))
 customers <- readRDS(test_path("customers.Rds"))
-stub(read_tessi_customer_no_map, "read_sql", mock(select(customers, customer_no),
+stub(tessi_customer_no_map, "read_sql", mock(select(customers, customer_no),
   merges, affiliations,
   cycle = TRUE
 ))
-map <- read_tessi_customer_no_map() %>% collect()
+map <- tessi_customer_no_map() %>% collect()
 
-test_that("read_tessi_customer_no_map correctly maps all merges", {
+test_that("tessi_customer_no_map correctly maps all merges", {
   self_maps <- filter(map, customer_no == kept_customer_no)
   diff_maps <- filter(map, customer_no != kept_customer_no)
   true_keeps <- filter(merges, !kept_id %in% merges$delete_id)
@@ -118,30 +118,30 @@ test_that("read_tessi_customer_no_map correctly maps all merges", {
   expect_true(!any(self_maps$customer_no %in% c(merges$delete_id, temp_keeps$kept_id)))
 })
 
-test_that("read_tessi_customer_no_map puts merged customers in customer_no", {
+test_that("tessi_customer_no_map puts merged customers in customer_no", {
   merged_customers <- filter(customers, inactive == 5)
   expect_lte(sum(merged_customers$customer_no %in% map$kept_customer_no), 1)
   expect_true(all(merged_customers$customer_no %in% map$customer_no))
 })
 
-test_that("read_tessi_customer_no_map includes all customers", {
+test_that("tessi_customer_no_map includes all customers", {
   expect_true(all(customers$customer_no %in% map$customer_no))
 })
 
-test_that("read_tessi_customer_no_map includes all affiliations in group_customer_no", {
+test_that("tessi_customer_no_map includes all affiliations in group_customer_no", {
   expect_true(all(affiliations$group_customer_no %in% map$group_customer_no))
 })
 
-test_that("read_tessi_customer_no_map includes all non-merged households in group_customer_no", {
+test_that("tessi_customer_no_map includes all non-merged households in group_customer_no", {
   households <- filter(customers, cust_type == 13 & inactive != 5)
   expect_true(all(households$customer_no %in% map$group_customer_no))
 })
 
-test_that("read_tessi_customer_no_map doesn't duplicate customer_no", {
+test_that("tessi_customer_no_map doesn't duplicate customer_no", {
   expect_true(anyDuplicated(map$customer_no) == 0)
 })
 
-test_that("read_tessi_customer_no_map has no nulls or nas", {
+test_that("tessi_customer_no_map has no nulls or nas", {
   expect_integer(map$customer_no, any.missing = FALSE)
   expect_integer(map$kept_customer_no, any.missing = FALSE)
   expect_integer(map$group_customer_no, any.missing = FALSE)

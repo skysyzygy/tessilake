@@ -86,6 +86,9 @@ read_sql <- function(query, name = digest::sha1(query),
   # build the query with dplyr
   table <- tbl(db$db, sql(query))
 
+  # sort by primary keys for faster updating
+  if(!is.null(primary_keys)) table <- arrange(table,across(!!primary_keys))
+
   # sql_mtime <- if (!is.null(date_column)) {
   #   table %>%
   #     summarise(across(!!date_column, max)) %>%
