@@ -58,7 +58,8 @@ tessi_list_tables <- function() {
 #' @param ... further arguments to be passed to other methods
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
-#' @importFrom rlang maybe_missing enexpr
+#' @importFrom rlang enexpr call_match
+#' @importFrom stringr str_split
 #' @export
 #'
 #' @examples
@@ -72,14 +73,13 @@ read_tessi <- function(table_name, select = NULL,
                        freshness = as.difftime(7, units = "days"), ...) {
   short_name <- customer_no <- kept_customer_no <- NULL
 
+  args <- as.list(call_match())[-1]
   select <- enexpr(select)
   assert_character(table_name)
   assert_names(table_name, subset.of = tessi_list_tables()$short_name)
 
   table_data <- tessi_list_tables()[short_name == table_name] %>% as.list()
-  table_data$long_name <- strsplit(table_data$long_name, ".", fixed = TRUE)[[1]]
-
-  args = list()
+  table_data$long_name <- str_split(table_data$long_name, stringr::fixed("."), n = 2)[[1]]
 
   if(length(table_data$long_name) == 1) {
     args$table_name = table_data$long_name[[1]]
@@ -89,7 +89,6 @@ read_tessi <- function(table_name, select = NULL,
   }
   if(any(!is.na(table_data$primary_keys)))
     args$primary_keys = table_data$primary_keys
-  args$freshness = freshness
   args$select = expr_get_names(select)
 
   table <- do.call(read_sql_table,args)
@@ -103,10 +102,10 @@ read_tessi <- function(table_name, select = NULL,
         table %>% select(-customer_no) %>% rename(customer_no = kept_customer_no)
       } else {
         table %>% rename(merged_customer_no = kept_customer_no)
-      } %>% collect(as_data_frame = FALSE)
+      }
   }
 
-  return(table)
+  return(collect(table,as_data_frame=FALSE))
 }
 
 #' tessi_customer_no_map

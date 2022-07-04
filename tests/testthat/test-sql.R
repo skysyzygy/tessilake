@@ -150,7 +150,7 @@ test_that("read_sql_table works with database", {
   m_read = mock(available_columns,NULL,cycle=T)
   stub(read_sql_table,"read_sql",m_read)
   read_sql_table("TR_SEASON",primary_keys="id",date_column = "last_update_dt")
-  expect_match(as.character(mock_args(m_read)[[2]][["query"]]),"select .* from `dbo`.`TR_SEASON`")
+  expect_match(as.character(mock_args(m_read)[[2]][["query"]]),"select .* from dbo.TR_SEASON")
 })
 
 test_that("read_sql_table reads a table from the database in `dbo` and `BI` schemas and caches it",{
@@ -181,7 +181,7 @@ test_that("read_sql_table finds the primary keys and last_update_dt columns",{
   read_sql_table("TR_SEASON")
 
   expect_equal(mock_args(m_read)[[4]][["primary_keys"]],"blah")
-  expect_names(names(mock_args(m_read)[[4]]),disjunct.from="date_column")
+  expect_equal(mock_args(m_read)[[4]][["date_column"]],NULL)
 
   available_columns = data.table(table_schema="dbo",table_name="TR_SEASON",
                                  column_name="blah",constraint_type=NA,
@@ -189,5 +189,7 @@ test_that("read_sql_table finds the primary keys and last_update_dt columns",{
 
   read_sql_table("TR_SEASON")
 
-  expect_names(names(mock_args(m_read)[[6]]),disjunct.from=c("primary_keys","date_column"))
+  expect_equal(mock_args(m_read)[[6]][["primary_keys"]],NULL)
+  expect_equal(mock_args(m_read)[[6]][["date_column"]],NULL)
+
 })

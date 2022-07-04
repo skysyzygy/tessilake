@@ -76,7 +76,6 @@ read_sql <- function(query, name = digest::sha1(query),
                      select = NULL,
                      primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days")) {
-  . <- NULL
 
   assert_character(query, len = 1)
   if (!is.null(date_column)) assert_character(date_column, max.len = 1)
@@ -88,15 +87,6 @@ read_sql <- function(query, name = digest::sha1(query),
 
   # sort by primary keys for faster updating
   if(!is.null(primary_keys)) table <- arrange(table,across(!!primary_keys))
-
-  # sql_mtime <- if (!is.null(date_column)) {
-  #   table %>%
-  #     summarise(across(!!date_column, max)) %>%
-  #     collect() %>%
-  #     .[[1]]
-  # } else {
-  #   Sys.time()
-  # }
 
   test_mtime <- Sys.time() - freshness
 
@@ -124,13 +114,11 @@ read_sql <- function(query, name = digest::sha1(query),
     )
   }
 
-  args = list()
-  args$table_name = name
-  args$depth = "shallow"
-  args$type = "tessi"
-  args$select = select
+  cache_read(table_name = name,
+             depth = "shallow",
+             type = "tessi",
+             select = select)
 
-  do.call(cache_read,args)
 }
 
 #' read_sql_table
@@ -146,6 +134,8 @@ read_sql <- function(query, name = digest::sha1(query),
 #' @describeIn read_sql Reads a table or view from a SQL database and caches it locally using read_sql.
 #' @importFrom dplyr filter select collect
 #' @importFrom DBI dbListTables
+#' @importFrom rlang maybe_missing
+#' @importFrom stringr str_split
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @export
 #'
@@ -170,8 +160,10 @@ read_sql_table <- function(table_name, schema = "dbo",
   ) %>%
     rbindlist(idcol = "schema")
 
+  table_name_part = str_split(table_name," ",n=2)[[1]][[1]]
+
   if (available_tables[
-    eval(expr(schema == !!schema & table_name == !!table_name)),
+    eval(expr(schema == !!schema & table_name == !!table_name_part)),
     .N
   ] == 0) {
     stop(paste("Table", paste(schema, table_name, collapse = "."), "doesn't exist."))
@@ -185,23 +177,20 @@ read_sql_table <- function(table_name, schema = "dbo",
     name = "available_columns",
     freshness = freshness
   ) %>%
-    filter(table_schema == schema & table_name == !!table_name) %>%
+    filter(table_schema == schema & table_name == !!table_name_part) %>%
     collect()
 
   if (!is.null(select)) assert_names(select, subset.of = available_columns$column_name)
   if (!is.null(primary_keys)) assert_names(primary_keys, subset.of = available_columns$column_name)
   if (!is.null(date_column)) assert_names(date_column, subset.of = available_columns$column_name)
 
-  args = list()
-  args$primary_keys = primary_keys
-  args$date_column = date_column
   # get primary key info
   if (is.null(primary_keys) && "PRIMARY KEY" %in% available_columns$constraint_type) {
-    args$primary_keys <- filter(available_columns, constraint_type=="PRIMARY KEY")$column_name
+    primary_keys <- filter(available_columns, constraint_type=="PRIMARY KEY")$column_name
   }
 
-  if (is.null(date_column) && !is.null(args$primary_keys) && "last_update_dt" %in% available_columns$column_name) {
-    args$date_column <- "last_update_dt"
+  if (is.null(date_column) && !is.null(primary_keys) && "last_update_dt" %in% available_columns$column_name) {
+    date_column <- "last_update_dt"
   }
 
   # arrange columns so that the "long data' is at the end
@@ -213,9 +202,10 @@ read_sql_table <- function(table_name, schema = "dbo",
   cols <- paste(c(non_max_cols$column_name,max_cols$column_name),collapse=",")
 
   # build the table query
-  args$query = paste("select",cols,"from", DBI::dbQuoteIdentifier(db$db, DBI::Id(schema = schema, table = table_name)))
-  args$name = paste(c(schema, table_name), collapse = ".")
-  args$select = select
-  args$freshness = freshness
-  do.call(read_sql,args)
+  read_sql(query = paste("select",cols,"from",paste(schema,table_name,sep=".")),
+           name = paste(c(schema, table_name_part), collapse = "."),
+           primary_keys = primary_keys,
+           date_column = maybe_missing(date_column),
+           select = select,
+           freshness = freshness)
 }

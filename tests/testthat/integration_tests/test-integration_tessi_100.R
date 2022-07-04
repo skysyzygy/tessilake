@@ -4,14 +4,20 @@ local_cache_dirs()
 
 test_that("read_tessi can read the first 100 rows from all the defined tables", {
 
-  read_sql <- function(query=NULL,primary_keys=NULL,...) {
-    if(!grepl("INFORMATION_SCHEMA",query))
-      query = paste(gsub("select","select top 100",query,fixed=TRUE),
-                    ifelse(!is.null(primary_keys),
-                           paste("order by",paste(primary_keys,sep=",")),
-                           ""))
-    tessilake::read_sql(query=query,primary_keys=primary_keys,...)
+  # only load first 100 rows
+  arrange <- function(...) {
+    dbplyr:::arrange.tbl_lazy(...) %>% head(100)
   }
+
+  # only load first 100 rows
+  tbl <- function(src,from,...) {
+    if(!grepl("INFORMATION_SCHEMA|from T",from,perl = TRUE) && is.null(get("primary_keys",envir = parent.frame())))
+      return(dplyr::tbl(src,from) %>% head(100))
+    dplyr::tbl(src,from)
+  }
+
+  stub(read_sql,"arrange.tbl_lazy",arrange)
+  stub(read_sql,"tbl",tbl)
   stub(read_sql_table,"read_sql",read_sql)
   stub(read_tessi,"read_sql_table",read_sql_table)
 

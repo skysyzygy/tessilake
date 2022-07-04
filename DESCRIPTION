@@ -32,6 +32,7 @@ Imports:
     odbc,
     Rfast,
     rlang,
+    stringr,
     yaml
 Suggests: 
     purrr,
@@ -45,5 +46,5 @@ Suggests:
     withr
 Config/testthat/edition: 3
 Language: en-US
-Remotes:  
+Remotes: 
     edwindj/ffbase/pkg
