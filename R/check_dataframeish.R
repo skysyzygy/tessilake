@@ -4,6 +4,8 @@
 #' like a data.frame.
 #'
 #' @param obj object to test
+#' @param .var.name	character(1) Name of the checked object to print in assertions. Defaults to the heuristic implemented in vname.
+#' @param add	[`checkmate::AssertCollection`] Collection to store assertion messages. See [checkmate::AssertCollection].
 #'
 #' @return see the [checkmate] package for more information on check/assert/test functions
 #' @importFrom utils methods

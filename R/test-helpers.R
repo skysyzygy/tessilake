@@ -1,6 +1,6 @@
 #' local_cache_dirs
 #'
-#' Test helper, create cache dirs for tests.
+#' Test helper, create cache directories for tests.
 #'
 #' @param ... other arguments for compatibility with testthat?
 #' @param envir parent.frame()

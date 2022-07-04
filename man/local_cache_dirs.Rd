@@ -12,5 +12,5 @@ local_cache_dirs(..., envir = parent.frame())
 \item{envir}{parent.frame()}
 }
 \description{
-Test helper, create cache dirs for tests.
+Test helper, create cache directories for tests.
 }

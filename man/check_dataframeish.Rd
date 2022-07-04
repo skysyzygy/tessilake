@@ -14,6 +14,10 @@ test_dataframeish(obj)
 }
 \arguments{
 \item{obj}{object to test}
+
+\item{.var.name}{character(1) Name of the checked object to print in assertions. Defaults to the heuristic implemented in vname.}
+
+\item{add}{\code{\link[checkmate:AssertCollection]{checkmate::AssertCollection}} Collection to store assertion messages. See \link[checkmate:AssertCollection]{checkmate::AssertCollection}.}
 }
 \value{
 see the \link{checkmate} package for more information on check/assert/test functions

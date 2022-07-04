@@ -1,6 +1,6 @@
 #' tessi_list_tables
 #'
-#' The list of tessitura tables is configured in the extdata/tessi_tables.yml file in the package directory
+#' The list of Tessitura tables is configured in the extdata/tessi_tables.yml file in the package directory
 #' supplemented by the tessi_tables dictionary in config.yml
 #'
 #' ## yml format
@@ -11,7 +11,7 @@
 #'    primary_keys: {the primary key(s) as a value or a list of values}
 #' ````
 #'
-#' @return  data.table of configured tessitura tables with columns short_name, long_name, base_table and primary_keys
+#' @return  data.table of configured Tessitura tables with columns short_name, long_name, base_table and primary_keys
 #' @importFrom yaml read_yaml
 #' @export
 #' @examples
