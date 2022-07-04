@@ -16,10 +16,11 @@ cache_get_attributes <- function(x) {
   if (!test_class(x, "ArrowObject") && !test_class(x, "arrow_dplyr_query")) {
     attributes <- attributes(x)
   } else {
-    dataset <- (if (inherits(x, "arrow_dplyr_query")) x$.data else x)
+    if (inherits(x, "arrow_dplyr_query"))
+      return(cache_get_attributes(x$.data))
 
-    if (!is.null(dataset$metadata$r)) {
-      attributes <- unserialize(charToRaw(dataset$metadata$r))$attributes
+    if (!is.null(x$metadata$r)) {
+      attributes <- unserialize(charToRaw(x$metadata$r))$attributes
     }
   }
 
@@ -47,15 +48,16 @@ cache_set_attributes <- function(x, attributes) {
     return(setattributes(x, attributes))
   }
 
-  dataset <- (if (inherits(x, "arrow_dplyr_query")) x$.data else x)
+  if (inherits(x, "arrow_dplyr_query"))
+    return(cache_set_attributes(x$.data, attributes))
 
-  if (!is.null(dataset$metadata$r)) {
-    r <- unserialize(charToRaw(dataset$metadata$r))
+  if (!is.null(x$metadata$r)) {
+    r <- unserialize(charToRaw(x$metadata$r))
     r$attributes[names(attributes)] <- attributes[names(attributes)]
     tryCatch(
-      dataset$schema$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE))),
+      x$schema$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE))),
       error = function(e) {
-        dataset$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE)))
+        x$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE)))
       }
     )
   }

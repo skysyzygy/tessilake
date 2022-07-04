@@ -23,6 +23,17 @@ test_that("cache_get_attributes returns attributes of an Arrow Table (except row
   expect_mapequal(cache_get_attributes(arrow_table(x)), attributes(x))
 })
 
+test_that("cache_get_attributes returns attributes of an arrow_dplyr_query", {
+  x <- data.frame(y = c(1, 2, 3), z = c(4, 5, 6))
+  setattr(x, "a", "test")
+  query1 <- filter(arrow_table(x), y < 3)
+  query2 <- left_join(query1, query1)
+  expect_class(cache_get_attributes(query1), "list")
+  expect_class(cache_get_attributes(query2), "list")
+  expect_mapequal(cache_get_attributes(query1), attributes(x))
+  expect_mapequal(cache_get_attributes(query2), attributes(x))
+})
+
 
 test_that("cache_get_attributes reads partitioning information from Arrow Dataset", {
   x <- data.frame(a = c(1, 2, 3), b = c("a", "b", "c"))
@@ -33,7 +44,6 @@ test_that("cache_get_attributes reads partitioning information from Arrow Datase
   expect_class(cache_get_attributes(dataset), "list")
   expect_mapequal(cache_get_attributes(dataset), attributes(x))
 })
-
 
 # cache_set_attributes ----------------------------------------------------
 
@@ -52,4 +62,16 @@ test_that("cache_set_attributes updates attributes of an Arrow Table", {
   cache_set_attributes(x, list(names = "test", b = "another"))
   setattributes(y, list(names = "test", b = "another"))
   expect_mapequal(cache_get_attributes(x), attributes(y))
+})
+
+test_that("cache_get_attributes updates attributes of an arrow_dplyr_query", {
+  x <- data.frame(y = c(1, 2, 3), z = c(4, 5, 6))
+  y <- copy(x)
+  query1 <- filter(arrow_table(x), y < 3)
+  query2 <- left_join(query1, query1)
+  cache_set_attributes(query1, list(names = "test", b = "another"))
+  cache_set_attributes(query2, list(names = "test", b = "another"))
+  setattributes(y, list(names = "test", b = "another"))
+  expect_mapequal(cache_get_attributes(query1), attributes(y))
+  expect_mapequal(cache_get_attributes(query2), attributes(y))
 })
