@@ -16,8 +16,7 @@
 #' }
 sql_connect <- function() {
   if (is.null(db$db)) {
-    tryCatch(
-      {
+    tryCatch({
         db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "latin1"))
 
         callbacks <- getTaskCallbackNames()

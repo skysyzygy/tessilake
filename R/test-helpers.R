@@ -8,8 +8,7 @@ local_cache_dirs <- function(..., envir = parent.frame()) {
   dir.create(file.path(tempdir(), "deep"))
   dir.create(file.path(tempdir(), "shallow"))
 
-  withr::defer(
-    {
+  withr::defer({
       gc()
       unlink(file.path(tempdir(), "deep"), recursive = T)
       unlink(file.path(tempdir(), "shallow"), recursive = T)

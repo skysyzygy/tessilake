@@ -45,7 +45,7 @@ test_that("fix_vmode converts character to factor and leaves factors alone", {
 
 
 local_create_vec <- function() {
-  vecs <- map(as.list(2^(0:63)), ~ c(0, .))
+  vecs <- purrr::map(as.list(2^(0:63)), ~ c(0, .))
   rlang::env_bind(parent.frame(),
     vecs = vecs,
     vecs_na = map(vecs, ~ c(NA, .)),

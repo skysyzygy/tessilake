@@ -17,7 +17,7 @@ cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("
     dir(dirname(cache_path(table_name, depth, type)), full.names = TRUE, recursive = TRUE)
   )
 
-  cache_mtime <- max(file.mtime(cache_files), na.rm = TRUE)
+  max(file.mtime(cache_files), na.rm = TRUE)
 }
 
 #' cache_path

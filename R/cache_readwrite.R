@@ -47,8 +47,6 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
     cache <- FALSE
   }
 
-  # repair colnames in r attributes
-  # cache_set_attributes(cache,list(names=NULL))
   cache
 }
 

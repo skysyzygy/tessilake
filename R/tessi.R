@@ -25,8 +25,7 @@
 tessi_list_tables <- function() {
   config_tessi_tables <- NULL
 
-  try(
-    {
+  try({
       config_default <- config::get()
       config_tessi_tables <- setdiff(config::get(config = "tessi_tables"), config_default)
     },
