@@ -18,7 +18,6 @@
 #' cache_make_partitioning(x, primary_keys = "a")
 #' # expression a/10000
 cache_make_partitioning <- function(x, primary_keys = cache_get_attributes(x)$primary_keys) {
-
   assert_dataframeish(x)
   assert_character(primary_keys, min.len = 1)
   assert_names(names(x), must.include = primary_keys)
@@ -26,7 +25,7 @@ cache_make_partitioning <- function(x, primary_keys = cache_get_attributes(x)$pr
 
   if (is.data.table(x)) {
     primary_key <- x[, pk, with = F]
-    setkeyv(primary_key,pk)
+    setkeyv(primary_key, pk)
   } else {
     primary_key <- select(x, !!pk) %>%
       arrange(!!sym(pk)) %>%
@@ -43,9 +42,12 @@ cache_make_partitioning <- function(x, primary_keys = cache_get_attributes(x)$pr
 
   if (test_numeric(primary_key, any.missing = F)) {
     # make sure offset is greater than 1 and is an integer
-    offset <- max(ceiling(
-      10000 * mean(primary_key[-1] - primary_key[-length(primary_key)])),
-      1)
+    offset <- max(
+      ceiling(
+        10000 * mean(primary_key[-1] - primary_key[-length(primary_key)])
+      ),
+      1
+    )
     partitioning <- expr(floor(!!sym(pk) / !!offset))
   } else if (test_character(primary_key, any.missing = F)) {
     partitioning <- expr(substr(tolower(!!sym(pk)), 1, 2))

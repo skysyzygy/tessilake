@@ -24,9 +24,9 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
   if (dir.exists(cache_path)) {
     cache <- open_dataset(cache_path, format = ifelse(depth == "deep", "parquet", "arrow"), ...)
 
-    if(!is.null(select)) {
-      assert_names(select,subset.of=colnames(cache))
-      cache = select(cache,!!select)
+    if (!is.null(select)) {
+      assert_names(select, subset.of = colnames(cache))
+      cache <- select(cache, !!select)
     }
 
     attributes <- cache_get_attributes(cache)
@@ -48,7 +48,7 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
   }
 
   # repair colnames in r attributes
-  #cache_set_attributes(cache,list(names=NULL))
+  # cache_set_attributes(cache,list(names=NULL))
   cache
 }
 

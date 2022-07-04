@@ -25,7 +25,8 @@
 tessi_list_tables <- function() {
   config_tessi_tables <- NULL
 
-  try({
+  try(
+    {
       config_default <- config::get()
       config_tessi_tables <- setdiff(config::get(config = "tessi_tables"), config_default)
     },
@@ -41,7 +42,7 @@ tessi_list_tables <- function() {
     lapply(function(.) {
       gsub("^$", NA, .)
     }) %>%
-    setDT -> ret
+    setDT() -> ret
   ret
 }
 
@@ -81,17 +82,18 @@ read_tessi <- function(table_name, select = NULL,
   table_data <- tessi_list_tables()[short_name == table_name] %>% as.list()
   table_data$long_name <- str_split(table_data$long_name, stringr::fixed("."), n = 2)[[1]]
 
-  if(length(table_data$long_name) == 1) {
-    args$table_name = table_data$long_name[[1]]
+  if (length(table_data$long_name) == 1) {
+    args$table_name <- table_data$long_name[[1]]
   } else {
-    args$schema = table_data$long_name[[1]]
-    args$table_name = table_data$long_name[[2]]
+    args$schema <- table_data$long_name[[1]]
+    args$table_name <- table_data$long_name[[2]]
   }
-  if(any(!is.na(table_data$primary_keys)))
-    args$primary_keys = table_data$primary_keys
-  args$select = expr_get_names(select)
+  if (any(!is.na(table_data$primary_keys))) {
+    args$primary_keys <- table_data$primary_keys
+  }
+  args$select <- expr_get_names(select)
 
-  table <- do.call(read_sql_table,args)
+  table <- do.call(read_sql_table, args)
 
   if ("customer_no" %in% names(table)) {
     # add group_customer_no
@@ -99,13 +101,15 @@ read_tessi <- function(table_name, select = NULL,
     # only change customer_no to kept (merged) customer_no if it's not a primary key
     table <-
       if (!"customer_no" %in% args$primary_keys) {
-        table %>% select(-customer_no) %>% rename(customer_no = kept_customer_no)
+        table %>%
+          select(-customer_no) %>%
+          rename(customer_no = kept_customer_no)
       } else {
         table %>% rename(merged_customer_no = kept_customer_no)
       }
   }
 
-  return(collect(table,as_data_frame=FALSE))
+  return(collect(table, as_data_frame = FALSE))
 }
 
 #' tessi_customer_no_map
@@ -122,10 +126,14 @@ tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
   kept_id <- kept_id_old <- kept_customer_no <- customer_no <- group_customer_no <- NULL
 
   customers <- read_sql("select customer_no from T_CUSTOMER",
-                        "customers", freshness = freshness)
+    "customers",
+    freshness = freshness
+  )
 
   merges <- read_sql("select kept_id, delete_id from T_MERGED where status='S' and kept_id<>delete_id",
-                     "merges", freshness = freshness) %>%
+    "merges",
+    freshness = freshness
+  ) %>%
     distinct() %>%
     collect(as_data_frame = FALSE)
 

@@ -58,7 +58,7 @@ expr_get_names <- function(expr) {
 #' # and mung it up
 #' to[1:5000, data := runif(.N)]
 #'
-#' update_table(from, to, primary_keys = c(x,y)) == expect
+#' update_table(from, to, primary_keys = c(x, y)) == expect
 #' # TRUE
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
   assert_dataframeish(from)
@@ -102,7 +102,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
   new <- cols_from[!cols_to, on = primary_keys]
 
   # rows that are missing in from
-  if(delete == TRUE) {
+  if (delete == TRUE) {
     remove <- cols_to[!cols_from, on = primary_keys]
     to <- to[!remove, on = primary_keys]
   }
@@ -116,7 +116,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
   }
 
   to[update, (colnames(from)) := from_update, on = primary_keys]
-  to <- rbindlist(list(to, from_new),use.names = TRUE)
+  to <- rbindlist(list(to, from_new), use.names = TRUE)
   setorderv(to, primary_keys)
 
   to

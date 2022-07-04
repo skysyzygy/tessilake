@@ -9,7 +9,7 @@
 #' @return POSIXct modification time
 #' @examples
 #' \dontrun{
-#' cache_get_mtime("test","deep","stream")
+#' cache_get_mtime("test", "deep", "stream")
 #' }
 cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
   cache_files <- c(
@@ -37,7 +37,7 @@ cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("
 #' cache_path("test", "deep", "stream")
 #' }
 cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
-  assert_character(table_name,len = 1)
+  assert_character(table_name, len = 1)
   assert_choice(depth, c("deep", "shallow"))
   assert_choice(type, c("tessi", "stream"))
 
@@ -89,26 +89,26 @@ cache_exists <- function(table_name, depth = c("deep", "shallow"), type = c("tes
 #'
 #' @examples
 #' \dontrun{
-#' cache_delete("test","deep","stream",partitions=c(1,2,3))
+#' cache_delete("test", "deep", "stream", partitions = c(1, 2, 3))
 #' }
 cache_delete <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
                          partitions = NULL) {
+  if (!is.null(partitions)) assert(check_character(partitions), check_numeric(partitions))
 
-  if(!is.null(partitions)) assert(check_character(partitions),check_numeric(partitions))
-
-  if(!cache_exists(table_name, depth, type))
-    stop(paste("Cache",table_name, depth, type, "doesn't exist so it can't be deleted."))
+  if (!cache_exists(table_name, depth, type)) {
+    stop(paste("Cache", table_name, depth, type, "doesn't exist so it can't be deleted."))
+  }
 
   cache_path <- cache_path(table_name, depth, type)
 
-  if(is.null(partitions)) {
-    unlink(paste0(cache_path,c("",".feather",".parquet")), recursive = TRUE)
+  if (is.null(partitions)) {
+    unlink(paste0(cache_path, c("", ".feather", ".parquet")), recursive = TRUE)
   } else {
-    if(!dir.exists(cache_path))
-      stop(paste("Cache",table_name, depth, type, "isn't partitioned, can't delete specified partitions."))
+    if (!dir.exists(cache_path)) {
+      stop(paste("Cache", table_name, depth, type, "isn't partitioned, can't delete specified partitions."))
+    }
     gc() # have to force R to destroy open file connectors... not a perfect solution but the best I can come up with now.
-    purrr::map(unique(partitions),~unlink(file.path(cache_path,paste0("partition*=",.x)),recursive = TRUE))
+    purrr::map(unique(partitions), ~ unlink(file.path(cache_path, paste0("partition*=", .x)), recursive = TRUE))
   }
   invisible()
 }
-

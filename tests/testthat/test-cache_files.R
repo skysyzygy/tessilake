@@ -32,27 +32,26 @@ test_that("cache_delete complains if arguments incorrect", {
 })
 
 test_that("cache_delete complains if cache doesn't exist", {
-  expect_error(cache_delete("test","deep","tessi"), "doesn't exist")
+  expect_error(cache_delete("test", "deep", "tessi"), "doesn't exist")
 })
 
 test_that("cache_delete works with cache_write", {
-
-  expect_true(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"),".parquet")))
-  expect_true(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"),".feather")))
-  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"),recursive = TRUE),11)
-  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"),recursive = TRUE),11)
+  expect_true(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"), ".parquet")))
+  expect_true(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"), ".feather")))
+  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"), recursive = TRUE), 11)
+  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"), recursive = TRUE), 11)
 
   cache_delete("test_read_write", "deep", "tessi")
   cache_delete("test_read_write", "shallow", "tessi")
 
-  expect_false(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"),".parquet")))
-  expect_false(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"),".feather")))
+  expect_false(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"), ".parquet")))
+  expect_false(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"), ".feather")))
 
-  cache_delete("test_partitioning", "deep", "tessi",partitions=0)
-  cache_delete("test_partitioning", "shallow", "tessi",partitions=c(8,9,10))
+  cache_delete("test_partitioning", "deep", "tessi", partitions = 0)
+  cache_delete("test_partitioning", "shallow", "tessi", partitions = c(8, 9, 10))
 
-  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"),recursive = TRUE),10)
-  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"),recursive = TRUE),8)
+  expect_length(dir(cache_path("test_partitioning", "deep", "tessi"), recursive = TRUE), 10)
+  expect_length(dir(cache_path("test_partitioning", "shallow", "tessi"), recursive = TRUE), 8)
 
   cache_delete("test_partitioning", "deep", "tessi")
   cache_delete("test_partitioning", "shallow", "tessi")
@@ -76,7 +75,7 @@ test_that("cache_path complains if the root directory doesn't exist or isn't wri
 
 test_that("cache_path returns a path", {
   cache_root <- config::get(paste0("tessilake.", "shallow"))
-  expect_equal(cache_path("seasons", "shallow", "stream"), file.path(cache_root,"stream","seasons"))
+  expect_equal(cache_path("seasons", "shallow", "stream"), file.path(cache_root, "stream", "seasons"))
 })
 
 # cache_exists ------------------------------------------------------------
@@ -98,5 +97,3 @@ test_that("cache_exists looks for directories, feather and parquet files", {
   expect_true(any(grepl("season\\.feather", mockery::mock_args(file.exists))))
   expect_true(any(grepl("season\\.parquet", mockery::mock_args(file.exists))))
 })
-
-

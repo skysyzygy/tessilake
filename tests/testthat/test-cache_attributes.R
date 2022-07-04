@@ -3,7 +3,10 @@ local_cache_dirs()
 
 # cache_get_attributes -----------------------------------------------------
 
-attributes <- function(x) {a <- base::attributes(x); a[which(!names(a) %in% c("names","row.names"))]}
+attributes <- function(x) {
+  a <- base::attributes(x)
+  a[which(!names(a) %in% c("names", "row.names"))]
+}
 test_that("cache_get_attributes returns attributes of a data.frame", {
   x <- data.frame(c(1, 2, 3))
   setattr(x, "a", "test")

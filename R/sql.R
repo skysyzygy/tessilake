@@ -16,7 +16,8 @@
 #' }
 sql_connect <- function() {
   if (is.null(db$db)) {
-    tryCatch({
+    tryCatch(
+      {
         db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "latin1"))
 
         callbacks <- getTaskCallbackNames()
@@ -76,7 +77,6 @@ read_sql <- function(query, name = digest::sha1(query),
                      select = NULL,
                      primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days")) {
-
   assert_character(query, len = 1)
   if (!is.null(date_column)) assert_character(date_column, max.len = 1)
   if (!is.null(primary_keys)) assert_character(primary_keys, min.len = length(date_column))
@@ -86,15 +86,15 @@ read_sql <- function(query, name = digest::sha1(query),
   table <- tbl(db$db, sql(query))
 
   # sort by primary keys for faster updating
-  if(!is.null(primary_keys)) table <- arrange(table,across(!!primary_keys))
+  if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))
 
   test_mtime <- Sys.time() - freshness
 
   if (!cache_exists(name, "deep", "tessi")) {
     cache_write(collect(table), name, "deep", "tessi", partition = FALSE, primary_keys = primary_keys)
     deep_mtime <- cache_get_mtime(name, "deep", "tessi")
-  } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime){# &&
-    #sql_mtime > deep_mtime) {
+  } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime) { # &&
+    # sql_mtime > deep_mtime) {
     cache_update(table, name, "deep", "tessi",
       primary_keys = primary_keys,
       date_column = date_column,
@@ -114,11 +114,12 @@ read_sql <- function(query, name = digest::sha1(query),
     )
   }
 
-  cache_read(table_name = name,
-             depth = "shallow",
-             type = "tessi",
-             select = select)
-
+  cache_read(
+    table_name = name,
+    depth = "shallow",
+    type = "tessi",
+    select = select
+  )
 }
 
 #' read_sql_table
@@ -160,7 +161,7 @@ read_sql_table <- function(table_name, schema = "dbo",
   ) %>%
     rbindlist(idcol = "schema")
 
-  table_name_part = str_split(table_name," ",n=2)[[1]][[1]]
+  table_name_part <- str_split(table_name, " ", n = 2)[[1]][[1]]
 
   if (available_tables[
     eval(expr(schema == !!schema & table_name == !!table_name_part)),
@@ -186,7 +187,7 @@ read_sql_table <- function(table_name, schema = "dbo",
 
   # get primary key info
   if (is.null(primary_keys) && "PRIMARY KEY" %in% available_columns$constraint_type) {
-    primary_keys <- filter(available_columns, constraint_type=="PRIMARY KEY")$column_name
+    primary_keys <- filter(available_columns, constraint_type == "PRIMARY KEY")$column_name
   }
 
   if (is.null(date_column) && !is.null(primary_keys) && "last_update_dt" %in% available_columns$column_name) {
@@ -197,15 +198,17 @@ read_sql_table <- function(table_name, schema = "dbo",
   # https://stackoverflow.com/questions/60757280/result-fetchresptr-n-nanodbc-nanodbc-cpp2966-07009-microsoftodbc-dri
 
   max_cols <- available_columns %>% filter(character_maximum_length == -1)
-  non_max_cols <- available_columns %>% filter((character_maximum_length != -1 | is.na(character_maximum_length))
-                                               & !grepl("encrypt",column_name))
-  cols <- paste(c(non_max_cols$column_name,max_cols$column_name),collapse=",")
+  non_max_cols <- available_columns %>% filter((character_maximum_length != -1 | is.na(character_maximum_length)) &
+    !grepl("encrypt", column_name))
+  cols <- paste(c(non_max_cols$column_name, max_cols$column_name), collapse = ",")
 
   # build the table query
-  read_sql(query = paste("select",cols,"from",paste(schema,table_name,sep=".")),
-           name = paste(c(schema, table_name_part), collapse = "."),
-           primary_keys = primary_keys,
-           date_column = maybe_missing(date_column),
-           select = select,
-           freshness = freshness)
+  read_sql(
+    query = paste("select", cols, "from", paste(schema, table_name, sep = ".")),
+    name = paste(c(schema, table_name_part), collapse = "."),
+    primary_keys = primary_keys,
+    date_column = maybe_missing(date_column),
+    select = select,
+    freshness = freshness
+  )
 }
