@@ -43,11 +43,13 @@ cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
 
   cache_root <- config::get(paste0("tessilake.", depth))
 
-  file.create(file.path(cache_root, "test"), showWarnings = FALSE)
-  if (!test_character(cache_root) || !file.exists(file.path(cache_root, "test"))) {
+  tmpfile <- tempfile("cache_write_test",cache_root)
+
+  file.create(tmpfile, showWarnings = FALSE)
+  if (!test_character(cache_root) || !file.exists(tmpfile)) {
     stop(paste0("Please set the tessilake.", depth, " option in config.yml to point to a cache path where you have read/write access."))
   }
-  file.remove(file.path(cache_root, "test"))
+  file.remove(tmpfile)
 
   # build the cache query with arrow
   cache_path <- file.path(cache_root, type, table_name)

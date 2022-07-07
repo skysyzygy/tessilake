@@ -92,12 +92,13 @@ test_that("update_table loads from DB incrementally", {
   seasons_tbl <- dplyr::copy_to(con, seasons)
   seasons <- setDT(seasons)[-1, ]
   seasons[1:2, "last_update_dt"] <- lubridate::ymd("1900-01-01")
-  stub(update_table, "collect", function(.) {
+  stub(update_table.default, "collect", function(.) {
     print(dplyr::collect(dplyr::summarize(., n()))[[1]])
     dplyr::collect(.)
   })
   # this writes out 2 and then 1 because 2 rows are updated and 1 row is added
-  expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "2\\n\\[1\\] 1$")
+  expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
+
 })
 
 test_that("read_tessi loads from arrow table incrementally", {
@@ -105,12 +106,12 @@ test_that("read_tessi loads from arrow table incrementally", {
   seasons_arrow <- arrow::arrow_table(seasons)
   seasons <- setDT(seasons)[-c(1, 2), ]
   seasons[1:3, "last_update_dt"] <- lubridate::ymd("1900-01-01")
-  stub(update_table, "collect", function(.) {
+  stub(update_table.default, "collect", function(.) {
     print(dplyr::collect(dplyr::summarize(., n()))[[1]])
     dplyr::collect(.)
   })
   # this writes out 3 and then 2 because 3 rows are updated and 2 row is added
-  expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "3\\n\\[1\\] 2$")
+  expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 5$")
 })
 
 test_that("update_table doesn't copy from when from is a data.table", {

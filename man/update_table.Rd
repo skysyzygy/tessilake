@@ -2,9 +2,15 @@
 % Please edit documentation in R/update_table.R
 \name{update_table}
 \alias{update_table}
+\alias{update_table.default}
+\alias{update_table.data.table}
 \title{update_table}
 \usage{
 update_table(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
+
+\method{update_table}{default}(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
+
+\method{update_table}{data.table}(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
 }
 \arguments{
 \item{from}{the source object}
@@ -18,7 +24,7 @@ update_table(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
 \item{delete}{whether to delete rows in \code{to} missing from \code{from}, default is not to delete the rows}
 }
 \value{
-an updated data.table updated in-place
+a data.table updated in-place
 }
 \description{
 updates the data.table-like object \code{to} based on the data.frame-like \code{from} object,
@@ -33,6 +39,7 @@ to <- copy(expect)[1000:10000]
 # and mung it up
 to[1:5000, data := runif(.N)]
 
-update_table(from, to, primary_keys = c(x,y)) == expect
+update_table(from, to, primary_keys = c(x, y)) == expect
 # TRUE
+
 }

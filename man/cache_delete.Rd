@@ -28,6 +28,6 @@ Delete some or all cache files for a given cache.
 }
 \examples{
 \dontrun{
-cache_delete("test","deep","stream",partitions=c(1,2,3))
+cache_delete("test", "deep", "stream", partitions = c(1, 2, 3))
 }
 }

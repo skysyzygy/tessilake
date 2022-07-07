@@ -25,6 +25,6 @@ Get the last modification time of the cache by querying the mtime of all of the 
 }
 \examples{
 \dontrun{
-cache_get_mtime("test","deep","stream")
+cache_get_mtime("test", "deep", "stream")
 }
 }
