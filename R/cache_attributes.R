@@ -20,7 +20,7 @@ cache_get_attributes <- function(x) {
       return(cache_get_attributes(x$.data))
 
     if (!is.null(x$metadata$r)) {
-      attributes <- unserialize(charToRaw(x$metadata$r))$attributes
+      attributes <- x$metadata$r$attributes
     }
   }
 
@@ -52,12 +52,12 @@ cache_set_attributes <- function(x, attributes) {
     return(cache_set_attributes(x$.data, attributes))
 
   if (!is.null(x$metadata$r)) {
-    r <- unserialize(charToRaw(x$metadata$r))
+    r <- x$metadata$r
     r$attributes[names(attributes)] <- attributes[names(attributes)]
     tryCatch(
-      x$schema$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE))),
+      x$schema$metadata$r <- r,
       error = function(e) {
-        x$metadata <- list(r = rawToChar(serialize(r, NULL, ascii = TRUE)))
+        x$metadata$r <- r
       }
     )
   }
