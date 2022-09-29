@@ -89,12 +89,18 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
     combine = "and"
   )
 
-  all <- left_join(from,
+  # turn off SQL ordering because it won't work with the join operation
+  if (inherits(from,"tbl_sql"))
+    from <- arrange(from,NULL)
+
+  suppressMessages(
+    all <- left_join(from,
                   mutate(select(to, !!c(date_column, primary_keys)),
                          to = TRUE),
                   by = primary_keys,
                   suffix = c("",".to"),
                   copy = TRUE)
+    )
 
   if(!is.null(date_column)) {
     all <- filter(all, is.na(to) | !!sym(date_column) != !!sym(paste0(date_column,".to"))) %>%
