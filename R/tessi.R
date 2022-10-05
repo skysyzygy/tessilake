@@ -13,6 +13,8 @@
 #'
 #' @return  data.table of configured Tessitura tables with columns short_name, long_name, base_table and primary_keys
 #' @importFrom yaml read_yaml
+#' @importFrom purrr map
+#' @importFrom stringr str_replace_all
 #' @export
 #' @examples
 #' # customers:
@@ -36,11 +38,9 @@ tessi_list_tables <- function() {
     read_yaml(system.file("extdata", "tessi_tables.yml", package = "tessilake")),
     config_tessi_tables
   ) %>%
-    rbindlist(idcol = "short_name") %>%
+    rbindlist(idcol = "short_name", fill = TRUE) %>%
     # get rid of blanks
-    lapply(function(.) {
-      gsub("^$", NA, .)
-    }) %>%
+    map(~str_replace_all(.,c("^$"=NA_character_,"\n"=" "))) %>%
     setDT() -> ret
   ret
 }
@@ -73,26 +73,33 @@ read_tessi <- function(table_name, select = NULL,
                        freshness = as.difftime(7, units = "days"), ...) {
   short_name <- customer_no <- kept_customer_no <- NULL
 
-  args <- as.list(call_match())[-1]
   select <- enexpr(select)
   assert_character(table_name)
   assert_names(table_name, subset.of = tessi_list_tables()$short_name)
 
   table_data <- tessi_list_tables()[short_name == table_name] %>% as.list()
+
   table_data$long_name <- str_split(table_data$long_name, stringr::fixed("."), n = 2)[[1]]
 
-  if (length(table_data$long_name) == 1) {
-    args$table_name <- table_data$long_name[[1]]
-  } else {
-    args$schema <- table_data$long_name[[1]]
-    args$table_name <- table_data$long_name[[2]]
-  }
+  args <- list()
   if (any(!is.na(table_data$primary_keys))) {
     args$primary_keys <- table_data$primary_keys
   }
   args$select <- expr_get_names(select)
+  args$freshness <- freshness
 
-  table <- do.call(read_sql_table, args)
+  if(!is.na(table_data$query[[1]])) {
+    args$query <- table_data$query[[1]]
+    table <- do.call(read_sql, args)
+  } else {
+    if (length(table_data$long_name) == 1) {
+      args$table_name <- table_data$long_name[[1]]
+    } else {
+      args$schema <- table_data$long_name[[1]]
+      args$table_name <- table_data$long_name[[2]]
+    }
+    table <- do.call(read_sql_table, args)
+  }
 
   if ("customer_no" %in% names(table)) {
     # add group_customer_no

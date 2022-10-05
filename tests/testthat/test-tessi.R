@@ -33,6 +33,7 @@ test_that("tessi_tables.yml is configured correctly for Tessitura tables", {
   read_sql <- mock(available_columns, data.frame(x = 1:100), cycle = T)
   stub(read_sql_table, "read_sql", read_sql)
   stub(read_tessi, "read_sql_table", read_sql_table)
+  stub(read_tessi, "read_sql", data.frame())
 
   for (short_name in tessi_list_tables()$short_name) {
     expect_silent(read_tessi(!!short_name))
