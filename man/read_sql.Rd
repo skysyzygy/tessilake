@@ -54,9 +54,9 @@ Database connection defined by an ODBC profile with the name set by the \code{te
 }
 \section{Functions}{
 \itemize{
-\item \code{read_sql_table}: Reads a table or view from a SQL database and caches it locally using read_sql.
-}}
+\item \code{read_sql_table()}: Reads a table or view from a SQL database and caches it locally using read_sql.
 
+}}
 \examples{
 \dontrun{
 read_sql("select * from T_CUSTOMER", "t_customer",
