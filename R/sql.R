@@ -203,7 +203,7 @@ read_sql_table <- function(table_name, schema = "dbo",
 
   # build the table query
   read_sql(
-    query = paste("select", cols, "from", paste(schema, table_name, sep = ".")),
+    query = paste("select", cols, "from", paste(schema, table_name, sep = "."), "with (nolock)"),
     name = paste(c(schema, table_name_part), collapse = "."),
     primary_keys = primary_keys,
     date_column = maybe_missing(date_column),

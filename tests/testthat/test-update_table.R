@@ -92,11 +92,31 @@ test_that("update_table loads from DB incrementally", {
   seasons_tbl <- dplyr::copy_to(con, seasons)
   seasons <- setDT(seasons)[-1, ]
   seasons[1:2, "last_update_dt"] <- lubridate::ymd("1900-01-01")
+
   stub(update_table.default, "collect", function(.) {
     print(dplyr::collect(dplyr::summarize(., n()))[[1]])
     dplyr::collect(.)
   })
-  # this writes out 2 and then 1 because 2 rows are updated and 1 row is added
+  # this writes out 3 because 2 rows are updated and 1 row is added
+  expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
+
+})
+
+test_that("update_table loads from DB incrementally even if it's a very large update", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  seasons <- readRDS(test_path("seasons.Rds"))
+  seasons <- dplyr::mutate_if(seasons, ~ lubridate::is.POSIXct(.), as.numeric)
+  seasons_tbl <- dplyr::copy_to(con, seasons)
+  seasons <- setDT(seasons)[-1, ]
+  seasons[1:2, "last_update_dt"] <- lubridate::ymd("1900-01-01")
+
+  stub(update_table.default, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., dplyr::n()))[[1]])
+    dplyr::collect(.)
+  })
+  stub(update_table.default, "object.size", 2^20+1)
+
+  # this writes out 3 because 2 rows are updated and 1 row is added
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
 
 })

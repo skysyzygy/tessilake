@@ -42,7 +42,7 @@ expr_get_names <- function(expr) {
 #' @param primary_keys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
 #' @param delete whether to delete rows in `to` missing from `from`, default is not to delete the rows
 #'
-#' @importFrom dplyr collect left_join select
+#' @importFrom dplyr collect left_join select semi_join copy_to
 #' @importFrom rlang as_name call_args eval_tidy
 #' @importFrom bit setattributes
 #' @importFrom checkmate assert_class assert_subset check_subset assert
@@ -89,25 +89,39 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
     combine = "and"
   )
 
-  # turn off SQL ordering because it won't work with the join operation
-  if (inherits(from,"tbl_sql"))
-    from <- arrange(from,NULL)
+  to_temp <- to[,c(date_column, primary_keys), with=F][,to:=T]
+  from_temp <- select(from,all_of(c(date_column,primary_keys))) %>% collect %>% setDT
 
-  suppressMessages(
-    all <- left_join(from,
-                  mutate(select(to, !!c(date_column, primary_keys)),
-                         to = TRUE),
-                  by = primary_keys,
-                  suffix = c("",".to"),
-                  copy = TRUE)
-    )
+  all <- merge(from_temp,to_temp,
+                all.x = T,
+                by = primary_keys,
+                suffix = c("",".to"))
 
   if(!is.null(date_column)) {
-    all <- filter(all, is.na(to) | !!sym(date_column) != !!sym(paste0(date_column,".to"))) %>%
-    select(-!!paste0(date_column,".to"))
+    all <- all[is.na(to) | get(date_column) != get(paste0(date_column,".to")),primary_keys,with=F]
   }
 
-  all <- collect(all) %>% setDT
+
+  if(object.size(all) > 2^20) {
+    warning("Trying the shortcut")
+    # if `all` is very large we don't want to transfer it as a temp table so let's
+    # download `from` and filter from by min/max of primary_keys
+    for(primary_key in primary_keys) {
+      from <- filter(from, if_all(primary_key, ~ between(.,!!min(all[,primary_key,with=F]),
+                                                           !!max(all[,primary_key,with=F]))))
+    }
+    from <- from %>% collect
+  }
+  if(inherits(from,"tbl_sql")) {
+    # turn off SQL ordering because it won't work with the join operation
+    from <- arrange(from,NULL)
+    # copy the `all` table and add an index
+    all <- copy_to(from$src$con,all,paste0("#all",rlang::hash(Sys.time())),
+                   temporary=T,unique_indexes=list(primary_keys))
+  }
+
+  all <- semi_join(from,all,by=primary_keys) %>% collect %>%
+    left_join(to_temp[,c(primary_keys,"to"),with=F],by=primary_keys) %>% setDT
 
   # rows that don't yet exist in to
   new <- all[is.na(to)][,to:=NULL]
