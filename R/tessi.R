@@ -90,6 +90,7 @@ read_tessi <- function(table_name, select = NULL,
 
   if(!is.na(table_data$query[[1]])) {
     args$query <- table_data$query[[1]]
+    args$name <- paste(table_data$long_name,collapse=".")
     table <- do.call(read_sql, args)
   } else {
     if (length(table_data$long_name) == 1) {
