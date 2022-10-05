@@ -126,6 +126,7 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
 }
 
 #' @export
+#' @importFrom stats na.omit
 #' @rdname update_table
 update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
   assert_class(from, "data.table")

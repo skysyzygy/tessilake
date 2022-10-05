@@ -30,13 +30,13 @@ Imports:
     glue,
     magrittr,
     odbc,
+    purrr,
     Rfast,
     rlang,
     stringr,
     tzdb,
     yaml
 Suggests: 
-    purrr,
     covr,
     testthat (>= 3.0.0),
     spelling,

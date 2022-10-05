@@ -8,30 +8,6 @@
 #
 #
 
-# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
-# nrow(...) (`actual`) not equal to nrow(get("customers")) (`expected`).
-#
-#   `actual`:  985684
-# `expected`: 1119471
-#
-# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
-# nrow(...) (`actual`) not equal to nrow(get("list_contents")) (`expected`).
-#
-#   `actual`: 175733473
-# `expected`: 176242690
-#
-# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
-# nrow(...) (`actual`) not equal to nrow(get("memberships")) (`expected`).
-#
-#   `actual`: 270712
-# `expected`: 273512
-#
-# -- Failure (test-integration_tessi_pks.R:34:5): read_tessi can read the primary keys from all the defined tables ---------------------------
-# nrow(...) (`actual`) not equal to nrow(get("promotions")) (`expected`).
-#
-#   `actual`: 211886538
-# `expected`: 211887880
-
 
 accounts:
   long_name: T_ACCOUNT_DATA
@@ -124,7 +100,10 @@ lists:
   base_table: T_LIST
   primary_keys: list_no
 memberships:
-  long_name: BI.VT_MEMBERSHIP m where exists (select 1 from T_MEMB_LEVEL ml where m.memb_org_no=ml.memb_org_no and m.original_memb_level_no=ml.memb_level_no)
+  long_name: BI.VT_MEMBERSHIP
+  query: |
+    select * from BI.VT_MEMBERSHIP with (nolock) m where exists
+    (select 1 from T_MEMB_LEVEL ml where m.memb_org_no=ml.memb_org_no and m.original_memb_level_no=ml.memb_level_no)
   base_table: TX_CUST_MEMBERSHIP
   primary_keys: cust_memb_no
 orders:
