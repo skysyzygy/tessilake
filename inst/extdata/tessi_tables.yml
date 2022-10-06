@@ -107,7 +107,7 @@ lists:
 memberships:
   long_name: BI.VT_MEMBERSHIP
   query: |
-    select * from BI.VT_MEMBERSHIP with (nolock) m where exists
+    select * from BI.VT_MEMBERSHIP m with (nolock) where exists
     (select 1 from T_MEMB_LEVEL ml where m.memb_org_no=ml.memb_org_no and m.original_memb_level_no=ml.memb_level_no)
   base_table: TX_CUST_MEMBERSHIP
   primary_keys: cust_memb_no

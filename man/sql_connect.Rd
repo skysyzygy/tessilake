@@ -18,9 +18,9 @@ updates the Rstudio connection pane
 }
 \section{Functions}{
 \itemize{
-\item \code{sql_disconnect}: Tear down the SQL connection
-}}
+\item \code{sql_disconnect()}: Tear down the SQL connection
 
+}}
 \examples{
 \dontrun{
 tessilake:::db$db

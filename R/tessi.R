@@ -13,6 +13,8 @@
 #'
 #' @return  data.table of configured Tessitura tables with columns short_name, long_name, base_table and primary_keys
 #' @importFrom yaml read_yaml
+#' @importFrom purrr map
+#' @importFrom stringr str_replace_all
 #' @export
 #' @examples
 #' # customers:
@@ -38,9 +40,7 @@ tessi_list_tables <- function() {
   ) %>%
     rbindlist(idcol = "short_name", fill = TRUE) %>%
     # get rid of blanks
-    lapply(function(.) {
-      gsub("^$", NA, .)
-    }) %>%
+    map(~str_replace_all(.,c("^$"=NA_character_,"\n"=" "))) %>%
     setDT() -> ret
   ret
 }
@@ -71,49 +71,78 @@ tessi_list_tables <- function() {
 #'
 read_tessi <- function(table_name, select = NULL,
                        freshness = as.difftime(7, units = "days"), ...) {
-  short_name <- customer_no <- kept_customer_no <- NULL
+  short_name <- customer_no <- merged_customer_no <- NULL
 
-  args <- as.list(call_match())[-1]
   select <- enexpr(select)
   assert_character(table_name)
   assert_names(table_name, subset.of = tessi_list_tables()$short_name)
 
   table_data <- tessi_list_tables()[short_name == table_name] %>% as.list()
+
   table_data$long_name <- str_split(table_data$long_name, stringr::fixed("."), n = 2)[[1]]
 
-  if (length(table_data$long_name) == 1) {
-    args$table_name <- table_data$long_name[[1]]
-  } else {
-    args$schema <- table_data$long_name[[1]]
-    args$table_name <- table_data$long_name[[2]]
-  }
+  args <- list()
   if (any(!is.na(table_data$primary_keys))) {
     args$primary_keys <- table_data$primary_keys
   }
   args$select <- expr_get_names(select)
+  args$freshness <- freshness
 
-  table <- do.call(read_sql_table, args)
-
-  if ("customer_no" %in% names(table)) {
-    # add group_customer_no
-    table <- table %>% left_join(tessi_customer_no_map(), by = "customer_no")
-    # only change customer_no to kept (merged) customer_no if it's not a primary key
-    table <-
-      if (!"customer_no" %in% args$primary_keys) {
-        table %>%
-          select(-customer_no) %>%
-          rename(customer_no = kept_customer_no)
-      } else {
-        table %>% rename(merged_customer_no = kept_customer_no)
-      }
+  if(!is.na(table_data$query[[1]])) {
+    args$query <- table_data$query[[1]]
+    args$name <- paste(table_data$long_name,collapse=".")
+    table <- do.call(read_sql, args)
+  } else {
+    if (length(table_data$long_name) == 1) {
+      args$table_name <- table_data$long_name[[1]]
+    } else {
+      args$schema <- table_data$long_name[[1]]
+      args$table_name <- table_data$long_name[[2]]
+    }
+    table <- do.call(read_sql_table, args)
   }
+
+  if("customer_no" %in% colnames(table))
+     table <- table %>% merge_customer_no_map("customer_no",freshness)
+
+  if("creditee_no" %in% colnames(table))
+    table <- table %>% merge_customer_no_map("creditee_no",freshness)
 
   return(collect(table, as_data_frame = FALSE))
 }
 
+#' merge_customer_no_map
+#'
+#' @param table data.table to merge with tessi_customer_no_map
+#' @param column string column name to merge with
+#' @param freshness difftime
+#'
+#' @return merged data.table
+#' @importFrom dplyr rename_with contains
+merge_customer_no_map <- function(table,column,
+                                  freshness = as.difftime(7, units = "days")) {
+
+  assert_names(names(table),must.include = column)
+
+  # add group columns
+  map <- tessi_customer_no_map(freshness) %>% rename_with(~gsub("customer_no",column,.))
+
+  table <- table %>% left_join(map, by = column, copy = T)
+  # only change column to kept (merged) column if it's not a primary key
+  table <-
+    if (!column %in% attributes(table)$primary_keys) {
+      table %>%
+        select(-all_of(column)) %>%
+        rename(!!column := !!sym(paste0("merged_",column)))
+    } else {
+      table
+    }
+
+}
+
 #' tessi_customer_no_map
 #'
-#' Return an Arrow table of customer numbers `customer_no_old` mapped to merged `customer_no` and household/primary group
+#' Return an Arrow table of customer numbers `customer_no` mapped to merged `merged_customer_no` and household/primary group
 #' customer numbers `group_customer_no`.
 #'
 #' @param freshness the returned data will be at least this fresh
@@ -122,7 +151,7 @@ read_tessi <- function(table_name, select = NULL,
 #' @return [arrow::Table]
 #' @export
 tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
-  kept_id <- kept_id_old <- kept_customer_no <- customer_no <- group_customer_no <- NULL
+  kept_id <- kept_id_old <- merged_customer_no <- customer_no <- group_customer_no <- NULL
 
   customers <- read_sql("select customer_no from T_CUSTOMER",
     "customers",
@@ -157,9 +186,9 @@ tessi_customer_no_map <- function(freshness = as.difftime(7, units = "days")) {
 
   map <- customers %>%
     full_join(merge_recursive(merges), by = c("customer_no" = "delete_id")) %>%
-    rename(kept_customer_no = kept_id) %>%
-    mutate(kept_customer_no = coalesce(kept_customer_no, customer_no)) %>%
-    left_join(affiliations, by = c("kept_customer_no" = "individual_customer_no")) %>%
-    mutate(group_customer_no = coalesce(group_customer_no, kept_customer_no)) %>%
+    rename(merged_customer_no = kept_id) %>%
+    mutate(merged_customer_no = coalesce(merged_customer_no, customer_no)) %>%
+    left_join(affiliations, by = c("merged_customer_no" = "individual_customer_no")) %>%
+    mutate(group_customer_no = coalesce(group_customer_no, merged_customer_no)) %>%
     collect(as_data_frame = FALSE)
 }

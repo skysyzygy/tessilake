@@ -21,6 +21,7 @@ test_that("read_tessi can read the first 100 rows from all the defined tables", 
   stub(read_sql, "tbl", tbl)
   stub(read_sql_table, "read_sql", read_sql)
   stub(read_tessi, "read_sql_table", read_sql_table)
+  stub(read_tessi, "read_sql", read_sql)
 
   name <- "creditees"
   for (name in unique(tessi_list_tables()$short_name)) {

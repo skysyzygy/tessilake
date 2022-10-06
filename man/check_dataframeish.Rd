@@ -28,11 +28,11 @@ like a data.frame.
 }
 \section{Functions}{
 \itemize{
-\item \code{assert_dataframeish}: checkmate assert function for check_dataframeish
+\item \code{assert_dataframeish()}: checkmate assert function for check_dataframeish
 
-\item \code{test_dataframeish}: checkmate test function for check_dataframeish
+\item \code{test_dataframeish()}: checkmate test function for check_dataframeish
+
 }}
-
 \examples{
 check_dataframeish(list())
 # FALSE
