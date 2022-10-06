@@ -72,13 +72,17 @@ test_that("read_tessi passes all arguments on to read_sql_table", {
 })
 
 
-test_that("read_tessi merges with tessi_customer_no_map when table contains customer_no", {
-  tbl <- mock(data.table(customer_no = 1:1000))
-  map <- mock(data.table(customer_no = 1:1000, kept_customer_no = 2:1001))
+test_that("read_tessi calls merge_customer_no_map when table contains customer_no or creditee_no", {
+  tbl <- data.table(customer_no = 1:1000)
   stub(read_tessi, "read_sql_table", tbl)
-  stub(read_tessi, "tessi_customer_no_map", map)
-
-  expect_equal(read_tessi("seasons", freshness = 0), data.table(customer_no = 2:1001))
+  merge_customer_no_map <- mock(tbl,cycle=T)
+  stub(read_tessi, "merge_customer_no_map", merge_customer_no_map)
+  read_tessi("seasons")
+  tbl[,creditee_no := 1:1000]
+  read_tessi("seasons")
+  expect_length(mock_args(merge_customer_no_map),3)
+  expect_equal(mock_args(merge_customer_no_map)[[1]][[2]],"customer_no")
+  expect_equal(mock_args(merge_customer_no_map)[[3]][[2]],"creditee_no")
 })
 
 # tessi_customer_no_map ----------------------------------------------
@@ -93,22 +97,22 @@ stub(tessi_customer_no_map, "read_sql", mock(select(customers, customer_no),
 map <- tessi_customer_no_map() %>% collect()
 
 test_that("tessi_customer_no_map correctly maps all merges", {
-  self_maps <- filter(map, customer_no == kept_customer_no)
-  diff_maps <- filter(map, customer_no != kept_customer_no)
+  self_maps <- filter(map, customer_no == merged_customer_no)
+  diff_maps <- filter(map, customer_no != merged_customer_no)
   true_keeps <- filter(merges, !kept_id %in% merges$delete_id)
   temp_keeps <- filter(merges, kept_id %in% merges$delete_id)
 
   # deleted + temp_keeps <--> customer_no
   expect_true(all(merges$delete_id %in% map$customer_no))
-  expect_true(!any(merges$delete_id %in% map$kept_customer_no))
+  expect_true(!any(merges$delete_id %in% map$merged_customer_no))
   expect_true(all(temp_keeps$kept_id %in% map$customer_no))
-  expect_true(!any(temp_keeps$kept_id %in% map$kept_customer_no))
-  expect_true(!any(map$kept_customer_no %in% merges$delete_id))
-  expect_true(!any(map$kept_customer_no %in% temp_keeps$kept_id))
-  # true_keep <--> kept_customer_no
-  expect_true(all(true_keeps$kept_id %in% map$kept_customer_no))
+  expect_true(!any(temp_keeps$kept_id %in% map$merged_customer_no))
+  expect_true(!any(map$merged_customer_no %in% merges$delete_id))
+  expect_true(!any(map$merged_customer_no %in% temp_keeps$kept_id))
+  # true_keep <--> merged_customer_no
+  expect_true(all(true_keeps$kept_id %in% map$merged_customer_no))
   expect_true(!any(true_keeps$kept_id %in% diff_maps$customer_no))
-  expect_true(all(diff_maps$kept_customer_no %in% true_keeps$kept_id))
+  expect_true(all(diff_maps$merged_customer_no %in% true_keeps$kept_id))
   expect_true(!any(diff_maps$customer_no %in% true_keeps$kept_id))
   # true_keeps in customer_no are self_maps
   expect_true(all(true_keeps$kept_id %in% self_maps$customer_no))
@@ -120,7 +124,7 @@ test_that("tessi_customer_no_map correctly maps all merges", {
 
 test_that("tessi_customer_no_map puts merged customers in customer_no", {
   merged_customers <- filter(customers, inactive == 5)
-  expect_lte(sum(merged_customers$customer_no %in% map$kept_customer_no), 1)
+  expect_lte(sum(merged_customers$customer_no %in% map$merged_customer_no), 1)
   expect_true(all(merged_customers$customer_no %in% map$customer_no))
 })
 
@@ -143,7 +147,32 @@ test_that("tessi_customer_no_map doesn't duplicate customer_no", {
 
 test_that("tessi_customer_no_map has no nulls or nas", {
   expect_integer(map$customer_no, any.missing = FALSE)
-  expect_integer(map$kept_customer_no, any.missing = FALSE)
+  expect_integer(map$merged_customer_no, any.missing = FALSE)
   expect_integer(map$group_customer_no, any.missing = FALSE)
-  expect_names(colnames(map), permutation.of = c("group_customer_no", "kept_customer_no", "customer_no"))
+  expect_names(colnames(map), permutation.of = c("group_customer_no", "merged_customer_no", "customer_no"))
+})
+
+# merge_customer_no_map ---------------------------------------------------
+
+stub(merge_customer_no_map,"tessi_customer_no_map",tessi_customer_no_map)
+
+test_that("merge_customer_no_map merges on named column", {
+  test_table <- map %>% select(customer_no)
+  expect_table <- map %>% dplyr::transmute(customer_no=merged_customer_no,group_customer_no)
+  expect_equal(merge_customer_no_map(test_table,"customer_no") %>% arrange(customer_no),
+                   arrange(expect_table,customer_no))
+})
+
+test_that("merge_customer_no_map merges on named column and updates names of merge table", {
+  test_table <- map %>% dplyr::transmute(person_no=customer_no)
+  expect_table <- map %>% dplyr::transmute(person_no=merged_customer_no,group_person_no=group_customer_no)
+  expect_equal(merge_customer_no_map(test_table,"person_no") %>% arrange(person_no),
+               arrange(expect_table,person_no))
+})
+
+test_that("merge_customer_no_map doesn't change a primary key",{
+  test_table <- map %>% select(customer_no) %>% setattr("primary_keys","customer_no")
+  expect_table <- map
+  expect_equal(merge_customer_no_map(test_table,"customer_no") %>% arrange(customer_no),
+               arrange(expect_table,customer_no) %>% setattr("primary_keys","customer_no"))
 })
