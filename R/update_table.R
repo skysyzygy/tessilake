@@ -103,7 +103,6 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
 
 
   if(object.size(all) > 2^20) {
-    warning("Trying the shortcut")
     # if `all` is very large we don't want to transfer it as a temp table so let's
     # download `from` and filter from by min/max of primary_keys
     for(primary_key in primary_keys) {

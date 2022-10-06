@@ -36,7 +36,7 @@ tessi_list_tables <- function() {
     read_yaml(system.file("extdata", "tessi_tables.yml", package = "tessilake")),
     config_tessi_tables
   ) %>%
-    rbindlist(idcol = "short_name") %>%
+    rbindlist(idcol = "short_name", fill = TRUE) %>%
     # get rid of blanks
     lapply(function(.) {
       gsub("^$", NA, .)

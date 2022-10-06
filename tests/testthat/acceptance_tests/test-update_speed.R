@@ -4,12 +4,7 @@ withr::local_package("dplyr")
 local_cache_dirs()
 sql_connect()
 
-# -- Failure (test-update_speed.R:71:5): update_table incremental loads through update_table faster (within 1 second) in real life --
-#   VT_ORDER_DETAIL_AT_PRICE_LAYER time0.01.arrow.elapsed is not less than test_results["time0.10.arrow.elapsed"] + 1. Difference: 1.69
-
-tables <- tessi_list_tables()[!is.na(primary_keys)][
-  short_name %in% c("order_detail","performance_pricing")
-]
+tables <- tessi_list_tables()[!is.na(primary_keys) & coalesce(incremental,"TRUE")=="TRUE"]
 
 tables[,`:=`(schema=coalesce(stringr::str_extract(long_name,"^.+?(?=\\.)"),"dbo"),
              long_name=stringr::str_remove(long_name,"^.+?\\."))]
