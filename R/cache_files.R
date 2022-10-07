@@ -12,9 +12,13 @@
 #' cache_get_mtime("test", "deep", "stream")
 #' }
 cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+  cache_path <- cache_path(table_name, depth, type)
+
   cache_files <- c(
-    dir(cache_path(table_name, depth, type), full.names = TRUE, recursive = TRUE),
-    dir(dirname(cache_path(table_name, depth, type)), full.names = TRUE, recursive = TRUE)
+    dir(cache_path, full.names = TRUE, recursive = TRUE),
+    dir(dirname(cache_path),
+        pattern = basename(cache_path),
+        full.names = TRUE, recursive = TRUE)
   )
 
   max(file.mtime(cache_files), na.rm = TRUE)
