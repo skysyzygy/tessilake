@@ -106,7 +106,7 @@ read_tessi <- function(table_name, select = NULL,
      table <- table %>% merge_customer_no_map("customer_no",freshness)
 
   if("creditee_no" %in% colnames(table))
-    table <- table %>% merge_customer_no_map("creditee_no",freshness)
+     table <- table %>% merge_customer_no_map("creditee_no",freshness)
 
   return(collect(table, as_data_frame = FALSE))
 }
@@ -130,7 +130,7 @@ merge_customer_no_map <- function(table,column,
   table <- table %>% left_join(map, by = column, copy = T)
   # only change column to kept (merged) column if it's not a primary key
   table <-
-    if (!column %in% attributes(table)$primary_keys) {
+    if (!column %in% cache_get_attributes(table)$primary_keys) {
       table %>%
         select(-all_of(column)) %>%
         rename(!!column := !!sym(paste0("merged_",column)))

@@ -106,8 +106,8 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
     # if `all` is very large we don't want to transfer it as a temp table so let's
     # download `from` and filter from by min/max of primary_keys
     for(primary_key in primary_keys) {
-      from <- filter(from, if_all(primary_key, ~ between(.,!!min(all[,primary_key,with=F]),
-                                                           !!max(all[,primary_key,with=F]))))
+      from <- filter(from, !!sym(primary_key) >= !!min(all[,primary_key,with=F]) &
+                       !!sym(primary_key) <= !!max(all[,primary_key,with=F]))
     }
     from <- from %>% collect
   }
