@@ -44,7 +44,8 @@ Suggests:
     testthis,
     lubridate,
     RSQLite,
-    withr
+    withr,
+    rprojroot
 Config/testthat/edition: 3
 Language: en-US
 Remotes: 
