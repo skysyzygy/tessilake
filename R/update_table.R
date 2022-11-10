@@ -62,73 +62,85 @@ expr_get_names <- function(expr) {
 #' # TRUE
 #'
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
-  UseMethod("update_table",from)
-}
-
-#' @export
-#' @rdname update_table
-update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
-  assert_dataframeish(from)
   assert_class(to, "data.table")
   assert_subset(colnames(from), colnames(to))
 
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
 
-  if (is.null(primary_keys) &&  !is.null(date_column))
+  if (is.null(primary_keys) && !is.null(date_column)) {
     stop(sprintf("primary_keys must be given if date_column is given"))
+  }
 
-  if (is.null(primary_keys) || delete == TRUE && is.null(date_column))
+  if (is.null(primary_keys) || delete == TRUE && is.null(date_column)) {
     return(to = collect(from))
-   # just copy everything from from into to
+  }
 
   assert(check_subset(primary_keys, colnames(from)),
-    check_subset(primary_keys, colnames(to)),
-    check_subset(date_column, colnames(from)),
-    check_subset(date_column, colnames(to)),
-    combine = "and"
+         check_subset(primary_keys, colnames(to)),
+         check_subset(date_column, colnames(from)),
+         check_subset(date_column, colnames(to)),
+         combine = "and"
   )
 
-  to_temp <- to[,c(date_column, primary_keys), with=F][,to:=T]
-  from_temp <- select(from,all_of(c(date_column,primary_keys))) %>% collect %>% setDT
+  UseMethod("update_table", from)
+}
 
-  all <- merge(from_temp,to_temp,
-                all.x = T,
-                by = primary_keys,
-                suffix = c("",".to"))
+#' @export
+#' @rdname update_table
+#' @importFrom utils object.size
+update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
+  assert_dataframeish(from)
+  primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
+  date_column <- expr_get_names(rlang::enexpr(date_column))
 
-  if(!is.null(date_column)) {
-    all <- all[is.na(to) | get(date_column) != get(paste0(date_column,".to")),primary_keys,with=F]
+  to_temp <- to[, c(date_column, primary_keys), with = F][, to := T]
+  from_temp <- select(from, all_of(c(date_column, primary_keys))) %>%
+    collect() %>%
+    setDT()
+
+  all <- merge(from_temp, to_temp,
+    all.x = T,
+    by = primary_keys,
+    suffix = c("", ".to")
+  )
+
+  if (!is.null(date_column)) {
+    all <- all[is.na(to) | get(date_column) != get(paste0(date_column, ".to")), primary_keys, with = F]
   }
 
 
-  if(object.size(all) > 2^20) {
+  if (object.size(all) > 2^20) {
     # if `all` is very large we don't want to transfer it as a temp table so let's
     # download `from` and filter from by min/max of primary_keys
-    for(primary_key in primary_keys) {
-      from <- filter(from, !!sym(primary_key) >= !!min(all[,primary_key,with=F]) &
-                       !!sym(primary_key) <= !!max(all[,primary_key,with=F]))
+    for (primary_key in primary_keys) {
+      from <- filter(from, !!sym(primary_key) >= !!min(all[, primary_key, with = F]) &
+        !!sym(primary_key) <= !!max(all[, primary_key, with = F]))
     }
-    from <- from %>% collect
+    from <- from %>% collect()
   }
-  if(inherits(from,"tbl_sql")) {
+  if (inherits(from, "tbl_sql")) {
     # turn off SQL ordering because it won't work with the join operation
-    from <- arrange(from,NULL)
+    from <- arrange(from, NULL)
     # copy the `all` table and add an index
-    all <- copy_to(from$src$con,all,paste0("#all",rlang::hash(Sys.time())),
-                   temporary=T,unique_indexes=list(primary_keys))
+    all <- copy_to(from$src$con, all, paste0("#all", rlang::hash(Sys.time())),
+      temporary = T, unique_indexes = list(primary_keys)
+    )
   }
 
-  all <- semi_join(from,all,by=primary_keys) %>% collect %>%
-    left_join(to_temp[,c(primary_keys,"to"),with=F],by=primary_keys) %>% setDT
+  all <- semi_join(from, all, by = primary_keys) %>%
+    collect() %>%
+    left_join(to_temp[, c(primary_keys, "to"), with = F], by = primary_keys) %>%
+    setDT()
 
   # rows that don't yet exist in to
-  new <- all[is.na(to)][,to:=NULL]
+  new <- all[is.na(to)][, to := NULL]
   # rows that exist in both
-  update <- all[!is.na(to)][,to:=NULL]
+  update <- all[!is.na(to)][, to := NULL]
   # rows that are missing in from
   if (delete == TRUE) {
-    to <- to[!all,on = primary_keys]
+    delete <- to[!from_temp, primary_keys, on = primary_keys, with = FALSE]
+    to <- to[!delete, on = primary_keys]
   }
 
   to[update, (colnames(from)) := update, on = primary_keys]
@@ -143,36 +155,21 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
 #' @rdname update_table
 update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
   assert_class(from, "data.table")
-  assert_class(to, "data.table")
-  assert_subset(colnames(from), colnames(to))
-
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
-
-  if (is.null(primary_keys) &&  !is.null(date_column))
-    stop(sprintf("primary_keys must be given if date_column is given"))
-
-  if (is.null(primary_keys) || delete == TRUE && is.null(date_column))
-    return(to = from)
-   # just copy everything from from into to
-
-  assert(check_subset(primary_keys, colnames(from)),
-         check_subset(primary_keys, colnames(to)),
-         check_subset(date_column, colnames(from)),
-         check_subset(date_column, colnames(to)),
-         combine = "and"
-  )
 
   # rows that match in from and to
   to_rows <- na.omit(to[from, which = TRUE, on = primary_keys])
 
   # rows that need to be updated
   if (!is.null(date_column)) {
-    update <- from[!to[to_rows,c(primary_keys,date_column),with = FALSE],
-                   on = c(primary_keys,date_column)]
+    update <- from[!to[to_rows, c(primary_keys, date_column), with = FALSE],
+      on = c(primary_keys, date_column)
+    ]
   } else {
-    update <- from[to[to_rows,c(primary_keys),with = FALSE],
-                   on = c(primary_keys)]
+    update <- from[to[to_rows, c(primary_keys), with = FALSE],
+      on = c(primary_keys)
+    ]
   }
 
   # rows that don't yet exist in to
@@ -183,7 +180,7 @@ update_table.data.table <- function(from, to, date_column = NULL, primary_keys =
     to <- to[to_rows]
   }
 
-  to[update, (colnames(from)) := mget(paste0("i.",colnames(from))), on = primary_keys]
+  to[update, (colnames(from)) := mget(paste0("i.", colnames(from))), on = primary_keys]
   to <- rbindlist(list(to, new), use.names = TRUE)
   setorderv(to, primary_keys)
 

@@ -21,7 +21,7 @@ test_that("expr_get_names works with vectors and lists", {
 test_that("update_table requires that from and to are given", {
   from <- data.table(x = c(1, 2, 3))
   to <- data.table(y = c(1, 2, 3))
-  expect_error(update_table(), "from")
+  expect_error(update_table(to=to), "from")
   expect_error(update_table(from), "to")
 })
 
@@ -72,6 +72,7 @@ test_that("update_table updates data.tables incrementally when given primary_key
 test_that("update_table updates data.tables incrementally when given date_column and primary_keys", {
   withr::local_package("lubridate")
   withr::local_timezone("America/New_York")
+
   from <- data.table(date = seq(today() - dyears(10), now(), by = "days"))
   from[, `:=`(I = .I, data = runif(.N))]
   to <- copy(from)
@@ -83,6 +84,42 @@ test_that("update_table updates data.tables incrementally when given date_column
 
   expect_equal(update_table(from, to, date_column = date, primary_keys = c(I)), from)
   expect_equal(update_table(from[1:1000], to, date_column = date, primary_keys = c(I), delete = TRUE), from[1:1000])
+})
+
+test_that("update_table updates from db incrementally when given primary_keys", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
+  # divide the data
+  from <- copy(expect)[1:9000] %>% copy_to(dest = con)
+  to <- copy(expect)[1000:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  expect_equal(update_table(from, to, primary_keys = c("x", "y")), expect)
+  expect_equal(update_table(from, to, primary_keys = c(x, y)), expect)
+  expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), collect(from))
+})
+
+test_that("update_table updates from db incrementally when given date_column and primary_keys", {
+  withr::local_package("lubridate")
+  withr::local_timezone("America/New_York")
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+
+  from <- data.table(date = seq(today() - dyears(10), now(), by = "days"))
+  from <- from[, `:=`(I = .I, data = runif(.N), date = as.integer(date))]
+  to <- copy(from)
+  from <- copy_to(con, from)
+  to <- to[runif(.N) > .1]
+  to[runif(.N) < .1, `:=`(
+    date = date - ddays(1),
+    data = runif(.N)
+  )]
+
+  expect_equal(update_table(from, to, date_column = date, primary_keys = c(I)), setDT(collect(from)))
+  expect_equal(
+    update_table(head(from, 1000), to, date_column = date, primary_keys = c(I), delete = TRUE),
+    setDT(collect(head(from, 1000)))
+  )
 })
 
 test_that("update_table loads from DB incrementally", {
@@ -99,7 +136,6 @@ test_that("update_table loads from DB incrementally", {
   })
   # this writes out 3 because 2 rows are updated and 1 row is added
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
-
 })
 
 test_that("update_table loads from DB incrementally even if it's a very large update", {
@@ -114,11 +150,10 @@ test_that("update_table loads from DB incrementally even if it's a very large up
     print(dplyr::collect(dplyr::summarize(., dplyr::n()))[[1]])
     dplyr::collect(.)
   })
-  stub(update_table.default, "object.size", 2^20+1)
+  stub(update_table.default, "object.size", 2^20 + 1)
 
   # this writes out 3 because 2 rows are updated and 1 row is added
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
-
 })
 
 test_that("read_tessi loads from arrow table incrementally", {
