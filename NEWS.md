@@ -1,3 +1,6 @@
+# tessilake 0.2.1
+- Hot fix for read_tessi issues (delete=TRUE when date_column is set and reading from sql).
+
 # tessilake 0.2.0
 
 * Beta release!
