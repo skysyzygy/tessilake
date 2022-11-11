@@ -203,3 +203,19 @@ test_that("update_table.default loads from arrow table incrementally", {
   # this writes out 3 and then 2 because 3 rows are updated and 2 row is added
   expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 5$")
 })
+
+test_that("update_table.default doesn't copy to when to is a data.table", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy(expect)[1:9000] %>% dplyr::copy_to(dest=con)
+  to <- copy(expect)[1001:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  tracemem(to)
+
+  expect_silent(update_table(from, to))
+  expect_silent(update_table(from, to, primary_keys = c(x, y)))
+  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+})
