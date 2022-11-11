@@ -56,7 +56,10 @@ test_that("update_table simply copies from into to when date_column and primary_
   expect_equal(update_table(from, to), from)
 })
 
-test_that("update_table updates data.tables incrementally when given primary_keys", {
+
+# update_table.data.table -------------------------------------------------
+
+test_that("update_table.data.table updates data.tables incrementally when given primary_keys", {
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
   # divide the data
   from <- copy(expect)[1:9000]
@@ -69,7 +72,7 @@ test_that("update_table updates data.tables incrementally when given primary_key
   expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), from)
 })
 
-test_that("update_table updates data.tables incrementally when given date_column and primary_keys", {
+test_that("update_table.data.table updates data.tables incrementally when given date_column and primary_keys", {
   withr::local_package("lubridate")
   withr::local_timezone("America/New_York")
 
@@ -86,7 +89,39 @@ test_that("update_table updates data.tables incrementally when given date_column
   expect_equal(update_table(from[1:1000], to, date_column = date, primary_keys = c(I), delete = TRUE), from[1:1000])
 })
 
-test_that("update_table updates from db incrementally when given primary_keys", {
+test_that("update_table.data.table doesn't copy from when from is a data.table", {
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy(expect)[1:9000]
+  to <- copy(expect)[1000:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  tracemem(from)
+
+  expect_silent(update_table(from, to))
+  expect_silent(update_table(from, to, primary_keys = c(x, y)))
+  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+})
+
+test_that("update_table.data.table doesn't copy to when to is a data.table", {
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy(expect)[1:9000]
+  to <- copy(expect)[1001:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  tracemem(to)
+
+  expect_silent(update_table(from, to))
+  expect_silent(update_table(from, to, primary_keys = c(x, y)))
+  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+})
+
+# update_table.default ----------------------------------------------------
+
+test_that("update_table.default updates from db incrementally when given primary_keys", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
   # divide the data
@@ -100,7 +135,7 @@ test_that("update_table updates from db incrementally when given primary_keys", 
   expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), collect(from))
 })
 
-test_that("update_table updates from db incrementally when given date_column and primary_keys", {
+test_that("update_table.default updates from db incrementally when given date_column and primary_keys", {
   withr::local_package("lubridate")
   withr::local_timezone("America/New_York")
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
@@ -122,7 +157,7 @@ test_that("update_table updates from db incrementally when given date_column and
   )
 })
 
-test_that("update_table loads from DB incrementally", {
+test_that("update_table.default loads from DB incrementally", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   seasons <- readRDS(test_path("seasons.Rds"))
   seasons <- dplyr::mutate_if(seasons, ~ lubridate::is.POSIXct(.), as.numeric)
@@ -138,7 +173,7 @@ test_that("update_table loads from DB incrementally", {
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
 })
 
-test_that("update_table loads from DB incrementally even if it's a very large update", {
+test_that("update_table.default loads from DB incrementally even if it's a very large update", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   seasons <- readRDS(test_path("seasons.Rds"))
   seasons <- dplyr::mutate_if(seasons, ~ lubridate::is.POSIXct(.), as.numeric)
@@ -156,7 +191,7 @@ test_that("update_table loads from DB incrementally even if it's a very large up
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
 })
 
-test_that("read_tessi loads from arrow table incrementally", {
+test_that("update_table.default loads from arrow table incrementally", {
   seasons <- readRDS(test_path("seasons.Rds"))
   seasons_arrow <- arrow::arrow_table(seasons)
   seasons <- setDT(seasons)[-c(1, 2), ]
@@ -167,34 +202,4 @@ test_that("read_tessi loads from arrow table incrementally", {
   })
   # this writes out 3 and then 2 because 3 rows are updated and 2 row is added
   expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 5$")
-})
-
-test_that("update_table doesn't copy from when from is a data.table", {
-  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
-  # divide the data
-  from <- copy(expect)[1:9000]
-  to <- copy(expect)[1000:10000]
-  # and mung it up
-  to[1:5000, data := runif(.N)]
-
-  tracemem(from)
-
-  expect_silent(update_table(from, to))
-  expect_silent(update_table(from, to, primary_keys = c(x, y)))
-  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
-})
-
-test_that("update_table doesn't copy to when to is a data.table", {
-  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
-  # divide the data
-  from <- copy(expect)[1:9000]
-  to <- copy(expect)[1001:10000]
-  # and mung it up
-  to[1:5000, data := runif(.N)]
-
-  tracemem(to)
-
-  expect_silent(update_table(from, to))
-  expect_silent(update_table(from, to, primary_keys = c(x, y)))
-  expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
 })
