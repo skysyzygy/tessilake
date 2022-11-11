@@ -32,6 +32,9 @@ jobs:
         with:
           extra-packages: rcmdcheck, covr
 
+      - name: Setup upterm session
+        uses: lhotari/action-upterm@v1
+
       - uses: r-lib/actions/check-r-package@v1
 
       - name: Show testthat output
