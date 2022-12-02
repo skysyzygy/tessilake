@@ -69,7 +69,7 @@ fix_vmode <- function(vec) {
   minVec <- min(vec, na.rm = TRUE)
   maxVec <- max(vec, na.rm = TRUE)
   isDate <- inherits(vec, "Date")
-  hasDec <- !isDate && !Rfast::is_integer(vec[which(!is.na(vec))])
+  hasDec <- !isDate && !is_integer(vec[which(!is.na(vec))])
   hasNA <- any(is.na(vec))
   signed <- minVec < 0 || isDate
   bits <- ceiling(log2(abs(as.numeric(maxVec)) + .01))
