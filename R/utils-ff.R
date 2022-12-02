@@ -40,7 +40,6 @@ as.ram2 <- function(obj) {
 #' @return a vector with the vmode attribute set appropriately
 #'
 #' @export
-#' @importFrom Rfast is_integer
 #' @importFrom glue glue
 #' @importFrom data.table setattr
 #' @importFrom ff is.ff vmode vmode<- .rammode
@@ -69,7 +68,8 @@ fix_vmode <- function(vec) {
   minVec <- min(vec, na.rm = TRUE)
   maxVec <- max(vec, na.rm = TRUE)
   isDate <- inherits(vec, "Date")
-  hasDec <- !isDate && !is_integer(vec[which(!is.na(vec))])
+  hasDec <- isDate || maxVec > .Machine$integer.max ||
+    any(as.integer(vec[which(!is.na(vec))])!=vec[which(!is.na(vec))])
   hasNA <- any(is.na(vec))
   signed <- minVec < 0 || isDate
   bits <- ceiling(log2(abs(as.numeric(maxVec)) + .01))

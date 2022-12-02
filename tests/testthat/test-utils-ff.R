@@ -1,5 +1,5 @@
 withr::local_package("purrr")
-library(ff)
+withr::local_package("ff")
 
 # as.ram2 -----------------------------------------------------------------
 
@@ -67,6 +67,12 @@ test_that("fix_vmode sets vmode on integer values based on the number of bits re
     rep("integer", 15),
     rep("double", 33)
   ))
+})
+
+test_that("fix_vmode sets vmode on decimal values", {
+  local_create_vec()
+  vecs <- map(vecs,~{.[1]=.[1]+.01; .})
+  expect_equal(map_chr(vecs,~ vmode(fix_vmode(.))),rep("double",64))
 })
 
 
