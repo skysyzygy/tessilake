@@ -9,6 +9,7 @@
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
+#' @param incremental whether or not to update the cache incrementally or to simply overwrite the existing cache, default is `TRUE`.
 #' @param ... extra arguments passed on to [`arrow::open_dataset`] and [`arrow::write_dataset`]
 #'
 #' @return invisible
@@ -24,7 +25,7 @@
 #' }
 cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
                          primary_keys = cache_get_attributes(x)$primary_keys,
-                         date_column = NULL, delete = FALSE, ...) {
+                         date_column = NULL, delete = FALSE, incremental = TRUE, ...) {
   . <- NULL
 
   if (!cache_exists(table_name, depth, type)) {
@@ -68,7 +69,7 @@ cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("
   cache_set_attributes(dataset, dataset_attributes)
   setDT(dataset)
 
-  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete)
+  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
 
   cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = TRUE, ...)
 

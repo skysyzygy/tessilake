@@ -58,17 +58,19 @@ test_that("read_tessi complains if asked for a table it doesn't know about", {
 test_that("read_tessi passes all arguments on to read_sql_table", {
   m <- mock(data.table(x = 1:1000), cycle = TRUE)
   stub(read_tessi, "read_sql_table", m)
-  read_tessi("seasons", select = "season_no", freshness = 0)
+  read_tessi("seasons", select = "season_no", freshness = 0, incremental = TRUE)
   expect_mapequal(mock_args(m)[[1]], list(
     table_name = "VT_SEASON", schema = "BI",
     select = "season_no",
     primary_keys = "season_no",
-    freshness = 0
+    freshness = 0,
+    incremental = TRUE
   ))
-  read_tessi("audit", freshness = 0)
+  read_tessi("audit", freshness = 0, incremental = TRUE)
   expect_mapequal(mock_args(m)[[2]], list(
     table_name = "TA_AUDIT_TRAIL",
-    freshness = 0
+    freshness = 0,
+    incremental = TRUE
   ))
 })
 

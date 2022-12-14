@@ -12,6 +12,7 @@ cache_update(
   primary_keys = cache_get_attributes(x)$primary_keys,
   date_column = NULL,
   delete = FALSE,
+  incremental = TRUE,
   ...
 )
 }
@@ -29,6 +30,8 @@ cache_update(
 \item{date_column}{character name of the column to be used for determining the date of last row update}
 
 \item{delete}{whether to delete rows in cache missing from \code{x}, default is not to delete the rows}
+
+\item{incremental}{whether or not to update the cache incrementally or to simply overwrite the existing cache, default is \code{TRUE}.}
 
 \item{...}{extra arguments passed on to \code{\link[arrow:open_dataset]{arrow::open_dataset}} and \code{\link[arrow:write_dataset]{arrow::write_dataset}}}
 }

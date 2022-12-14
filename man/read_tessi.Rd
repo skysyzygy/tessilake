@@ -8,6 +8,7 @@ read_tessi(
   table_name,
   select = NULL,
   freshness = as.difftime(7, units = "days"),
+  incremental = TRUE,
   ...
 )
 }
@@ -19,7 +20,9 @@ name of a SQL table that exists in Tessitura. The default SQL table schema is \c
 
 \item{freshness}{the returned data will be at least this fresh}
 
-\item{...}{further arguments to be passed to other methods}
+\item{incremental}{whether or not to load data incrementally, default is \code{TRUE}}
+
+\item{...}{further arguments to be passed to read_sql_table}
 }
 \value{
 an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.

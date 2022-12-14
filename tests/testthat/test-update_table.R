@@ -72,6 +72,18 @@ test_that("update_table.data.table updates data.tables incrementally when given 
   expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), from)
 })
 
+test_that("update_table.data.table updates data.tables incrementally when given primary_keys unless incremental is FALSE", {
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
+  # divide the data
+  from <- copy(expect)[1:9000]
+  to <- copy(expect)[1000:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  expect_equal(update_table(from, to, primary_keys = c("x", "y"), incremental = FALSE), from)
+  expect_equal(update_table(from, to, primary_keys = c(x, y), incremental = FALSE), from)
+})
+
 test_that("update_table.data.table updates data.tables incrementally when given date_column and primary_keys", {
   withr::local_package("lubridate")
   withr::local_timezone("America/New_York")
@@ -134,6 +146,20 @@ test_that("update_table.default updates from db incrementally when given primary
   expect_equal(update_table(from, to, primary_keys = c(x, y)), expect)
   expect_equal(update_table(from, to, primary_keys = c(x, y), delete = TRUE), collect(from))
 })
+
+test_that("update_table.default updates from db incrementally when given primary_keys unless incremental is FALSE", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
+  # divide the data
+  from <- copy(expect)[1:9000] %>% copy_to(dest = con)
+  to <- copy(expect)[1000:10000]
+  # and mung it up
+  to[1:5000, data := runif(.N)]
+
+  expect_equal(update_table(from, to, primary_keys = c("x", "y"), incremental = FALSE), collect(from))
+  expect_equal(update_table(from, to, primary_keys = c(x, y), incremental = FALSE), collect(from))
+})
+
 
 test_that("update_table.default updates from db incrementally when given date_column and primary_keys", {
   withr::local_package("lubridate")

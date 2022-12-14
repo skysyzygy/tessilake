@@ -55,7 +55,8 @@ tessi_list_tables <- function() {
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
 #' @param select vector of strings indicating columns to select from database
 #' @param freshness the returned data will be at least this fresh
-#' @param ... further arguments to be passed to other methods
+#' @param incremental whether or not to load data incrementally, default is `TRUE`
+#' @param ... further arguments to be passed to read_sql_table
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @importFrom rlang enexpr call_match
@@ -70,7 +71,8 @@ tessi_list_tables <- function() {
 #' }
 #'
 read_tessi <- function(table_name, select = NULL,
-                       freshness = as.difftime(7, units = "days"), ...) {
+                       freshness = as.difftime(7, units = "days"),
+                       incremental = TRUE, ...) {
   short_name <- customer_no <- merged_customer_no <- NULL
 
   select <- enexpr(select)
@@ -81,12 +83,13 @@ read_tessi <- function(table_name, select = NULL,
 
   table_data$long_name <- str_split(table_data$long_name, stringr::fixed("."), n = 2)[[1]]
 
-  args <- list()
+  args <- rlang::list2(...)
   if (any(!is.na(table_data$primary_keys))) {
     args$primary_keys <- table_data$primary_keys
   }
   args$select <- expr_get_names(select)
   args$freshness <- freshness
+  args$incremental <- incremental
 
   if(!is.na(table_data$query[[1]])) {
     args$query <- table_data$query[[1]]

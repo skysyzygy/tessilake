@@ -11,7 +11,8 @@ read_sql(
   select = NULL,
   primary_keys = NULL,
   date_column = NULL,
-  freshness = as.difftime(7, units = "days")
+  freshness = as.difftime(7, units = "days"),
+  incremental = TRUE
 )
 
 read_sql_table(
@@ -20,7 +21,8 @@ read_sql_table(
   select = NULL,
   primary_keys = NULL,
   date_column = NULL,
-  freshness = as.difftime(7, units = "days")
+  freshness = as.difftime(7, units = "days"),
+  incremental = TRUE
 )
 }
 \arguments{
@@ -37,6 +39,8 @@ SQL metadata.}
 Defaults to "last_update_dt" if it exists in the table.}
 
 \item{freshness}{the returned data will be at least this fresh}
+
+\item{incremental}{whether or not to load data incrementally, default is \code{TRUE}}
 
 \item{table_name}{character, table name without schema.}
 

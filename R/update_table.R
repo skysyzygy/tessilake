@@ -41,6 +41,8 @@ expr_get_names <- function(expr) {
 #' @param date_column string or tidyselected column identifying the date column to use to determine which rows to update
 #' @param primary_keys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
 #' @param delete whether to delete rows in `to` missing from `from`, default is not to delete the rows
+#' @param incremental whether or not to update the table incrementally or to simply overwrite the existing table with a new one,
+#' the default is `TRUE`
 #'
 #' @importFrom dplyr collect left_join select semi_join copy_to
 #' @importFrom rlang as_name call_args eval_tidy
@@ -61,7 +63,7 @@ expr_get_names <- function(expr) {
 #' update_table(from, to, primary_keys = c(x, y)) == expect
 #' # TRUE
 #'
-update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
+update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
   assert_class(to, "data.table")
   assert_subset(colnames(from), colnames(to))
 
@@ -72,7 +74,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
     stop(sprintf("primary_keys must be given if date_column is given"))
   }
 
-  if (is.null(primary_keys) || delete == TRUE && is.null(date_column)) {
+  if (is.null(primary_keys) || delete == TRUE && is.null(date_column) || !incremental) {
     return(to = collect(from))
   }
 
@@ -89,7 +91,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
 #' @export
 #' @rdname update_table
 #' @importFrom utils object.size
-update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
+update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
   assert_dataframeish(from)
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
@@ -153,7 +155,7 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
 #' @export
 #' @importFrom stats na.omit
 #' @rdname update_table
-update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE) {
+update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
   assert_class(from, "data.table")
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))

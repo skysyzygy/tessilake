@@ -55,6 +55,15 @@ test_that("read_sql passes select on to cache_read", {
   expect_equal(mock_args(m_read)[[2]][["select"]], "id")
 })
 
+test_that("read_sql passes incremental on to cache_update", {
+  table <- data.table(id = 1:1000, y = 2:1001)
+  cache_update <- mock(table, cycle = T)
+  stub(read_sql, "tbl", table)
+  stub(read_sql, "cache_update", cache_update)
+  read_sql("tbl", freshness = 0, incremental = TRUE)
+  expect_true(mock_args(cache_update)[[1]][["incremental"]])
+})
+
 test_that("read_sql works with database", {
   db$db <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   data <- dplyr::copy_to(db$db, data, "data_with_tbl")
@@ -141,6 +150,14 @@ test_that("read_sql_table passes select on to read_sql", {
   stub(read_sql_table, "read_sql", m_read)
   read_sql_table("TR_SEASON", freshness = 0, select = "id")
   expect_equal(mock_args(m_read)[[2]][["select"]], "id")
+})
+
+test_that("read_sql_table passes incremental on to read_sql", {
+  table <- data.table(id = 1:1000, y = 2:1001)
+  m_read <- mock(available_columns, table, cycle = T)
+  stub(read_sql_table, "read_sql", m_read)
+  read_sql_table("TR_SEASON", freshness = 0, incremental = TRUE)
+  expect_equal(mock_args(m_read)[[2]][["incremental"]], TRUE)
 })
 
 test_that("read_sql_table works with database", {

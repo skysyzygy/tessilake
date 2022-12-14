@@ -6,11 +6,32 @@
 \alias{update_table.data.table}
 \title{update_table}
 \usage{
-update_table(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
+update_table(
+  from,
+  to,
+  date_column = NULL,
+  primary_keys = NULL,
+  delete = FALSE,
+  incremental = TRUE
+)
 
-\method{update_table}{default}(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
+\method{update_table}{default}(
+  from,
+  to,
+  date_column = NULL,
+  primary_keys = NULL,
+  delete = FALSE,
+  incremental = TRUE
+)
 
-\method{update_table}{data.table}(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
+\method{update_table}{data.table}(
+  from,
+  to,
+  date_column = NULL,
+  primary_keys = NULL,
+  delete = FALSE,
+  incremental = TRUE
+)
 }
 \arguments{
 \item{from}{the source object}
@@ -22,6 +43,9 @@ update_table(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE)
 \item{primary_keys}{vector of strings or tidyselected columns identifying the primary keys to determine which rows to update}
 
 \item{delete}{whether to delete rows in \code{to} missing from \code{from}, default is not to delete the rows}
+
+\item{incremental}{whether or not to update the table incrementally or to simply overwrite the existing table with a new one,
+the default is \code{TRUE}}
 }
 \value{
 a data.table updated in-place

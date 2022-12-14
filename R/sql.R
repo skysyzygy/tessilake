@@ -56,6 +56,7 @@ db <- new.env(parent = emptyenv())
 #' @param primary_keys primary keys of the query to be used for incremental updates
 #' @param date_column update date column of the query to be used for incremental updates
 #' @param freshness the returned data will be at least this fresh
+#' @param incremental whether or not to load data incrementally, default is `TRUE`
 #'
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @importFrom arrow arrow_table
@@ -75,7 +76,8 @@ db <- new.env(parent = emptyenv())
 read_sql <- function(query, name = digest::sha1(query),
                      select = NULL,
                      primary_keys = NULL, date_column = NULL,
-                     freshness = as.difftime(7, units = "days")) {
+                     freshness = as.difftime(7, units = "days"),
+                     incremental = TRUE) {
   assert_character(query, len = 1)
   if (!is.null(date_column)) assert_character(date_column, max.len = 1)
   if (!is.null(primary_keys)) assert_character(primary_keys, min.len = length(date_column))
@@ -97,7 +99,8 @@ read_sql <- function(query, name = digest::sha1(query),
     cache_update(table, name, "deep", "tessi",
       primary_keys = primary_keys,
       date_column = date_column,
-      delete = TRUE
+      delete = TRUE,
+      incremental = incremental
     )
   }
 
@@ -109,7 +112,8 @@ read_sql <- function(query, name = digest::sha1(query),
       name, "shallow", "tessi",
       primary_keys = primary_keys,
       date_column = date_column,
-      delete = TRUE
+      delete = TRUE,
+      incremental = incremental
     )
   }
 
@@ -131,6 +135,7 @@ read_sql <- function(query, name = digest::sha1(query),
 #' @param date_column character, date column of the table showing the last date the row was updated.
 #' Defaults to "last_update_dt" if it exists in the table.
 #' @param freshness the returned data will be at least this fresh
+#' @param incremental whether or not to load data incrementally, default is `TRUE`
 #' @describeIn read_sql Reads a table or view from a SQL database and caches it locally using read_sql.
 #' @importFrom dplyr filter select collect
 #' @importFrom DBI dbListTables
@@ -146,7 +151,8 @@ read_sql <- function(query, name = digest::sha1(query),
 read_sql_table <- function(table_name, schema = "dbo",
                            select = NULL,
                            primary_keys = NULL, date_column = NULL,
-                           freshness = as.difftime(7, units = "days")) {
+                           freshness = as.difftime(7, units = "days"),
+                           incremental = TRUE) {
   table_schema <- constraint_type <- character_maximum_length <- column_name <- NULL
 
   assert_character(table_name, len = 1)
@@ -208,6 +214,7 @@ read_sql_table <- function(table_name, schema = "dbo",
     primary_keys = primary_keys,
     date_column = maybe_missing(date_column),
     select = select,
-    freshness = freshness
+    freshness = freshness,
+    incremental = incremental
   )
 }

@@ -1,4 +1,5 @@
 withr::local_package("checkmate")
+withr::local_package("mockery")
 local_cache_dirs()
 
 test_read_write <- data.table::setattr(data.table(x = 1:100000, y = runif(1000)), "key", "value")
@@ -15,6 +16,15 @@ test_that("cache_update writes the whole table when there's nothing there to beg
 test_that("cache_update updates the whole table when there is no partitioning", {
   cache_update(test_read_write, "test_new2", "deep", "tessi")
   expect_equal(collect(cache_read("test_new2", "deep", "tessi")), test_read_write)
+})
+
+test_that("cache_update passes incremental on to update_table", {
+  # Handle quasiquoted arguments!
+  stub(mock,"list",rlang::exprs)
+  update_table <- mock(test_read_write)
+  stub(cache_update,"update_table",update_table)
+  cache_update(test_read_write, "test_new2", "deep", "tessi")
+  expect_equal(mock_args(update_table)[[1]][["incremental"]],sym("incremental"))
 })
 
 test_that("cache_update updates the whole table when there is no partitioning and doesn't copy from", {
