@@ -1,6 +1,6 @@
 Package: tessilake
 Title: Data Lake for Tessiract
-Version: 0.2.1
+Version: 0.2.2
 Authors@R: 
     person(given = "Sky",
            family = "Syzygy",

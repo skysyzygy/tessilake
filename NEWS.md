@@ -1,3 +1,6 @@
+# tessilake 0.2.2
+- Added incremental feature to read_tessi, read_sql_table, read_sql, cache_update, and update_table
+
 # tessilake 0.2.1
 - Hot fix for read_tessi issues (delete=TRUE when date_column is set and reading from sql).
 
