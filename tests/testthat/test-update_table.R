@@ -101,6 +101,18 @@ test_that("update_table.data.table updates data.tables incrementally when given 
   expect_equal(update_table(from[1:1000], to, date_column = date, primary_keys = c(I), delete = TRUE), from[1:1000])
 })
 
+test_that("update_table.data.table updates by date when date_column given and primary_keys are missing", {
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy(expect)[x>50]
+  to <- copy(expect)[x<90]
+
+  expect_warning(result <- update_table(from, to, date_column = "x"), "primary_keys not given.+date_column given")
+  setkey(result,x,y)
+  setkey(expect,x,y)
+  expect_equal(result, expect)
+})
+
 test_that("update_table.data.table doesn't copy from when from is a data.table", {
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
   # divide the data
@@ -114,6 +126,7 @@ test_that("update_table.data.table doesn't copy from when from is a data.table",
   expect_silent(update_table(from, to))
   expect_silent(update_table(from, to, primary_keys = c(x, y)))
   expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+  expect_silent(expect_warning(update_table(from, to, date_column = c(x))))
 })
 
 test_that("update_table.data.table doesn't copy to when to is a data.table", {
@@ -129,6 +142,8 @@ test_that("update_table.data.table doesn't copy to when to is a data.table", {
   expect_silent(update_table(from, to))
   expect_silent(update_table(from, to, primary_keys = c(x, y)))
   expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+  expect_silent(expect_warning(update_table(from, to, date_column = c(x))))
+
 })
 
 # update_table.default ----------------------------------------------------
@@ -183,6 +198,26 @@ test_that("update_table.default updates from db incrementally when given date_co
   )
 })
 
+test_that("update_table loads from DB incrementally by date when date_column given and primary_keys are missing", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy_to(con,expect[x>50])
+  to <- copy(expect)[x<90]
+
+  stub(update_table_date_only.default, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., dplyr::n()))[[1]])
+    dplyr::collect(.)
+  })
+
+  # this writes out 1100 because 11*100 rows are updated
+  expect_output(result <- update_table_date_only(from, to, date_column = "x"), "\\[1\\] 1100$")
+  setkey(collect(result),x,y)
+  setkey(expect,x,y)
+  expect_equal(result, expect)
+})
+
 test_that("update_table.default loads from DB incrementally", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   seasons <- readRDS(test_path("seasons.Rds"))
@@ -198,6 +233,8 @@ test_that("update_table.default loads from DB incrementally", {
   # this writes out 3 because 2 rows are updated and 1 row is added
   expect_output(update_table(seasons_tbl, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
 })
+
+
 
 test_that("update_table.default loads from DB incrementally even if it's a very large update", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
@@ -244,4 +281,6 @@ test_that("update_table.default doesn't copy to when to is a data.table", {
   expect_silent(update_table(from, to))
   expect_silent(update_table(from, to, primary_keys = c(x, y)))
   expect_silent(update_table(from, to, primary_keys = c(x, y), delete = TRUE))
+  expect_silent(expect_warning(update_table(from, to, date_column = c(x))))
+
 })

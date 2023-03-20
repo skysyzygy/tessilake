@@ -48,8 +48,8 @@ tessi_list_tables <- function() {
 
 #' read_tessi
 #'
-#' Thin wrapper on read_sql_table using the tables configured in `list_tessi_tables` that additionally updates `customer_no` and adds
-#' `group_customer_no` based on [tessi_customer_no_map()]
+#' Thin wrapper on read_sql_table using the tables configured in `list_tessi_tables` that also :
+#' * updates `customer_no` based on merges and adds `group_customer_no` based on [tessi_customer_no_map()]
 #'
 #' @param table_name character name of the table to read from Tessitura, either one of the available tables (see [tessi_list_tables()]) or the
 #' name of a SQL table that exists in Tessitura. The default SQL table schema is `dbo`.
@@ -61,6 +61,7 @@ tessi_list_tables <- function() {
 #' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
 #' @importFrom rlang enexpr call_match
 #' @importFrom stringr str_split
+#' @importFrom dplyr mutate_if
 #' @export
 #'
 #' @examples
@@ -86,6 +87,9 @@ read_tessi <- function(table_name, select = NULL,
   args <- rlang::list2(...)
   if (any(!is.na(table_data$primary_keys))) {
     args$primary_keys <- table_data$primary_keys
+  }
+  if (!is.na(table_data$date_column[[1]])) {
+    args$date_column <- table_data$date_column[[1]]
   }
   args$select <- expr_get_names(select)
   args$freshness <- freshness

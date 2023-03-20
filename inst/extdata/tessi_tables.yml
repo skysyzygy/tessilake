@@ -29,7 +29,7 @@ audit:
   long_name: TA_AUDIT_TRAIL
   base_table: TA_AUDIT_TRAIL
   primary_keys: ''
-  incremental: false
+  date_column: date
 emails:
   long_name: T_EADDRESS
   base_table: T_EADDRESS

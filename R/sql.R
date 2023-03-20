@@ -62,8 +62,10 @@ db <- new.env(parent = emptyenv())
 #' @importFrom arrow arrow_table
 #' @importFrom checkmate assert_character
 #' @importFrom dplyr tbl sql across summarise
+#' @importFrom tidyselect where
 #' @importFrom dbplyr tbl_sql
 #' @importFrom digest sha1
+#' @importFrom lubridate tz force_tz
 #' @export
 #'
 #' @examples
@@ -84,7 +86,10 @@ read_sql <- function(query, name = digest::sha1(query),
 
   sql_connect()
   # build the query with dplyr
-  table <- tbl(db$db, sql(query))
+  table <- tbl(db$db, sql(query)) %>%
+  # force local timezone for all UTC columns
+    mutate(across(where(is.POSIXct),
+                  function(.) { if(tz(.) == "UTC") {force_tz(.,Sys.timezone())} else {.}}))
 
   # sort by primary keys for faster updating
   if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))

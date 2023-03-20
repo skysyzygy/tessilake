@@ -1,3 +1,7 @@
+# tessilake 0.2.3
+- Added the ability to incrementally update by date only, which will allow for incremental updating on the audit table among others
+- Added local timezone information to all UTC dates when loaded through read_sql
+
 # tessilake 0.2.2
 - Added incremental feature to read_tessi, read_sql_table, read_sql, cache_update, and update_table
 

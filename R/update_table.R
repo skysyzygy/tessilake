@@ -70,12 +70,13 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
 
-  if (is.null(primary_keys) && !is.null(date_column)) {
-    stop(sprintf("primary_keys must be given if date_column is given"))
+  if (is.null(primary_keys) && is.null(date_column) || delete == TRUE && is.null(date_column) || !incremental) {
+    return(collect(from))
   }
 
-  if (is.null(primary_keys) || delete == TRUE && is.null(date_column) || !incremental) {
-    return(to = collect(from))
+  if (is.null(primary_keys) && !is.null(date_column)) {
+    warning("primary_keys not given but date_column given, updating by date only. Use incremental = FALSE if this is not the desired behavior.")
+    return(update_table_date_only(from, to, date_column = date_column))
   }
 
   assert(check_subset(primary_keys, colnames(from)),
@@ -187,4 +188,48 @@ update_table.data.table <- function(from, to, date_column = NULL, primary_keys =
   setorderv(to, primary_keys)
 
   to
+}
+
+#' @describeIn update_table update incrementally when primary_keys not given but date_column given
+#' @importFrom checkmate assert_character
+update_table_date_only <- function(from, to, date_column = NULL) {
+  date_column <- expr_get_names(rlang::enexpr(date_column))
+  assert_character(date_column,min.len=1,max.len=1)
+
+  UseMethod("update_table_date_only", from)
+}
+
+#' @describeIn update_table update incrementally when primary_keys not given but date_column given
+#' @importFrom dplyr across summarise collect
+update_table_date_only.data.table <- function(from, to, date_column = NULL) {
+  . <- NULL
+
+  to_max_date <- if(is.data.table(to)) {
+    to[,max(get(date_column))]
+  } else {
+    summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
+  }
+  rbind(
+    to,
+    from[get(date_column) > to_max_date],
+    fill = TRUE
+  )
+}
+
+#' @describeIn update_table update incrementally when primary_keys not given but date_column given
+#' @importFrom dplyr across collect filter
+update_table_date_only.default <- function(from, to, date_column = NULL) {
+  . <- NULL
+
+  to_max_date <- if(is.data.table(to)) {
+     to[,max(get(date_column))]
+  } else {
+    summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
+  }
+  from <- filter(from,!!rlang::sym(date_column) > to_max_date) %>% collect()
+  rbind(
+    to,
+    from,
+    fill = TRUE
+  )
 }

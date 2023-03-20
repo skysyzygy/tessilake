@@ -69,11 +69,11 @@ test_that("read_tessi passes all arguments on to read_sql_table", {
   read_tessi("audit", freshness = 0, incremental = TRUE)
   expect_mapequal(mock_args(m)[[2]], list(
     table_name = "TA_AUDIT_TRAIL",
+    date_column = "date",
     freshness = 0,
     incremental = TRUE
   ))
 })
-
 
 test_that("read_tessi calls merge_customer_no_map when table contains customer_no or creditee_no", {
   tbl <- data.table(customer_no = 1:1000)

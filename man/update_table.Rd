@@ -4,6 +4,9 @@
 \alias{update_table}
 \alias{update_table.default}
 \alias{update_table.data.table}
+\alias{update_table_date_only}
+\alias{update_table_date_only.data.table}
+\alias{update_table_date_only.default}
 \title{update_table}
 \usage{
 update_table(
@@ -32,6 +35,12 @@ update_table(
   delete = FALSE,
   incremental = TRUE
 )
+
+update_table_date_only(from, to, date_column = NULL)
+
+\method{update_table_date_only}{data.table}(from, to, date_column = NULL)
+
+\method{update_table_date_only}{default}(from, to, date_column = NULL)
 }
 \arguments{
 \item{from}{the source object}
@@ -54,6 +63,15 @@ a data.table updated in-place
 updates the data.table-like object \code{to} based on the data.frame-like \code{from} object,
 using \code{date_column} to determine which rows have been updated and updating only those with matching \code{primary_keys}.
 }
+\section{Functions}{
+\itemize{
+\item \code{update_table_date_only()}: update incrementally when primary_keys not given but date_column given
+
+\item \code{update_table_date_only(data.table)}: update incrementally when primary_keys not given but date_column given
+
+\item \code{update_table_date_only(default)}: update incrementally when primary_keys not given but date_column given
+
+}}
 \examples{
 library(data.table)
 expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
