@@ -86,10 +86,12 @@ read_sql <- function(query, name = digest::sha1(query),
 
   sql_connect()
   # build the query with dplyr
-  table <- tbl(db$db, sql(query)) %>%
+  table <- tbl(db$db, sql(query))
+  dt_cols <- head(table) %>% collect() %>% lapply(is.POSIXct)
   # force local timezone for all UTC columns
-    mutate(across(where(is.POSIXct),
-                  function(.) { if(tz(.) == "UTC") {force_tz(.,Sys.timezone())} else {.}}))
+  for(col in names(which(dt_cols))) {
+      table <- mutate(table,"{col}" := if(tz(.data[[col]]) == "UTC") {force_tz(.data[[col]],Sys.timezone())} else {.data[[col]]})
+  }
 
   # sort by primary keys for faster updating
   if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))
