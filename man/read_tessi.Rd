@@ -31,7 +31,6 @@ an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} 
 Thin wrapper on read_sql_table using the tables configured in \code{list_tessi_tables} that also :
 \itemize{
 \item updates \code{customer_no} based on merges and adds \code{group_customer_no} based on \code{\link[=tessi_customer_no_map]{tessi_customer_no_map()}}
-\item adds local timezone information to UTC timestamps
 }
 }
 \examples{
