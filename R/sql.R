@@ -81,7 +81,6 @@ read_sql <- function(query, name = digest::sha1(query),
                      primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days"),
                      incremental = TRUE) {
-  .data <- head <- datepart <- todatetimeoffset <- sysdatetimeoffset <- NULL
 
   assert_character(query, len = 1)
   if (!is.null(date_column)) assert_character(date_column, max.len = 1)

@@ -1,3 +1,6 @@
+# tessilake 0.2.4
+- Reverted: Adding local timezone information to all UTC dates when loaded through read_sql, not compatible with latest SQL Server and ODBC combination.
+
 # tessilake 0.2.3
 - Added the ability to incrementally update by date only, which will allow for incremental updating on the audit table among others
 - Added local timezone information to all UTC dates when loaded through read_sql
