@@ -81,7 +81,7 @@ read_sql <- function(query, name = digest::sha1(query),
                      primary_keys = NULL, date_column = NULL,
                      freshness = as.difftime(7, units = "days"),
                      incremental = TRUE) {
-  .data <- head <- datepart <- todatetimeoffset <- tzoffset <- sysdatetimeoffset <- NULL
+  .data <- head <- datepart <- todatetimeoffset <- sysdatetimeoffset <- NULL
 
   assert_character(query, len = 1)
   if (!is.null(date_column)) assert_character(date_column, max.len = 1)
@@ -90,12 +90,6 @@ read_sql <- function(query, name = digest::sha1(query),
   sql_connect()
   # build the query with dplyr
   table <- tbl(db$db, sql(query))
-  dt_cols <- head(table) %>% collect() %>% lapply(is.POSIXct)
-  # force local timezone for all columns
-  for(col in names(which(dt_cols == T))) {
-      table <- mutate(table,"{col}" := todatetimeoffset(.data[[col]],
-                             datepart(tzoffset,sysdatetimeoffset())))
-  }
 
   # sort by primary keys for faster updating
   if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))

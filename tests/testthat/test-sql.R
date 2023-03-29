@@ -64,15 +64,6 @@ test_that("read_sql passes incremental on to cache_update", {
   expect_true(mock_args(cache_update)[[1]][["incremental"]])
 })
 
-test_that("read_sql converts timezones to local", {
-  withr::local_package("lubridate")
-  table <- data.table(date = force_tz(seq(now() - dhours(30), now(), by="s"),"UTC"))
-  stub(read_sql, "tbl", table)
-  tbl <- read_sql("dates", freshness = 0, incremental = TRUE) %>% collect()
-
-  expect_equal(tz(tbl$date),Sys.timezone())
-  expect_equal(tbl,table[,date:=force_tz(date,Sys.timezone())])
-})
 
 test_that("read_sql works with database", {
   db$db <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
