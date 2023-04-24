@@ -21,13 +21,6 @@ jobs:
         with:
           use-public-rspm: true
 
-      - name: install ffbase
-        run: |
-          cd ..
-          Rscript -e 'install.packages("remotes")
-          remotes::install_github("ffbase=edwindj/ffbase/pkg")'
-        shell: bash
-
       - uses: r-lib/actions/setup-r-dependencies@v2
         with:
           extra-packages: rcmdcheck, covr
