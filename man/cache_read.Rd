@@ -10,6 +10,7 @@ cache_read(
   type = c("tessi", "stream"),
   include_partition = FALSE,
   select = NULL,
+  num_tries = 60,
   ...
 )
 }
@@ -23,6 +24,8 @@ cache_read(
 \item{include_partition}{boolean, whether or not to return the partition information as a column}
 
 \item{select}{vector of strings indicating columns to select from database}
+
+\item{num_tries}{integer number of times to try reading before failing}
 
 \item{...}{extra arguments to pass on to arrow::open_dataset}
 }
