@@ -10,6 +10,7 @@
 #' @param include_partition boolean, whether or not to return the partition information as a column
 #' @param select vector of strings indicating columns to select from database
 #' @param ... extra arguments to pass on to arrow::open_dataset
+#' @param num_tries integer number of times to try reading before failing
 #'
 #' @return [`arrow::Dataset`]
 #' @importFrom arrow open_dataset read_feather read_parquet
@@ -18,7 +19,7 @@
 #' cache_read("test", "deep", "stream")
 #' }
 cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
-                       include_partition = FALSE, select = NULL, ...) {
+                       include_partition = FALSE, select = NULL, num_tries = 60, ...) {
   cache_path <- cache_path(table_name, depth, type)
 
   if (dir.exists(cache_path)) {
@@ -44,15 +45,19 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
   } else if (file.exists(paste0(cache_path, ".parquet"))) {
     cache_reader <- read_parquet
     cache_file <- paste0(cache_path, ".parquet")
-  } else {
-    message(paste("Cache file not found at", cache_path))
-    return(FALSE)
   }
 
-  num_tries <- 100
   while(!exists("cache") && num_tries > 0) {
     try(cache <- cache_reader(cache_file, as_data_frame = F, col_select = !!select, ...), silent = TRUE)
+    if(exists("cache"))
+      break
     num_tries <- num_tries - 1
+    Sys.sleep(1)
+  }
+
+  if(!exists("cache")) {
+    warning(paste("Cache file not found at", cache_path))
+    return(FALSE)
   }
 
   cache

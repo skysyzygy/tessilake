@@ -58,8 +58,9 @@ test_that("cache_write returns nothing, invisibly", {
 
 # cache_read --------------------------------------------------------------
 
-test_that("cache_read returns FALSE for non-existent caches", {
-  expect_false(suppressMessages(cache_read("blah", "deep", "tessi")))
+test_that("cache_read returns FALSE and warns for non-existent caches", {
+  expect_warning(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
+                              "Cache file not found")
 })
 
 test_that("cache_read returns data to the original form including attributes", {
@@ -91,15 +92,19 @@ test_that("cache_read is failure resistant", {
   test_read_write <- data.table(x = runif(1000000))
   path <- cache_path("test_read_write","deep","tessi")
   # point child process to parent tempdir
-  mockery::stub(cache_write,"cache_path",path)
-  mockery::stub(cache_exists,"cache_path",path)
-  mockery::stub(cache_write,"cache_exists",cache_exists)
-  # set up a write storm
+  mockery::stub(cache_read,"cache_path",path)
+  cache_write(test_read_write,"test_read_write","deep","tessi",overwrite=T)
+  # mung up the file
+  system2("truncate",c("-s","-1k",shQuote(paste0(path,".parquet"))))
+  # and try to read it -- should throw warning
+  expect_warning(cache_read("test_read_write","deep","tessi",num_tries = 1),"Cache file not found")
+  # now try to read it again
   r <- callr::r_bg(function(){
-    while(T){cache_write(test_read_write, "test_read_write", "deep", "tessi", overwrite = TRUE)}
-    }, package = T)
-  # and try to read it
-  while(ncol(ret <- cache_read("test_read_write", "deep", "tessi"))>1)
-    Sys.sleep(1)
-  expect_equal(test_read_write,collect(ret))
+    dplyr::collect(cache_read("test_read_write", "deep", "tessi"))
+  }, package = T)
+  # and restore file in the meantime
+  cache_write(test_read_write,"test_read_write","deep","tessi",overwrite=T)
+  r$wait()
+  ret <- r$get_result()
+  expect_equal(ret,test_read_write)
 })
