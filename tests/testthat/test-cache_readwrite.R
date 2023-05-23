@@ -86,3 +86,20 @@ test_that("cache_read can select particular columns", {
   expect_equal(cache_read("test_partitioning", "deep", "tessi", select = "y") %>% collect() %>% .[[1]] %>% sort(), test_read_write[, y] %>% sort())
   expect_equal(cache_read("test_partitioning", "shallow", "tessi", select = "y") %>% collect() %>% .[[1]] %>% sort(), test_read_write[, y] %>% sort())
 })
+
+test_that("cache_read is failure resistant", {
+  test_read_write <- data.table(x = runif(1000000))
+  path <- cache_path("test_read_write","deep","tessi")
+  # point child process to parent tempdir
+  mockery::stub(cache_write,"cache_path",path)
+  mockery::stub(cache_exists,"cache_path",path)
+  mockery::stub(cache_write,"cache_exists",cache_exists)
+  # set up a write storm
+  r <- callr::r_bg(function(){
+    while(T){cache_write(test_read_write, "test_read_write", "deep", "tessi", overwrite = TRUE)}
+    }, package = T)
+  # and try to read it
+  while(ncol(ret <- cache_read("test_read_write", "deep", "tessi"))>1)
+    Sys.sleep(1)
+  expect_equal(test_read_write,collect(ret))
+})

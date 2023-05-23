@@ -39,12 +39,20 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
       }
     }
   } else if (file.exists(paste0(cache_path, ".feather"))) {
-    cache <- read_feather(paste0(cache_path, ".feather"), as_data_frame = F, col_select = !!select, ...)
+    cache_reader <- read_feather
+    cache_file <- paste0(cache_path, ".feather")
   } else if (file.exists(paste0(cache_path, ".parquet"))) {
-    cache <- read_parquet(paste0(cache_path, ".parquet"), as_data_frame = F, col_select = !!select, ...)
+    cache_reader <- read_parquet
+    cache_file <- paste0(cache_path, ".parquet")
   } else {
     message(paste("Cache file not found at", cache_path))
-    cache <- FALSE
+    return(FALSE)
+  }
+
+  num_tries <- 100
+  while(!exists("cache") && num_tries > 0) {
+    try(cache <- cache_reader(cache_file, as_data_frame = F, col_select = !!select, ...), silent = TRUE)
+    num_tries <- num_tries - 1
   }
 
   cache

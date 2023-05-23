@@ -34,7 +34,6 @@ Imports:
     purrr,
     rlang,
     stringr,
-    tzdb,
     yaml
 Suggests: 
     covr,
@@ -44,7 +43,8 @@ Suggests:
     testthis,
     RSQLite,
     withr,
-    rprojroot
+    rprojroot,
+    callr
 Config/testthat/edition: 3
 Language: en-US
 Remotes: 
