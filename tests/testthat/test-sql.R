@@ -4,7 +4,7 @@ local_cache_dirs()
 
 # sql_connect -------------------------------------------------------------
 stub(sql_connect, "odbc::odbc", RSQLite::SQLite())
-stub(sql_connect, "config::get", ":memory:")
+stub(sql_connect, "config::get", list(tessitura = ":memory:"))
 
 test_that("sql_connect connects to the database", {
   expect_true(is.null(tessilake:::db$db))
@@ -24,7 +24,7 @@ test_that("sql_connect only connects once", {
 rm(sql_connect)
 test_that("sql_connect throws an error when it can't connect", {
   sql_disconnect()
-  stub(sql_connect, "config::get", "not a database")
+  stub(sql_connect, "config::get", list(tessitura = "not a database"))
   expect_error(suppressMessages(sql_connect()), "DSN")
 })
 
@@ -127,7 +127,7 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 # read_sql_table ----------------------------------------------------------
 
 stub(sql_connect, "odbc::odbc", RSQLite::SQLite())
-stub(sql_connect, "config::get", ":memory:")
+stub(sql_connect, "config::get", list(tessitura = ":memory:"))
 available_columns <- readRDS(test_path("available_columns.Rds"))
 # stub list of tables
 stub(read_sql_table, "dbListTables", mock("TR_SEASON", "VT_SEASON", cycle = TRUE))

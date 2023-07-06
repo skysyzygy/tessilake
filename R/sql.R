@@ -17,7 +17,7 @@
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
-        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "windows-1252"))
+        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake")[["tessitura"]], encoding = "windows-1252"))
 
         callbacks <- getTaskCallbackNames()
         db$db <- eval(db_expr)
@@ -47,7 +47,7 @@ db <- new.env(parent = emptyenv())
 #' read_sql
 #'
 #' Execute a database query and cache it locally as a Feather file and remotely as a Parquet file.
-#' Cache storage locations are managed by `tessilake.shallow` and `tessilake.deep` options.
+#' Cache storage locations are managed by `tessilake.depths` options.
 #' Database connection defined by an ODBC profile with the name set by the `tessilake.tessitura` option.
 #'
 #' @param query character query to run on the database.

@@ -1,12 +1,12 @@
 
-#' cache_read
+#' read_cache
 #'
-#' Internal function to read cached arrow files. Simple wrapper on open_dataset.
+#' Function to read cached arrow files. Simple wrapper on open_dataset.
 #' Optionally returns the partition information as a dataset column.
 #'
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #' @param include_partition boolean, whether or not to return the partition information as a column
 #' @param select vector of strings indicating columns to select from database
 #' @param ... extra arguments to pass on to arrow::open_dataset
@@ -14,16 +14,17 @@
 #'
 #' @return [`arrow::Dataset`]
 #' @importFrom arrow open_dataset read_feather read_parquet
+#' @export
 #' @examples
 #' \dontrun{
-#' cache_read("test", "deep", "stream")
+#' read_cache("test", "deep", "stream")
 #' }
-cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+read_cache <- cache_read <- function(table_name, depth, type,
                        include_partition = FALSE, select = NULL, num_tries = 60, ...) {
   cache_path <- cache_path(table_name, depth, type)
 
   if (dir.exists(cache_path)) {
-    cache <- open_dataset(cache_path, format = ifelse(depth == "deep", "parquet", "arrow"), ...)
+    cache <- open_dataset(cache_path, format = coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet"), ...)
 
     if (!is.null(select)) {
       assert_names(select, subset.of = colnames(cache))
@@ -63,15 +64,15 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
   cache
 }
 
-#' cache_write
+#' write_cache
 #'
-#' Internal function to write cached arrow files. Simple wrapper on write_dataset that points to a directory defined by
+#' Function to write cached arrow files. Simple wrapper on write_dataset that points to a directory defined by
 #' `tessilake.{depth}/{type}` and uses partitioning specified by primary_keys attribute/argument.
 #'
 #' @param x data.frame to be written
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param partition boolean, whether or not to partition the dataset using primary_keys information
 #' @param overwrite boolean, whether or not to overwrite an existing cache
@@ -82,12 +83,13 @@ cache_read <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
 #' @importFrom dplyr select mutate
 #' @importFrom data.table setattr
 #' @importFrom rlang is_symbol as_name env_has
+#' @export
 #' @examples
 #' \dontrun{
 #' x <- data.table(a = c(1, 2, 3))
-#' cache_write(x, "test", "deep", "stream", primary_keys = c("a"))
+#' write_cache(x, "test", "deep", "stream", primary_keys = c("a"))
 #' }
-cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+write_cache <- cache_write <- function(x, table_name, depth, type,
                         primary_keys = cache_get_attributes(x)$primary_keys,
                         partition = !is.null(primary_keys), overwrite = FALSE, ...) {
   if (cache_exists(table_name, depth, type) == TRUE && overwrite == FALSE) {
@@ -100,6 +102,8 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
 
   attributes <- cache_get_attributes(x)
   attributes_old <- attributes
+
+  format <- coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet")
 
   if (partition == TRUE) {
     if (is.null(primary_keys)) {
@@ -122,7 +126,7 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
     cache_set_attributes(x, attributes)
 
     write_dataset(x, cache_path,
-      format = ifelse(depth == "deep", "parquet", "feather"),
+      format = format,
       partitioning = partition_name, ...
     )
 
@@ -132,8 +136,10 @@ cache_write <- function(x, table_name, depth = c("deep", "shallow"), type = c("t
     attributes$primary_keys <- primary_keys
     cache_set_attributes(x, attributes)
 
-    writer <- ifelse(depth == "deep", write_parquet, write_feather)
-    writer(x, paste0(cache_path, ".", ifelse(depth == "deep", "parquet", "feather")), ...)
+    writer <- switch(format,
+                     feather = write_feather,
+                     write_parquet)
+    writer(x, paste0(cache_path, ".", format), ...)
   }
 
   # restore the old attributes so we don't have side-effects on x if x is a data.table

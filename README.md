@@ -22,9 +22,12 @@ for your particular machine configuration:
 ```
 default:
 # tessilake settings
-  tessilake.deep: path_to_deep_storage
-  tessilake.shallow: path_to_shallow_storage
-  tessilake.tessitura: ODBC_name_for_database
+  tessilake:
+    depths:
+      deep: path_to_deep_storage
+      shallow: path_to_shallow_storage
+      somewhere: another_path
+    tessitura: ODBC_name_for_database
 ```
 
 ## Example
@@ -32,6 +35,8 @@ default:
 ``` r
 library(tessilake)
 
+write_cache(data,"giant_table","somewhere","subdir")
+read_cache("giant_table","somewhere","subdir")
 read_tessi("customers")
 read_sql_table("T_CUSTOMER")
 read_sql("select top 10 customer_no from T_CUSTOMER")

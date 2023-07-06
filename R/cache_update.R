@@ -4,8 +4,8 @@
 #'
 #' @param x data.frame or part of a data.frame to be cached
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
@@ -23,7 +23,7 @@
 #' cache_write(x, "test", "deep", "stream")
 #' cache_update(y, "test", "deep", "stream")
 #' }
-cache_update <- function(x, table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+cache_update <- function(x, table_name, depth, type,
                          primary_keys = cache_get_attributes(x)$primary_keys,
                          date_column = NULL, delete = FALSE, incremental = TRUE, ...) {
   . <- NULL
