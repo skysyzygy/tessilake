@@ -17,7 +17,7 @@
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
-        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake.tessitura"), encoding = "windows-1252"))
+        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake")[["tessitura"]], encoding = "windows-1252"))
 
         callbacks <- getTaskCallbackNames()
         db$db <- eval(db_expr)
@@ -47,7 +47,7 @@ db <- new.env(parent = emptyenv())
 #' read_sql
 #'
 #' Execute a database query and cache it locally as a Feather file and remotely as a Parquet file.
-#' Cache storage locations are managed by `tessilake.shallow` and `tessilake.deep` options.
+#' Cache storage locations are managed by `tessilake.depths` options.
 #' Database connection defined by an ODBC profile with the name set by the `tessilake.tessitura` option.
 #'
 #' @param query character query to run on the database.
@@ -67,6 +67,7 @@ db <- new.env(parent = emptyenv())
 #' @importFrom lubridate tz force_tz is.POSIXct
 #' @importFrom rlang .data
 #' @importFrom utils head
+#' @importFrom purrr iwalk
 #' @export
 #'
 #' @examples
@@ -95,31 +96,28 @@ read_sql <- function(query, name = digest::sha1(query),
 
   test_mtime <- Sys.time() - freshness
 
-  if (!cache_exists(name, "deep", "tessi")) {
-    cache_write(collect(table), name, "deep", "tessi", partition = FALSE, primary_keys = primary_keys)
-    deep_mtime <- cache_get_mtime(name, "deep", "tessi")
-  } else if ((deep_mtime <- cache_get_mtime(name, "deep", "tessi")) < test_mtime) { # &&
-    # sql_mtime > deep_mtime) {
-    cache_update(table, name, "deep", "tessi",
-      primary_keys = primary_keys,
-      date_column = date_column,
-      delete = TRUE,
-      incremental = incremental
-    )
-  }
+  depths <- names(config::get("tessilake")[["depths"]])
 
-  if (!cache_exists(name, "shallow", "tessi")) {
-    cache_write(cache_read(name, "deep", "tessi"), name, "shallow", "tessi", partition = FALSE)
-  } else if ((shallow_mtime <- cache_get_mtime(name, "shallow", "tessi")) < test_mtime &&
-    deep_mtime > shallow_mtime) {
-    cache_update(cache_read(name, "deep", "tessi"),
-      name, "shallow", "tessi",
-      primary_keys = primary_keys,
-      date_column = date_column,
-      delete = TRUE,
-      incremental = incremental
-    )
-  }
+  iwalk(depths, \(depth, index) {
+
+    if(index > 1) {
+      table <- cache_read(name, depths[index-1], "tessi")
+      test_mtime <- cache_get_mtime(name, depths[index-1], "tessi")
+    }
+
+    if (!cache_exists(name, depth, "tessi")) {
+      if(inherits(table, "tbl_sql"))
+        table <- collect(table)
+      cache_write(table, name, depth, "tessi", partition = FALSE, primary_keys = primary_keys)
+    } else if (cache_get_mtime(name, depth, "tessi") < test_mtime) {
+      cache_update(table, name, depth, "tessi",
+        primary_keys = primary_keys,
+        date_column = date_column,
+        delete = TRUE,
+        incremental = incremental
+      )
+    }
+  })
 
   cache_read(
     table_name = name,

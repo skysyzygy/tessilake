@@ -53,7 +53,7 @@ an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} 
 }
 \description{
 Execute a database query and cache it locally as a Feather file and remotely as a Parquet file.
-Cache storage locations are managed by \code{tessilake.shallow} and \code{tessilake.deep} options.
+Cache storage locations are managed by \code{tessilake.depths} options.
 Database connection defined by an ODBC profile with the name set by the \code{tessilake.tessitura} option.
 }
 \section{Functions}{

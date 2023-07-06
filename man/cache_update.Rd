@@ -7,8 +7,8 @@
 cache_update(
   x,
   table_name,
-  depth = c("deep", "shallow"),
-  type = c("tessi", "stream"),
+  depth,
+  type,
   primary_keys = cache_get_attributes(x)$primary_keys,
   date_column = NULL,
   delete = FALSE,
@@ -21,9 +21,9 @@ cache_update(
 
 \item{table_name}{string}
 
-\item{depth}{string, either "deep" or "shallow"}
+\item{depth}{string, e.g. "deep" or "shallow"}
 
-\item{type}{string, either "tessi" or "stream"}
+\item{type}{string, e.g. "tessi" or "stream"}
 
 \item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
 

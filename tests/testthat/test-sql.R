@@ -4,7 +4,7 @@ local_cache_dirs()
 
 # sql_connect -------------------------------------------------------------
 stub(sql_connect, "odbc::odbc", RSQLite::SQLite())
-stub(sql_connect, "config::get", ":memory:")
+stub(sql_connect, "config::get", list(tessitura = ":memory:"))
 
 test_that("sql_connect connects to the database", {
   expect_true(is.null(tessilake:::db$db))
@@ -24,7 +24,7 @@ test_that("sql_connect only connects once", {
 rm(sql_connect)
 test_that("sql_connect throws an error when it can't connect", {
   sql_disconnect()
-  stub(sql_connect, "config::get", "not a database")
+  stub(sql_connect, "config::get", list(tessitura = "not a database"))
   expect_error(suppressMessages(sql_connect()), "DSN")
 })
 
@@ -40,7 +40,6 @@ test_that("read_sql preserves primary_key across runs", {
   read_sql("data_with_attr")
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
-
   read_sql("data_with_attr", freshness = 0)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
@@ -94,7 +93,7 @@ test_that("read_sql updates cache iff it's not fresh enough", {
   expect_lt(mtime_feather, test_time)
 
   # updates deep with shallow but not deep because deep is fresher than last_update_dt
-  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now() - lubridate::ddays(8)))
+  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now(), lubridate::now() - lubridate::ddays(8)))
   read_sql("data_fresh", "data_fresh", primary_keys = "x", date_column = "last_update_dt", freshness = 0)
 
   mtime_parquet <- file.mtime(file.path(tempdir(), "deep", "tessi", "data_fresh.parquet"))
@@ -127,7 +126,7 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 # read_sql_table ----------------------------------------------------------
 
 stub(sql_connect, "odbc::odbc", RSQLite::SQLite())
-stub(sql_connect, "config::get", ":memory:")
+stub(sql_connect, "config::get", list(tessitura = ":memory:"))
 available_columns <- readRDS(test_path("available_columns.Rds"))
 # stub list of tables
 stub(read_sql_table, "dbListTables", mock("TR_SEASON", "VT_SEASON", cycle = TRUE))

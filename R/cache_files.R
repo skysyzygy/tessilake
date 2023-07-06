@@ -3,15 +3,15 @@
 #' Get the last modification time of the cache by querying the mtime of all of the files that make up the cache
 #'
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #'
 #' @return POSIXct modification time
 #' @examples
 #' \dontrun{
 #' cache_get_mtime("test", "deep", "stream")
 #' }
-cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+cache_get_mtime <- function(table_name, depth, type) {
   cache_path <- cache_path(table_name, depth, type)
 
   cache_files <- c(
@@ -26,12 +26,12 @@ cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("
 
 #' cache_path
 #'
-#' Internal function to build cache directory/path and check that we have read/write access
+#' Internal function to build cache directory/path and check that we have read/write access to
 #' `tessilake.{depth}/{type}/{table_name}`
 #'
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #'
 #' @return string for the configured cache path
 #' @importFrom checkmate assert_character assert_choice test_character test_directory
@@ -40,12 +40,11 @@ cache_get_mtime <- function(table_name, depth = c("deep", "shallow"), type = c("
 #' \dontrun{
 #' cache_path("test", "deep", "stream")
 #' }
-cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+cache_path <- function(table_name, depth, type) {
   assert_character(table_name, len = 1)
-  assert_choice(depth, c("deep", "shallow"))
-  assert_choice(type, c("tessi", "stream"))
+  assert_choice(depth, names(config::get("tessilake")$depths))
 
-  cache_root <- config::get(paste0("tessilake.", depth))
+  cache_root <- config::get("tessilake")[["depths"]][[depth]][["path"]]
 
   tmpfile <- tempfile("cache_write_test",cache_root)
 
@@ -66,8 +65,8 @@ cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
 #' Internal function to test if a cache already exists.
 #'
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #'
 #' @return TRUE/FALSE
 #' @export
@@ -75,7 +74,7 @@ cache_path <- function(table_name, depth = c("deep", "shallow"), type = c("tessi
 #' \dontrun{
 #' cache_exists("test", "deep", "stream")
 #' }
-cache_exists <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream")) {
+cache_exists <- function(table_name, depth, type) {
   cache_path <- cache_path(table_name, depth, type)
 
   dir.exists(cache_path) || file.exists(paste0(cache_path, ".feather")) || file.exists(paste0(cache_path, ".parquet"))
@@ -86,8 +85,8 @@ cache_exists <- function(table_name, depth = c("deep", "shallow"), type = c("tes
 #' Delete some or all cache files for a given cache.
 #'
 #' @param table_name string
-#' @param depth string, either "deep" or "shallow"
-#' @param type string, either "tessi" or "stream"
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
 #' @param partitions optional vector of partitions to delete
 #'
 #' @return nothing, invisibly
@@ -97,7 +96,7 @@ cache_exists <- function(table_name, depth = c("deep", "shallow"), type = c("tes
 #' \dontrun{
 #' cache_delete("test", "deep", "stream", partitions = c(1, 2, 3))
 #' }
-cache_delete <- function(table_name, depth = c("deep", "shallow"), type = c("tessi", "stream"),
+cache_delete <- function(table_name, depth, type,
                          partitions = NULL) {
   if (!is.null(partitions)) assert(check_character(partitions), check_numeric(partitions))
 

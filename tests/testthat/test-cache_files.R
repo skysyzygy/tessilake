@@ -9,6 +9,7 @@ test_that("cache_get_mtime works with cache_write", {
   cache_write(test_read_write, "test_read_write", "deep", "tessi", partition = FALSE)
   cache_write(test_read_write, "test_read_write", "shallow", "tessi", partition = FALSE)
   timeB <- Sys.time()
+
   cache_write(test_read_write, "test_partitioning", "deep", "tessi")
   cache_write(test_read_write, "test_partitioning", "shallow", "tessi")
   timeC <- Sys.time()
@@ -28,8 +29,8 @@ test_that("cache_get_mtime works with cache_write", {
 
 test_that("cache_delete complains if arguments incorrect", {
   expect_error(cache_delete(), "table_name")
-  expect_error(cache_delete("seasons", "deep", "blah"), "type")
-  expect_error(cache_delete("seasons", "blah", "tessi"), "depth")
+  expect_error(cache_delete("seasons", "deep", "blah"), "doesn't exist")
+  expect_error(cache_delete("seasons", "blah", "tessi"), "Must be element of set")
 })
 
 test_that("cache_delete complains if cache doesn't exist", {
@@ -65,17 +66,16 @@ test_that("cache_delete works with cache_write", {
 
 test_that("cache_path complains if arguments incorrect", {
   expect_error(cache_path(), "table_name")
-  expect_error(cache_path("seasons", "deep", "blah"), "type")
-  expect_error(cache_path("seasons", "blah", "tessi"), "depth")
+  expect_error(cache_path("seasons", "blah", "tessi"), "Must be element of set")
 })
 
 test_that("cache_path complains if the root directory doesn't exist or isn't writeable", {
-  mockery::stub(cache_path, "config::get", file.path(tempdir(), "doesntexist"))
+  mockery::stub(cache_path, "config::get", list(depths = list(shallow = list(path = file.path(tempdir(), "doesntexist")))))
   expect_error(cache_path("seasons", "shallow", "stream"), "cache path")
 })
 
 test_that("cache_path returns a path", {
-  cache_root <- config::get(paste0("tessilake.", "shallow"))
+  cache_root <- config::get("tessilake")[["depths"]][["shallow"]][["path"]]
   expect_equal(cache_path("seasons", "shallow", "stream"), file.path(cache_root, "stream", "seasons"))
 })
 
@@ -83,8 +83,7 @@ test_that("cache_path returns a path", {
 
 test_that("cache_exists complains if arguments incorrect", {
   expect_error(cache_exists(), "table_name")
-  expect_error(cache_exists("seasons", "deep", "blah"), "type")
-  expect_error(cache_exists("seasons", "blah", "tessi"), "depth")
+  expect_error(cache_exists("seasons", "blah", "tessi"), "Must be element of set")
 })
 
 test_that("cache_exists looks for directories, feather and parquet files", {

@@ -152,7 +152,7 @@ test_that("update_table.default updates from db incrementally when given primary
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
   # divide the data
-  from <- copy(expect)[1:9000] %>% copy_to(dest = con)
+  from <- copy(expect)[1:9000] %>% copy_to(dest = con, "from")
   to <- copy(expect)[1000:10000]
   # and mung it up
   to[1:5000, data := runif(.N)]
@@ -166,7 +166,7 @@ test_that("update_table.default updates from db incrementally when given primary
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)] %>% setorderv(c("x", "y"))
   # divide the data
-  from <- copy(expect)[1:9000] %>% copy_to(dest = con)
+  from <- copy(expect)[1:9000] %>% copy_to(dest = con, "from")
   to <- copy(expect)[1000:10000]
   # and mung it up
   to[1:5000, data := runif(.N)]
@@ -271,7 +271,7 @@ test_that("update_table.default doesn't copy to when to is a data.table", {
   con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
   expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
   # divide the data
-  from <- copy(expect)[1:9000] %>% dplyr::copy_to(dest=con)
+  from <- copy(expect)[1:9000] %>% dplyr::copy_to(dest=con, "from")
   to <- copy(expect)[1001:10000]
   # and mung it up
   to[1:5000, data := runif(.N)]
