@@ -1,3 +1,9 @@
+# tessilake 0.3.0
+- New config.yml format for tessilake allowing for more flexible storage configuration
+- Updates to documentation and exporting read_cache/write_cache
+- Simplified/more flexible implementation of read_sql that loops through storages
+- read_cache retries multiple times on read failure
+
 # tessilake 0.2.4
 - Reverted: Adding local timezone information to all UTC dates when loaded through read_sql, as it is not compatible with latest SQL Server and ODBC combination.
 
