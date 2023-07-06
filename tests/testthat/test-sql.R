@@ -40,7 +40,6 @@ test_that("read_sql preserves primary_key across runs", {
   read_sql("data_with_attr")
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
-
   read_sql("data_with_attr", freshness = 0)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
@@ -94,7 +93,7 @@ test_that("read_sql updates cache iff it's not fresh enough", {
   expect_lt(mtime_feather, test_time)
 
   # updates deep with shallow but not deep because deep is fresher than last_update_dt
-  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now() - lubridate::ddays(8)))
+  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now(), lubridate::now() - lubridate::ddays(8)))
   read_sql("data_fresh", "data_fresh", primary_keys = "x", date_column = "last_update_dt", freshness = 0)
 
   mtime_parquet <- file.mtime(file.path(tempdir(), "deep", "tessi", "data_fresh.parquet"))
