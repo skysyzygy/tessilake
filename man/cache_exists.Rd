@@ -4,18 +4,14 @@
 \alias{cache_exists}
 \title{cache_exists}
 \usage{
-cache_exists(
-  table_name,
-  depth = c("deep", "shallow"),
-  type = c("tessi", "stream")
-)
+cache_exists(table_name, depth, type)
 }
 \arguments{
 \item{table_name}{string}
 
-\item{depth}{string, either "deep" or "shallow"}
+\item{depth}{string, e.g. "deep" or "shallow"}
 
-\item{type}{string, either "tessi" or "stream"}
+\item{type}{string, e.g. "tessi" or "stream"}
 }
 \value{
 TRUE/FALSE

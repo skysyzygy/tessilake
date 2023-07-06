@@ -4,24 +4,20 @@
 \alias{cache_path}
 \title{cache_path}
 \usage{
-cache_path(
-  table_name,
-  depth = c("deep", "shallow"),
-  type = c("tessi", "stream")
-)
+cache_path(table_name, depth, type)
 }
 \arguments{
 \item{table_name}{string}
 
-\item{depth}{string, either "deep" or "shallow"}
+\item{depth}{string, e.g. "deep" or "shallow"}
 
-\item{type}{string, either "tessi" or "stream"}
+\item{type}{string, e.g. "tessi" or "stream"}
 }
 \value{
 string for the configured cache path
 }
 \description{
-Internal function to build cache directory/path and check that we have read/write access
+Internal function to build cache directory/path and check that we have read/write access to
 \verb{tessilake.\{depth\}/\{type\}/\{table_name\}}
 }
 \examples{

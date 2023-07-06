@@ -4,19 +4,14 @@
 \alias{cache_delete}
 \title{cache_delete}
 \usage{
-cache_delete(
-  table_name,
-  depth = c("deep", "shallow"),
-  type = c("tessi", "stream"),
-  partitions = NULL
-)
+cache_delete(table_name, depth, type, partitions = NULL)
 }
 \arguments{
 \item{table_name}{string}
 
-\item{depth}{string, either "deep" or "shallow"}
+\item{depth}{string, e.g. "deep" or "shallow"}
 
-\item{type}{string, either "tessi" or "stream"}
+\item{type}{string, e.g. "tessi" or "stream"}
 
 \item{partitions}{optional vector of partitions to delete}
 }
