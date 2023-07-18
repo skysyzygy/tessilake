@@ -104,6 +104,10 @@ lists:
   long_name: T_LIST
   base_table: T_LIST
   primary_keys: list_no
+logins:
+  long_name: T_CUST_LOGIN
+  base_table: T_CUST_LOGIN
+  primary_keys: login_no
 memberships:
   long_name: BI.VT_MEMBERSHIP
   query: |
