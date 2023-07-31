@@ -24,7 +24,6 @@ test_that("tessi_list_tables combines tessi_tables.yml with config.yml so that c
   rm(tessi_list_tables)
   stub(tessi_list_tables, "read_yaml", yaml_mock)
   stub(tessi_list_tables, "config::get", config_mock)
-  debugonce(tessi_list_tables)
   expect_equal(tessi_list_tables(), data.table(short_name = c("a", "d"),
                                                b = c("config_a", "yaml_d")))
 })
