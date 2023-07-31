@@ -47,11 +47,10 @@ campaigns:
   base_table: T_CAMPAIGN
   primary_keys: campaign_no
 constituencies:
-  long_name: TX_CONST_CUST
+  long_name: BI.VT_CONSTITUENCY
   base_table: TX_CONST_CUST
   primary_keys:
-  - constituency
-  - customer_no
+  - constituency_key
 contributions:
   long_name: BI.VT_CONTRIBUTION
   base_table: T_CONTRIBUTION
@@ -106,6 +105,10 @@ lists:
   primary_keys: list_no
 logins:
   long_name: T_CUST_LOGIN
+  query: |
+    select const_update_dt,create_dt,create_loc,created_by,customer_no,eaddress_no,failed_attempts,
+    inactive,last_login_dt,last_update_dt,last_updated_by,locked_dt,login,login_no,login_type,n1n2_ind,
+    primary_ind,temporary_ind from dbo.T_CUST_LOGIN with (nolock)
   base_table: T_CUST_LOGIN
   primary_keys: login_no
 memberships:
