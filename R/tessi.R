@@ -34,7 +34,7 @@ tessi_list_tables <- function() {
     silent = TRUE
   )
 
-  c(
+  config::merge(
     read_yaml(system.file("extdata", "tessi_tables.yml", package = "tessilake")),
     config_tessi_tables
   ) %>%

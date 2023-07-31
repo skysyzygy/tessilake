@@ -4,20 +4,29 @@ local_cache_dirs()
 
 # tessi_list_tables -------------------------------------------------------
 
-test_that("tessi_list_tables combines tessi_tables.yml with config.yml", {
-  config_mock <- mock(config::get(), list(a = list(b = "c")))
-  yaml_mock <- mock(list(a = list(b = "c")))
+test_that("tessi_list_tables combines tessi_tables.yml with config.yml so that config both supplements and overrides", {
+  config_mock <- mock(config::get(), list(a = list(b = "config_a")), cycle = T)
+  yaml_mock <- mock(list(a = list(b = "yaml_a"),
+                         d = list(b = "yaml_d")), cycle = T)
 
   stub(tessi_list_tables, "read_yaml", list())
   stub(tessi_list_tables, "config::get", config_mock)
-  expect_equal(tessi_list_tables(), data.table(short_name = "a", b = "c"))
+  expect_equal(tessi_list_tables(), data.table(short_name = "a", b = "config_a"))
   expect_equal(mock_args(config_mock)[[2]], list(config = "tessi_tables"))
 
   rm(tessi_list_tables)
   stub(tessi_list_tables, "read_yaml", yaml_mock)
   stub(tessi_list_tables, "config::get", list())
-  expect_equal(tessi_list_tables(), data.table(short_name = "a", b = "c"))
+  expect_equal(tessi_list_tables(), data.table(short_name = c("a", "d"),
+                                               b = c("yaml_a", "yaml_d")))
   expect_equal(mock_args(yaml_mock)[[1]], list(system.file("extdata", "tessi_tables.yml", package = "tessilake")))
+
+  rm(tessi_list_tables)
+  stub(tessi_list_tables, "read_yaml", yaml_mock)
+  stub(tessi_list_tables, "config::get", config_mock)
+  debugonce(tessi_list_tables)
+  expect_equal(tessi_list_tables(), data.table(short_name = c("a", "d"),
+                                               b = c("config_a", "yaml_d")))
 })
 
 test_that("tessi_tables.yml is configured correctly for Tessitura tables", {
