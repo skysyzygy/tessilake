@@ -29,7 +29,7 @@ cache_update <- function(x, table_name, depth, type,
   . <- NULL
 
   if (!cache_exists(table_name, depth, type)) {
-    return(cache_write(x, table_name, depth, type, primary_keys = primary_keys))
+    return(cache_write(x, table_name, depth, type, primary_keys = primary_keys, ...))
   }
 
   dataset <- cache_read(table_name, depth, type, include_partition = TRUE, ...)
@@ -71,7 +71,11 @@ cache_update <- function(x, table_name, depth, type,
 
   x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
 
-  cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = TRUE, ...)
+  args <- modifyList(rlang::list2(...),
+                     list(x = x, table_name = table_name, depth = depth, type = type,
+                          primary_keys = primary_keys, partition = partition, overwrite = TRUE))
+
+  do.call(cache_write, args)
 
   if (delete == TRUE && partition == TRUE) {
     cache_delete(table_name, depth, type, partitions = setdiff(dataset_partitions, partitions))
