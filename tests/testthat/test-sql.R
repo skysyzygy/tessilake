@@ -45,22 +45,22 @@ test_that("read_sql preserves primary_key across runs", {
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
 })
 
-test_that("read_sql passes select on to cache_read", {
+test_that("read_sql passes select on to read_cache", {
   table <- data.table(id = 1:1000, y = 2:1001)
-  m_read <- mock(table, cycle = T)
+  read_cache <- mock(table, cycle = T)
   stub(read_sql, "tbl", table)
-  stub(read_sql, "cache_read", m_read)
+  stub(read_sql, "read_cache", read_cache)
   read_sql("tbl", freshness = 0, select = "id")
-  expect_equal(mock_args(m_read)[[2]][["select"]], "id")
+  expect_equal(mock_args(read_cache)[[1]][["select"]], "id")
 })
 
-test_that("read_sql passes incremental on to cache_update", {
+test_that("read_sql passes incremental on to write_cache", {
   table <- data.table(id = 1:1000, y = 2:1001)
-  cache_update <- mock(table, cycle = T)
+  write_cache <- mock(table, cycle = T)
   stub(read_sql, "tbl", table)
-  stub(read_sql, "cache_update", cache_update)
+  stub(read_sql, "write_cache", write_cache)
   read_sql("tbl", freshness = 0, incremental = TRUE)
-  expect_true(mock_args(cache_update)[[1]][["incremental"]])
+  expect_true(mock_args(write_cache)[[1]][["incremental"]])
 })
 
 
@@ -92,24 +92,14 @@ test_that("read_sql updates cache iff it's not fresh enough", {
   expect_lt(mtime_parquet, test_time)
   expect_lt(mtime_feather, test_time)
 
-  # updates deep with shallow but not deep because deep is fresher than last_update_dt
-  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now(), lubridate::now() - lubridate::ddays(8)))
+  # don't update anything because one of the storages if fresh enough
+  stub(read_sql, "cache_get_mtime", mock(lubridate::now(), lubridate::now() + lubridate::ddays(1)))
   read_sql("data_fresh", "data_fresh", primary_keys = "x", date_column = "last_update_dt", freshness = 0)
 
   mtime_parquet <- file.mtime(file.path(tempdir(), "deep", "tessi", "data_fresh.parquet"))
   mtime_feather <- file.mtime(file.path(tempdir(), "shallow", "tessi", "data_fresh.feather"))
-
   expect_lt(mtime_parquet, test_time)
-  expect_gt(mtime_feather, test_time)
-
-  # updates nothing because deep and shallow are fresh enough
-  rm(read_sql)
-  stub(read_sql, "tbl", mock(data, cycle = T))
-  data[, last_update_dt := lubridate::now() - lubridate::ddays(8)]
-  read_sql("data_fresh", "data_fresh", primary_keys = "x", date_column = "last_update_dt", freshness = 0)
-
-  mtime_parquet <- file.mtime(file.path(tempdir(), "deep", "tessi", "data_fresh.parquet"))
-  mtime_feather <- file.mtime(file.path(tempdir(), "shallow", "tessi", "data_fresh.feather"))
+  expect_lt(mtime_feather, test_time)
 
   # updates deep and shallow because they're now both older than data and they're stale
   stub(read_sql, "cache_get_mtime", lubridate::now() - lubridate::ddays(9))

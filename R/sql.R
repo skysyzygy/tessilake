@@ -97,34 +97,14 @@ read_sql <- function(query, name = digest::sha1(query),
   test_mtime <- Sys.time() - freshness
 
   depths <- names(config::get("tessilake")[["depths"]])
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime(name, depth, "tessi"))
 
-  iwalk(depths, \(depth, index) {
+  if(all(mtimes < test_mtime))
+    # Update caches
+    write_cache(collect(table), table_name = name, type = "tessi", incremental = TRUE,
+                primary_keys = primary_keys, date_column = date_column, partition = FALSE)
 
-    if(index > 1) {
-      table <- cache_read(name, depths[index-1], "tessi")
-      test_mtime <- cache_get_mtime(name, depths[index-1], "tessi")
-    }
-
-    if (!cache_exists(name, depth, "tessi")) {
-      if(inherits(table, "tbl_sql"))
-        table <- collect(table)
-      cache_write(table, name, depth, "tessi", partition = FALSE, primary_keys = primary_keys)
-    } else if (cache_get_mtime(name, depth, "tessi") < test_mtime) {
-      cache_update(table, name, depth, "tessi",
-        primary_keys = primary_keys,
-        date_column = date_column,
-        delete = TRUE,
-        incremental = incremental
-      )
-    }
-  })
-
-  cache_read(
-    table_name = name,
-    depth = "shallow",
-    type = "tessi",
-    select = select
-  )
+  read_cache(table_name = name, type = "tessi", select = select)
 }
 
 #' read_sql_table
