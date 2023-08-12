@@ -16,6 +16,7 @@
 #' @importFrom arrow open_dataset
 #' @importFrom dplyr select filter all_of anti_join distinct
 #' @importFrom rlang sym
+#' @importFrom utils modifyList
 #' @examples
 #' \dontrun{
 #' x <- data.table(a = 1:1000, b = runif(1000))

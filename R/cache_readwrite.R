@@ -116,6 +116,7 @@ cache_read <- function(table_name, depth, type,
 #' x <- data.table(a = c(1, 2, 3))
 #' write_cache(x, "test", "stream", primary_keys = c("a"))
 #' }
+#' @importFrom utils modifyList
 write_cache <- function(x, table_name, type,
                         incremental = FALSE, ...) {
   assert_dataframeish(x)
@@ -138,6 +139,7 @@ write_cache <- function(x, table_name, type,
 
 #' @describeIn write_cache Underlying cache writer that invokes [arrow::write_feather], [arrow::write_parquet] or [arrow::write_dataset] and handles partitioning
 #' specified by `primary_keys` attribute/argument.
+#' @importFrom utils modifyList
 cache_write <- function(x, table_name, depth, type,
                         primary_keys = cache_get_attributes(x)$primary_keys,
                         partition = !is.null(primary_keys), overwrite = FALSE,
