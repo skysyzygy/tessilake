@@ -2,9 +2,12 @@
 % Please edit documentation in R/cache_readwrite.R
 \name{read_cache}
 \alias{read_cache}
+\alias{cache_read}
 \title{read_cache}
 \usage{
-read_cache(
+read_cache(table_name, type, ...)
+
+cache_read(
   table_name,
   depth,
   type,
@@ -17,27 +20,34 @@ read_cache(
 \arguments{
 \item{table_name}{string}
 
-\item{depth}{string, e.g. "deep" or "shallow"}
-
 \item{type}{string, e.g. "tessi" or "stream"}
+
+\item{...}{extra arguments to pass on to \link{cache_read} and then \link[arrow:open_dataset]{arrow::open_dataset}, \link[arrow:read_parquet]{arrow::read_parquet}, or \link[arrow:read_feather]{arrow::read_feather}}
+
+\item{depth}{string, e.g. "deep" or "shallow"}
 
 \item{include_partition}{boolean, whether or not to return the partition information as a column}
 
 \item{select}{vector of strings indicating columns to select from database}
 
 \item{num_tries}{integer number of times to try reading before failing}
-
-\item{...}{extra arguments to pass on to arrow::open_dataset}
 }
 \value{
 \code{\link[arrow:Dataset]{arrow::Dataset}}
 }
 \description{
-Function to read cached arrow files. Simple wrapper on open_dataset.
+Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storages.
 Optionally returns the partition information as a dataset column.
 }
+\section{Functions}{
+\itemize{
+\item \code{cache_read()}: Underlying cache reader that invokes \link[arrow:open_dataset]{arrow::open_dataset}, \link[arrow:read_parquet]{arrow::read_parquet}, or \link[arrow:read_feather]{arrow::read_feather}
+and handles partitioning information
+
+}}
 \examples{
 \dontrun{
-read_cache("test", "deep", "stream")
+write_cache(data.table(a=letters), "test", "stream")
+read_cache("test", "stream")
 }
 }
