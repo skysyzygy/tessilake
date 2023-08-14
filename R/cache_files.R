@@ -26,7 +26,7 @@ cache_get_mtime <- function(table_name, depth, type) {
 
 #' cache_path
 #'
-#' Internal function to build cache directory/path and check that we have read/write access to
+#' Convenience functions to return the configured cache path and check that we have read/write access to it
 #' `tessilake.{depth}/{type}/{table_name}`
 #'
 #' @param table_name string
@@ -40,6 +40,7 @@ cache_get_mtime <- function(table_name, depth, type) {
 #' \dontrun{
 #' cache_path("test", "deep", "stream")
 #' }
+#' @describeIn cache_path function to return the specified cache path and check that we have read/write access to
 cache_path <- function(table_name, depth, type) {
   assert_character(table_name, len = 1)
   assert_choice(depth, names(config::get("tessilake")$depths))
@@ -58,6 +59,13 @@ cache_path <- function(table_name, depth, type) {
   cache_path <- file.path(cache_root, type, table_name)
 
   cache_path
+}
+
+#' @describeIn cache_path wrapper around [cache_path] that returns the path for the primary (first) defined storage
+cache_primary_path <- function(table_name, type) {
+
+  cache_path(table_name = table_name, depth = names(config::get("tessilake")$depths)[1], type = type)
+
 }
 
 #' cache_exists
