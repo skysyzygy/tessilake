@@ -46,10 +46,13 @@ read_cache <- cache_read <- function(table_name, depth, type,
   } else if (file.exists(paste0(cache_path, ".parquet"))) {
     cache_reader <- read_parquet
     cache_file <- paste0(cache_path, ".parquet")
+  } else {
+    cache_reader <- \(...) stop("Cache does not exist")
   }
 
   while(!exists("cache") && num_tries > 0) {
-    try(cache <- cache_reader(cache_file, as_data_frame = F, col_select = !!select, ...), silent = TRUE)
+    last_error <- tryCatch(cache <- cache_reader(cache_file, as_data_frame = F, col_select = !!select),
+                           error = force)
     if(exists("cache"))
       break
     num_tries <- num_tries - 1
@@ -57,7 +60,8 @@ read_cache <- cache_read <- function(table_name, depth, type,
   }
 
   if(!exists("cache")) {
-    warning(paste("Cache file not found at", cache_path))
+    rlang::warn(c(paste("Couldn't read cache at", cache_path),
+                  "*" = last_error$message))
     return(FALSE)
   }
 
@@ -74,9 +78,10 @@ read_cache <- cache_read <- function(table_name, depth, type,
 #' @param depth string, e.g. "deep" or "shallow"
 #' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
+#' @param num_tries integer number of times to try reading before failing
 #' @param partition boolean, whether or not to partition the dataset using primary_keys information
 #' @param overwrite boolean, whether or not to overwrite an existing cache
-#' @param ... extra arguments passed on to [`arrow::write_dataset`]
+#' @param ... extra arguments passed on to [arrow::write_feather], [arrow::write_parquet] or [arrow::write_dataset]
 #'
 #' @return invisible
 #' @importFrom arrow write_dataset write_parquet write_feather
@@ -91,7 +96,8 @@ read_cache <- cache_read <- function(table_name, depth, type,
 #' }
 write_cache <- cache_write <- function(x, table_name, depth, type,
                         primary_keys = cache_get_attributes(x)$primary_keys,
-                        partition = !is.null(primary_keys), overwrite = FALSE, ...) {
+                        partition = !is.null(primary_keys), overwrite = FALSE,
+                        num_tries = 60, ...) {
   if (cache_exists(table_name, depth, type) == TRUE && overwrite == FALSE) {
     stop("Cache already exists, and overwrite is not TRUE")
   }
@@ -125,21 +131,39 @@ write_cache <- cache_write <- function(x, table_name, depth, type,
     attributes$primary_keys <- primary_keys
     cache_set_attributes(x, attributes)
 
-    write_dataset(x, cache_path,
-      format = format,
-      partitioning = partition_name, ...
-    )
+    cache_writer <- write_dataset
+    args <- list(dataset = x,
+                  path = cache_path,
+                  format = format,
+                  partitioning = partition_name)
 
-    if (inherits(x, "data.table")) x[, (partition_name) := NULL]
   } else {
     if (!dir.exists(dirname(cache_path))) dir.create(dirname(cache_path))
     attributes$primary_keys <- primary_keys
     cache_set_attributes(x, attributes)
 
-    writer <- switch(format,
+    cache_writer <- switch(format,
                      feather = write_feather,
                      write_parquet)
-    writer(x, paste0(cache_path, ".", format), ...)
+
+    args <- list(x = x,
+                 sink = paste0(cache_path, ".", format))
+  }
+
+  args <- modifyList(rlang::list2(...),args)
+
+  while(!exists("cache") && num_tries > 0) {
+    last_error <- tryCatch(cache <- do.call(cache_writer, args),
+                           error = force)
+    if(exists("cache"))
+      break
+    num_tries <- num_tries - 1
+    Sys.sleep(1)
+  }
+
+  if(!exists("cache")) {
+    rlang::warn(c(paste("Couldn't write cache at", cache_path),
+                  "*" = last_error$message))
   }
 
   # restore the old attributes so we don't have side-effects on x if x is a data.table
@@ -147,6 +171,8 @@ write_cache <- cache_write <- function(x, table_name, depth, type,
     for (name in names(attributes)) {
       setattr(x, name, attributes_old[[name]])
     }
+    if (inherits(x, "data.table") & exists("partition_name"))
+      x[, (partition_name) := NULL]
   }
 
   invisible()

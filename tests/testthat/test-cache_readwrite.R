@@ -4,7 +4,6 @@ local_cache_dirs()
 # cache_write -------------------------------------------------------------
 
 test_read_write <- setattr(data.table(x = 1:100000, y = runif(1000)), "key", "value")
-
 test_that("cache_write with partitioning=FALSE creates parquet and feather files", {
   cache_write(test_read_write, "test_read_write", "deep", "tessi", partition = FALSE)
   expect_true(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"), ".parquet")))
@@ -56,11 +55,38 @@ test_that("cache_write returns nothing, invisibly", {
   expect_equal(cache_write(test_read_write, "test_silent2", "deep", "tessi"), NULL)
 })
 
+test_that("cache_write is failure resistant", {
+  test_write_failure <- data.table(x = runif(1000000))
+  path <- cache_path("test_write_failure","shallow","tessi")
+  cache_write(test_write_failure, "test_write_failure", "shallow", "tessi")
+  # point child process to parent tempdir
+  mockery::stub(cache_read,"cache_path",path)
+  # read cache from child process
+  r <- callr::r_bg(function() {
+    dplyr::collect(cache_read("test_write_failure", "shallow", "tessi"))
+  }, package = T)
+  # and simultaneously try to write it...
+  n <- 0
+  expect_warning(while(n<100) {
+    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T,num_tries = 1)
+    n <- n + 1 }, "IOError")
+  # now try to write again with some error recovery
+  r$wait()
+  r <- callr::r_bg(function() {
+    dplyr::collect(cache_read("test_write_failure", "shallow", "tessi"))
+  }, package = T)
+  # and simultaneously try to write it...
+  n <- 0
+  expect_silent(while(n<100) {
+    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T)
+    n <- n + 1 })
+})
+
 # cache_read --------------------------------------------------------------
 
 test_that("cache_read returns FALSE and warns for non-existent caches", {
   expect_warning(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
-                              "Cache file not found")
+                              "Cache does not exist")
 })
 
 test_that("cache_read returns data to the original form including attributes", {
@@ -91,13 +117,13 @@ test_that("cache_read can select particular columns", {
 test_that("cache_read is failure resistant", {
   test_read_write <- data.table(x = runif(1000000))
   path <- cache_path("test_read_write","deep","tessi")
-  # point child process to parent tempdir
-  mockery::stub(cache_read,"cache_path",path)
   cache_write(test_read_write,"test_read_write","deep","tessi",overwrite=T)
   # mung up the file
   system2("truncate",c("-s","-1k",shQuote(paste0(path,".parquet"))))
   # and try to read it -- should throw warning
-  expect_warning(cache_read("test_read_write","deep","tessi",num_tries = 1),"Cache file not found")
+  expect_warning(cache_read("test_read_write","deep","tessi",num_tries = 1),"Couldn't read cache.+corrupted")
+  # point child process to parent tempdir
+  mockery::stub(cache_read,"cache_path",path)
   # now try to read it again
   r <- callr::r_bg(function(){
     dplyr::collect(cache_read("test_read_write", "deep", "tessi"))

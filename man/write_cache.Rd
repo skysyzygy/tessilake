@@ -12,6 +12,7 @@ write_cache(
   primary_keys = cache_get_attributes(x)$primary_keys,
   partition = !is.null(primary_keys),
   overwrite = FALSE,
+  num_tries = 60,
   ...
 )
 }
@@ -30,7 +31,9 @@ write_cache(
 
 \item{overwrite}{boolean, whether or not to overwrite an existing cache}
 
-\item{...}{extra arguments passed on to \code{\link[arrow:write_dataset]{arrow::write_dataset}}}
+\item{num_tries}{integer number of times to try reading before failing}
+
+\item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
 }
 \value{
 invisible
