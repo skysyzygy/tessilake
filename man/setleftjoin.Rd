@@ -3,7 +3,8 @@
 \name{setleftjoin}
 \alias{setleftjoin}
 \title{setleftjoin
-Fast left join for data.table that simply adds r's columns to l by reference.}
+Fast left join for data.table that simply adds columns from \code{r} to \code{l} by reference.
+Requires that \code{r} has at most one item of each join group in order to be able to simply add to \code{l}.}
 \usage{
 setleftjoin(l, r, by = NULL)
 }
@@ -20,7 +21,8 @@ a joined data.table, invisibly
 }
 \description{
 setleftjoin
-Fast left join for data.table that simply adds r's columns to l by reference.
+Fast left join for data.table that simply adds columns from \code{r} to \code{l} by reference.
+Requires that \code{r} has at most one item of each join group in order to be able to simply add to \code{l}.
 }
 \examples{
 

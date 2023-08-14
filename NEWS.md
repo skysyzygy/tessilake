@@ -1,7 +1,7 @@
 # tessilake 0.3.0
 - New config.yml format for tessilake allowing for more flexible storage configuration
 - Updates to documentation and exporting read_cache/write_cache
-- Simplified/more flexible implementation of read_sql that loops through storages
+- Simplified/more flexible implementation of read_sql that loops through storage depths
 - read_cache retries multiple times on read failure
 
 # tessilake 0.2.4
@@ -22,7 +22,7 @@
 * Beta release!
 - Fixed warning about ORDER_BY clause when updating table
 - Fixed logic for update_table so that it only incrementally updates when there are primary keys and a date column to reference
-- Fixed deadlock issue by making all loads nonlocking
+- Fixed deadlock issue by making all loads non-locking
 - Fixed file collision when multiple processes are using the library simultaneously
 - Fixed race condition in update_table when table is updated quickly
 - Acceptance tests to make sure that update_table is actually faster than a full download

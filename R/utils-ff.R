@@ -128,3 +128,31 @@ fix_vmode <- function(vec) {
   }
   vec
 }
+
+#' write_ffdf
+#'
+#' Write out a gzip compressed ffdf. `table_name` is converted to camel-case for consistency with
+#' legacy use
+#'
+#' @param x data.frame to be written
+#' @param table_name string name of the file to be written, will be converted to camel-case
+#' @param out_dir string directory where the compressed ffdf should be written
+#' @importFrom ffbase save.ffdf
+#' @importFrom ff ffdf as.ff
+#' @return invisibly
+#' @export
+write_ffdf <- function(x, table_name, out_dir) {
+  table_name_camelcase <- gsub("[^a-zA-Z](\\w)", "\\U\\1", table_name, perl = TRUE)
+
+  assign(table_name_camelcase,
+         lapply(x, function(c) { as.ff(fix_vmode(c)) }) %>% do.call(what = ffdf))
+
+  temp_dir <- tempfile(paste0(table_name_camelcase,"XXX"))
+  dir.create(temp_dir)
+  eval(rlang::expr(save.ffdf(!!table_name_camelcase,dir=temp_dir,overwrite=T)))
+
+  message("packing ffdf...")
+  tar(file.path(out_dir,paste0(table_name_camelcase, ".gz")),
+      files=".",compression="gzip",tar="tar",extra_flags=paste0("-C ",temp_dir))
+  invisible()
+}

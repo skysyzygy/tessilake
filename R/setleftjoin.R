@@ -1,6 +1,6 @@
 #' setleftjoin
-#' Fast left join for data.table that simply adds r's columns to l by reference.
-#  Requires that r has at most one item of each join group in order to be able to simply add to l.
+#' Fast left join for data.table that simply adds columns from `r` to `l` by reference.
+#'  Requires that `r` has at most one item of each join group in order to be able to simply add to `l`.
 #' @param l left side of the join (data.table)
 #' @param r right side of the join (data.table)
 #' @param by character vector for matching columns. Names, if they exist, refer to columns in the

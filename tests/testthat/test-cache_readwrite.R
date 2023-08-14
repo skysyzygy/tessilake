@@ -4,7 +4,6 @@ local_cache_dirs()
 # cache_write -------------------------------------------------------------
 
 test_read_write <- setattr(data.table(x = 1:100000, y = runif(1000)), "key", "value")
-
 test_that("cache_write with partitioning=FALSE creates parquet and feather files", {
   cache_write(test_read_write, "test_read_write", "deep", "tessi", partition = FALSE)
   expect_true(file.exists(paste0(cache_path("test_read_write", "deep", "tessi"), ".parquet")))

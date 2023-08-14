@@ -35,6 +35,7 @@ Imports:
     purrr,
     rlang,
     stringr,
+    tzdb,
     yaml
 Suggests: 
     covr,

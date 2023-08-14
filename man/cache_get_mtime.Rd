@@ -17,7 +17,7 @@ cache_get_mtime(table_name, depth, type)
 POSIXct modification time
 }
 \description{
-Get the last modification time of the cache by querying the mtime of all of the files that make up the cache
+Get the last modification time of the cache by querying the \code{mtime} of all of the files that make up the cache
 }
 \examples{
 \dontrun{

@@ -1,6 +1,6 @@
 #' cache_get_mtime
 #'
-#' Get the last modification time of the cache by querying the mtime of all of the files that make up the cache
+#' Get the last modification time of the cache by querying the `mtime` of all of the files that make up the cache
 #'
 #' @param table_name string
 #' @param depth string, e.g. "deep" or "shallow"

@@ -38,8 +38,8 @@ expr_get_names <- function(expr) {
 #'
 #' @param from the source object
 #' @param to the object to be updated
-#' @param date_column string or tidyselected column identifying the date column to use to determine which rows to update
-#' @param primary_keys vector of strings or tidyselected columns identifying the primary keys to determine which rows to update
+#' @param date_column string or tidy-selected column identifying the date column to use to determine which rows to update
+#' @param primary_keys vector of strings or tidy-selected columns identifying the primary keys to determine which rows to update
 #' @param delete whether to delete rows in `to` missing from `from`, default is not to delete the rows
 #' @param incremental whether or not to update the table incrementally or to simply overwrite the existing table with a new one,
 #' the default is `TRUE`
