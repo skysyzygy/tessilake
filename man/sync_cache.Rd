@@ -21,7 +21,7 @@ sync_cache(table_name, type, incremental = FALSE, date_column = NULL, ...)
 invisible
 }
 \description{
-Syncs cached files across storages by incrementally updating using \link{cache_update} or simply copying and convertin
+Syncs cached files across storage depths by incrementally updating using \link{cache_update} or simply copying and converting
 the most recently-modified cache to the other locations using \link{cache_read} and \link{cache_write}.
 }
 \examples{

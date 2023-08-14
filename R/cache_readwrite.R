@@ -2,7 +2,7 @@
 
 #' read_cache
 #'
-#' Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storages.
+#' Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storage depths.
 #' Optionally returns the partition information as a dataset column.
 #'
 #' @param table_name string
@@ -226,7 +226,7 @@ cache_write <- function(x, table_name, depth, type,
 
 #' sync_cache
 #'
-#' Syncs cached files across storages by incrementally updating using [cache_update] or simply copying and convertin
+#' Syncs cached files across storage depths by incrementally updating using [cache_update] or simply copying and converting
 #' the most recently-modified cache to the other locations using [cache_read] and [cache_write].
 #'
 #' @param table_name string

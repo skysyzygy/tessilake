@@ -36,7 +36,7 @@ cache_read(
 \code{\link[arrow:Dataset]{arrow::Dataset}}
 }
 \description{
-Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storages.
+Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storage depths.
 Optionally returns the partition information as a dataset column.
 }
 \section{Functions}{
