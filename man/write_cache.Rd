@@ -5,7 +5,14 @@
 \alias{cache_write}
 \title{write_cache}
 \usage{
-write_cache(x, table_name, type, incremental = FALSE, ...)
+write_cache(
+  x,
+  table_name,
+  type,
+  depth = deprecated(),
+  incremental = FALSE,
+  ...
+)
 
 cache_write(
   x,
@@ -26,11 +33,11 @@ cache_write(
 
 \item{type}{string, e.g. "tessi" or "stream"}
 
+\item{depth}{string, e.g. "deep" or "shallow", deprecated in \link{write_cache}}
+
 \item{incremental}{boolean, whether to call \link{cache_update} or \link{cache_write} to update the cached dataset.}
 
 \item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
-
-\item{depth}{string, e.g. "deep" or "shallow"}
 
 \item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
 

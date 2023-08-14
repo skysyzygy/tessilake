@@ -5,7 +5,7 @@
 \alias{cache_read}
 \title{read_cache}
 \usage{
-read_cache(table_name, type, ...)
+read_cache(table_name, type, depth = deprecated(), ...)
 
 cache_read(
   table_name,
@@ -22,9 +22,9 @@ cache_read(
 
 \item{type}{string, e.g. "tessi" or "stream"}
 
-\item{...}{extra arguments to pass on to \link{cache_read} and then \link[arrow:open_dataset]{arrow::open_dataset}, \link[arrow:read_parquet]{arrow::read_parquet}, or \link[arrow:read_feather]{arrow::read_feather}}
+\item{depth}{string, e.g. "deep" or "shallow", deprecated in \link{read_cache}}
 
-\item{depth}{string, e.g. "deep" or "shallow"}
+\item{...}{extra arguments to pass on to \link{cache_read} and then \link[arrow:open_dataset]{arrow::open_dataset}, \link[arrow:read_parquet]{arrow::read_parquet}, or \link[arrow:read_feather]{arrow::read_feather}}
 
 \item{include_partition}{boolean, whether or not to return the partition information as a column}
 

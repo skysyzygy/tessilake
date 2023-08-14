@@ -1,6 +1,6 @@
 Package: tessilake
 Title: Data Lake for Tessiract
-Version: 0.3.0
+Version: 0.4.0
 Authors@R: 
     person(given = "Sky",
            family = "Syzygy",
@@ -29,6 +29,7 @@ Imports:
     ff,
     ffbase (>= 0.13.2),
     glue,
+    lifecycle,
     lubridate,
     magrittr,
     odbc,

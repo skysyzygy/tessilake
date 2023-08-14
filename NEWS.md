@@ -1,3 +1,5 @@
+# tessilake 0.4.0
+
 # tessilake 0.3.0
 - New config.yml format for tessilake allowing for more flexible storage configuration
 - Updates to documentation and exporting read_cache/write_cache

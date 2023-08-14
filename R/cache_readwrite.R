@@ -6,7 +6,7 @@
 #' Optionally returns the partition information as a dataset column.
 #'
 #' @param table_name string
-#' @param depth string, e.g. "deep" or "shallow"
+#' @param depth string, e.g. "deep" or "shallow", deprecated in [read_cache]
 #' @param type string, e.g. "tessi" or "stream"
 #' @param include_partition boolean, whether or not to return the partition information as a column
 #' @param select vector of strings indicating columns to select from database
@@ -15,15 +15,22 @@
 #'
 #' @return [`arrow::Dataset`]
 #' @importFrom checkmate assert_character
+#' @importFrom lifecycle deprecated deprecate_warn
 #' @export
 #' @examples
 #' \dontrun{
 #' write_cache(data.table(a=letters), "test", "stream")
 #' read_cache("test", "stream")
 #' }
-read_cache <- function(table_name, type, ...) {
+read_cache <- function(table_name, type, depth = deprecated(), ...) {
   assert_character(table_name, len = 1)
   assert_character(type, len = 1)
+
+  if(lifecycle::is_present(depth) | type %in% names(config::get("tessilake")$depths)) {
+    deprecate_warn("0.4.0", "tessilake::read_cache(depth)",
+                    details = "The depth argument is no longer needed, reads are made from the most-recently updated storage.",
+                    always = TRUE)
+  }
 
   depths <- names(config::get("tessilake")[["depths"]])
   mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime(table_name, depth, type))
@@ -97,7 +104,7 @@ cache_read <- function(table_name, depth, type,
 #' @param x data.frame to be written
 #' @param table_name string
 #' @param incremental boolean, whether to call [cache_update] or [cache_write] to update the cached dataset.
-#' @param depth string, e.g. "deep" or "shallow"
+#' @param depth string, e.g. "deep" or "shallow", deprecated in [write_cache]
 #' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param num_tries integer number of times to try reading before failing
@@ -110,6 +117,7 @@ cache_read <- function(table_name, depth, type,
 #' @importFrom dplyr select mutate
 #' @importFrom data.table setattr
 #' @importFrom rlang is_symbol as_name env_has
+#' @importFrom lifecycle deprecated deprecate_warn
 #' @export
 #' @examples
 #' \dontrun{
@@ -118,11 +126,18 @@ cache_read <- function(table_name, depth, type,
 #' }
 #' @importFrom utils modifyList
 write_cache <- function(x, table_name, type,
+                        depth = deprecated(),
                         incremental = FALSE, ...) {
   assert_dataframeish(x)
   assert_character(table_name, len = 1)
   assert_character(type, len = 1)
   depths <- names(config::get("tessilake")[["depths"]])
+
+  if(lifecycle::is_present(depth) | type %in% names(config::get("tessilake")$depths)) {
+    lifecycle::deprecate_warn("0.4.0", "tessilake::write_cache(depth)",
+                               details = "The depth argument is no longer needed, writes are to the primary storage and then synced across all storages.",
+                               always = TRUE)
+  }
 
   args <- modifyList(rlang::list2(...),
                      list(x = x, table_name = table_name, depth = depths[1], type = type))
