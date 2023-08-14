@@ -60,27 +60,23 @@ test_that("cache_write is failure resistant", {
   test_write_failure <- data.table(x = runif(1000000))
   path <- cache_path("test_write_failure","shallow","tessi")
   cache_write(test_write_failure, "test_write_failure", "shallow", "tessi")
-  # point child process to parent tempdir
-  mockery::stub(cache_read,"cache_path",path)
-  # read cache from child process
+  # make cache read-only
+  system2("chmod",c("400",paste0(path,".feather")))
+  # and try to write it...
+  expect_warning(
+    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T,num_tries = 1),
+    "IOError")
+  # set up a deferred job to make it writeable again
   r <- callr::r_bg(function() {
-    dplyr::collect(cache_read("test_write_failure", "shallow", "tessi"))
-  }, package = T)
-  # and simultaneously try to write it...
-  n <- 0
-  expect_warning(while(n<100) {
-    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T,num_tries = 1)
-    n <- n + 1 }, "IOError")
+    Sys.sleep(1)
+    system2("chmod",c("600",paste0(path,".feather")))
+  }, package = TRUE)
   # now try to write again with some error recovery
-  r$wait()
-  r <- callr::r_bg(function() {
-    dplyr::collect(cache_read("test_write_failure", "shallow", "tessi"))
-  }, package = T)
-  # and simultaneously try to write it...
-  n <- 0
-  expect_silent(while(n<100) {
-    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T)
-    n <- n + 1 })
+  error_count <- mock(cycle = T)
+  stub(cache_write, "force", error_count)
+  expect_silent(
+    cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T))
+  expect_gte(length(mock_args(error_count)),1)
 })
 
 # cache_read --------------------------------------------------------------
