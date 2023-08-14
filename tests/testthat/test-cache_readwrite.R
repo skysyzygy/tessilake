@@ -1,4 +1,5 @@
 withr::local_package("checkmate")
+withr::local_package("mockery")
 local_cache_dirs()
 
 # cache_write -------------------------------------------------------------
@@ -138,6 +139,19 @@ test_that("cache_read is failure resistant", {
 # read_cache --------------------------------------------------------------
 
 test_that("read_cache reads from the most recently updated cache", {
+  withr::local_package("lubridate")
+  cache_read <- mock(cycle = TRUE)
+  cache_get_mtime <- mock(now(), now() + 3600, now() + 3600, now())
+  stub(read_cache, "cache_read", cache_read)
+  stub(read_cache, "cache_get_mtime", cache_get_mtime)
+
+  read_cache("test_read_write", "tessi")
+  expect_length(mock_args(cache_read), 1)
+  expect_equal(mock_args(cache_read)[[1]][["depth"]], names(config::get("tessilake")$depths)[2])
+
+  read_cache("test_read_write", "tessi")
+  expect_length(mock_args(cache_read), 2)
+  expect_equal(mock_args(cache_read)[[2]][["depth"]], names(config::get("tessilake")$depths)[1])
 
 })
 
