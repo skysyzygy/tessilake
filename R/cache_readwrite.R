@@ -149,6 +149,15 @@ write_cache <- function(x, table_name, type,
   }
 
   sync_cache(table_name = table_name, type = type, incremental = incremental, ...)
+
+  cache_path <- cache_path(table_name = table_name, depth = depths[1], type = type)
+  cache_files <- c(cache_path, dir(dirname(cache_path),
+                                           pattern = paste0(table_name, "\\..+"),
+                                           full.names = TRUE, recursive = TRUE))
+
+  if(length(cache_files) > 0)
+    system2("touch",cache_files)
+
 }
 
 

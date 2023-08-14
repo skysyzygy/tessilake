@@ -177,6 +177,15 @@ test_that("write_cache writes to the primary (first listed) cache using either `
   expect_equal(mock_args(sync_cache)[[2]][["incremental"]], TRUE)
 })
 
+test_that("write_cache makes the primary file the most recently updated after a sync for better performance", {
+  depths <- names(config::get("tessilake")$depths)
+  write_cache(test_read_write, "test_write_cache", "tessi")
+
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test_write_cache", depth, "tessi"))
+  expect_length(mtimes,length(depths))
+  expect_true(all(mtimes[1] > mtimes[-1]))
+})
+
 # sync_cache --------------------------------------------------------------
 
 test_that("sync_cache updates arrow caches incrementally across all storages", {
