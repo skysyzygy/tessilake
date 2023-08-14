@@ -91,8 +91,8 @@ read_sql <- function(query, name = digest::sha1(query),
   # build the query with dplyr
   table <- tbl(db$db, sql(query))
 
-  # sort by primary keys for faster updating
-  if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))
+  # sort by primary keys and date column for faster updating
+  if (!is.null(primary_keys) || !is.null(date_column)) table <- arrange(table, across(!!c(primary_keys, date_column)))
 
   test_mtime <- Sys.time() - freshness
 
