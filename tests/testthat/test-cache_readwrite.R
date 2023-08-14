@@ -188,12 +188,37 @@ test_that("write_cache makes the primary file the most recently updated after a 
 
 # sync_cache --------------------------------------------------------------
 
-test_that("sync_cache updates arrow caches incrementally across all storages", {
+test_that("sync_cache updates arrow caches non-incrementally across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+  cache_write(test_read_write, "test_sync_cache", depths[1], "stream")
+  .cache_write <- mock(cycle = TRUE)
+  stub(sync_cache, "cache_write", .cache_write)
+
+  sync_cache("test_sync_cache", "stream")
+  expect_length(mock_args(.cache_write),1)
+  expect_equal(mock_args(.cache_write)[[1]][["depth"]], depths[2])
+
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream")
+  sync_cache("test_sync_cache", "stream")
+  expect_length(mock_args(.cache_write),2)
+  expect_equal(mock_args(.cache_write)[[2]][["depth"]], depths[1])
 
 })
 
-test_that("sync_cache updates arrow caches non-incrementally across all storages", {
+test_that("sync_cache updates arrow caches incrementally across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+  cache_write(test_read_write, "test_sync_cache", depths[1], "stream", overwrite = TRUE)
+  cache_update <- mock(cycle = TRUE)
+  stub(sync_cache, "cache_update", cache_update)
 
+  sync_cache("test_sync_cache", "stream", incremental = TRUE)
+  expect_length(mock_args(cache_update),1)
+  expect_equal(mock_args(cache_update)[[1]][["depth"]], depths[2])
+
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream", overwrite = TRUE)
+  sync_cache("test_sync_cache", "stream", incremental = TRUE)
+  expect_length(mock_args(cache_update),2)
+  expect_equal(mock_args(cache_update)[[2]][["depth"]], depths[1])
 })
 
 test_that("sync_cache copies non-arrow files across all storages", {

@@ -278,14 +278,19 @@ sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL
   for(index in seq(2,length(depths))) {
     table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
     if(incremental) {
-      cache_update(table,
+      args <- list(x = table,
                    table_name = table_name, depth = depths[index], type = type,
-                   delete = TRUE, date_column = date_column, ...)
+                   delete = TRUE, date_column = date_column)
+      cache_sync <- cache_update
     } else {
-      cache_write(table,
-                  table_name = table_name, depth = depths[index], type = type,
-                  overwrite = TRUE, ...)
+      args <- list(x = table,
+                   table_name = table_name, depth = depths[index], type = type,
+                   overwrite = TRUE)
+      cache_sync <- cache_write
     }
+
+    args <- modifyList(rlang::list2(...), args)
+    do.call(cache_sync, args)
   }
 
   invisible()
