@@ -9,14 +9,14 @@ write_ffdf(x, table_name, out_dir)
 \arguments{
 \item{x}{data.frame to be written}
 
-\item{table_name}{string name of the file to be written, will be converted to camelcase}
+\item{table_name}{string name of the file to be written, will be converted to camel-case}
 
-\item{out_dir}{string directory where the gzipped ffdf should be written}
+\item{out_dir}{string directory where the compressed ffdf should be written}
 }
 \value{
 invisibly
 }
 \description{
-Write to gzipped ffdf. \code{table_name} is converted to camelcase for consistency with
+Write out a gzip compressed ffdf. \code{table_name} is converted to camel-case for consistency with
 legacy use
 }

@@ -47,9 +47,9 @@ update_table_date_only(from, to, date_column = NULL)
 
 \item{to}{the object to be updated}
 
-\item{date_column}{string or tidyselected column identifying the date column to use to determine which rows to update}
+\item{date_column}{string or tidy-selected column identifying the date column to use to determine which rows to update}
 
-\item{primary_keys}{vector of strings or tidyselected columns identifying the primary keys to determine which rows to update}
+\item{primary_keys}{vector of strings or tidy-selected columns identifying the primary keys to determine which rows to update}
 
 \item{delete}{whether to delete rows in \code{to} missing from \code{from}, default is not to delete the rows}
 

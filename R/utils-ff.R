@@ -131,12 +131,12 @@ fix_vmode <- function(vec) {
 
 #' write_ffdf
 #'
-#' Write to gzipped ffdf. `table_name` is converted to camelcase for consistency with
+#' Write out a gzip compressed ffdf. `table_name` is converted to camel-case for consistency with
 #' legacy use
 #'
 #' @param x data.frame to be written
-#' @param table_name string name of the file to be written, will be converted to camelcase
-#' @param out_dir string directory where the gzipped ffdf should be written
+#' @param table_name string name of the file to be written, will be converted to camel-case
+#' @param out_dir string directory where the compressed ffdf should be written
 #' @importFrom ffbase save.ffdf
 #' @importFrom ff ffdf as.ff
 #' @return invisibly
