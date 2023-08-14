@@ -157,8 +157,28 @@ test_that("read_cache reads from the most recently updated cache", {
 
 # write_cache -------------------------------------------------------------
 
-test_that("write_cache writes to the primary (first listed) cache", {
+test_that("write_cache writes to the primary (first listed) cache using either `cache_write` or `cache_update` and then syncs", {
 
+  cache_write <- mock()
+  cache_update <- mock()
+  sync_cache <- mock()
+  stub(write_cache, "cache_write", cache_write)
+  stub(write_cache, "cache_update", cache_update)
+  stub(write_cache, "sync_cache", sync_cache)
+
+  write_cache(test_read_write, "test_write_cache", "tessi")
+  expect_length(mock_args(cache_write), 1)
+  expect_equal(mock_args(cache_write)[[1]][["depth"]], names(config::get("tessilake")$depths)[1])
+  expect_length(mock_args(sync_cache), 1)
+  expect_equal(mock_args(sync_cache)[[1]][["table_name"]], "test_write_cache")
+  expect_equal(mock_args(sync_cache)[[1]][["incremental"]], FALSE)
+
+  write_cache(test_read_write, "test_write_cache", "tessi", incremental = TRUE)
+  expect_length(mock_args(cache_update), 1)
+  expect_equal(mock_args(cache_update)[[1]][["depth"]], names(config::get("tessilake")$depths)[1])
+  expect_length(mock_args(sync_cache), 2)
+  expect_equal(mock_args(sync_cache)[[2]][["table_name"]], "test_write_cache")
+  expect_equal(mock_args(sync_cache)[[2]][["incremental"]], TRUE)
 })
 
 # sync_cache --------------------------------------------------------------
