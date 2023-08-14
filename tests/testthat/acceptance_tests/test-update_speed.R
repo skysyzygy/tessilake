@@ -17,7 +17,7 @@ test_full_load <- function(long_name,schema) {
   time <- system.time(
     result <- read_sql_table(long_name,schema) %>% collect %>% setDT
   )
-  cache <- cache_write(result,long_name,"deep","tessi",partition=FALSE,overwrite=TRUE)
+  cache <- write_cache(result,long_name,"tessi",partition=FALSE,overwrite=TRUE)
   cli::cli_inform("time1.0: {scales::number(summary(time),.01)}")
   list(time,result)
 }
@@ -44,7 +44,7 @@ test_update <- function(long_name,schema,full_table,primary_keys,date_column,fra
   cli::cli_inform("time_sql{frac}: {scales::number(summary(time_sql),.01)}")
 
   time_arrow <- system.time(
-    update_table(cache_read(long_name,"deep","tessi"),
+    update_table(read_cache(long_name,"tessi"),
                  primary_keys=!!primary_keys,
                  date_column=!!date_column,
                  full_table[1:(.N-n),],

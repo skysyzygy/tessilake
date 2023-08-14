@@ -28,14 +28,16 @@ test_that("read_tessi can read the first 100 rows from all the defined tables", 
     long_name <- tessi_list_tables()[short_name == name]$long_name[[1]]
     long_name <- ifelse(!grepl("\\.", long_name), paste0("dbo.", long_name), long_name)
 
+    cli::cli_h1(name)
+
     x <- read_tessi(name)
     # check initial load
     expect_gte(nrow(collect(x)), 1)
     # check update
-    cache_write(cache_read(long_name, "deep", "tessi")[-1, ],
-      long_name, "deep", "tessi",
+    write_cache(read_cache(long_name, "tessi")[-1, ],
+      long_name, "tessi",
       partition = FALSE, overwrite = TRUE
     )
-    expect_equal(collect(read_tessi(!!name, freshness = 0)), collect(x))
+    expect_equal(collect(read_tessi(!!name, freshness = 0)), setDT(collect(x)))
   }
 })
