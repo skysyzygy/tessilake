@@ -15,9 +15,9 @@ cache_get_mtime <- function(table_name, depth, type) {
   cache_path <- cache_path(table_name, depth, type)
 
   cache_files <- c(
-    dir(cache_path, full.names = TRUE, recursive = TRUE),
+    cache_path,
     dir(dirname(cache_path),
-        pattern = basename(cache_path),
+        pattern = paste0(basename(cache_path),"\\..+"),
         full.names = TRUE, recursive = TRUE)
   )
 
