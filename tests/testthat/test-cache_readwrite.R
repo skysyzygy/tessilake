@@ -229,7 +229,7 @@ test_that("sync_cache copies non-arrow files across all storages", {
   expect_file_exists(cache_path("other_file.txt", depths[2], "stream"))
 
   timeA <- Sys.time()
-
+  Sys.sleep(1)
   other_file <- system2("touch",cache_path("other_file.txt", depths[2], "stream"))
   sync_cache("other_file.txt", "stream")
   expect_gt(file.mtime(cache_path("other_file.txt", depths[1], "stream")), timeA)

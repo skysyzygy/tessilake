@@ -12,7 +12,7 @@ cache_set_attributes(x, attributes)
 \item{attributes}{list of attributes to set}
 }
 \description{
-Internal function to set R attributes from an \link[arrow:Dataset]{arrow::Dataset}/\link[arrow:arrow_dplyr_query]{arrow::arrow_dplyr_query}
+Internal function to set R attributes from an \link[arrow:Dataset]{arrow::Dataset}/\code{arrow:::arrow_dplyr_query}
 }
 \examples{
 \dontrun{

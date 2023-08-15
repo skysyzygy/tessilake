@@ -13,7 +13,7 @@ cache_get_attributes(x)
 a named vector of attributes
 }
 \description{
-Internal function to read R attributes on an \link[arrow:Dataset]{arrow::Dataset}/\link[arrow:arrow_dplyr_query]{arrow::arrow_dplyr_query} or other object
+Internal function to read R attributes on an \link[arrow:Dataset]{arrow::Dataset}/\code{arrow:::arrow_dplyr_query} or other object
 }
 \examples{
 \dontrun{
