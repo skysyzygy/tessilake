@@ -88,11 +88,8 @@ read_sql <- function(query, name = digest::sha1(query),
   if (!is.null(primary_keys)) assert_character(primary_keys, min.len = length(date_column))
 
   sql_connect()
-  # build the query with dplyr
-  table <- tbl(db$db, sql(query))
-
-  # sort by primary keys and date column for faster updating
-  if (!is.null(primary_keys) || !is.null(date_column)) table <- arrange(table, across(!!c(primary_keys, date_column)))
+  # build the query with dplyr and sort by primary keys and date column for faster updating
+  table <- tbl(db$db, sql(query)) %>% arrange(across(!!c(primary_keys, date_column)))
 
   test_mtime <- Sys.time() - freshness
 
@@ -101,7 +98,7 @@ read_sql <- function(query, name = digest::sha1(query),
 
   if(all(mtimes < test_mtime))
     # Update caches
-    write_cache(collect(table), table_name = name, type = "tessi", incremental = TRUE,
+    write_cache(setDT(collect(table)), table_name = name, type = "tessi", incremental = TRUE,
                 primary_keys = primary_keys, date_column = date_column, partition = FALSE)
 
   read_cache(table_name = name, type = "tessi", select = select)

@@ -69,12 +69,12 @@ test_that("read_sql works with database", {
   data <- dplyr::copy_to(db$db, data, "data_with_tbl")
 
   read_sql("select * from data_with_tbl", "data_with_tbl")
-  expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), collect(data))
-  expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), collect(data))
+  expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), setDT(collect(data)))
+  expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), setDT(collect(data)))
 
   read_sql("select * from data_with_tbl", "data_with_tbl", freshness = 0)
-  expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), collect(data))
-  expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), collect(data))
+  expect_equal(collect(cache_read("data_with_tbl", "deep", "tessi")), setDT(collect(data)))
+  expect_equal(collect(cache_read("data_with_tbl", "shallow", "tessi")), setDT(collect(data)))
 })
 
 test_that("read_sql updates cache iff it's not fresh enough", {
