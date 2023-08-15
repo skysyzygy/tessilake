@@ -2,9 +2,12 @@
 % Please edit documentation in R/cache_files.R
 \name{cache_path}
 \alias{cache_path}
+\alias{cache_primary_path}
 \title{cache_path}
 \usage{
 cache_path(table_name, depth, type)
+
+cache_primary_path(table_name, type)
 }
 \arguments{
 \item{table_name}{string}
@@ -17,9 +20,16 @@ cache_path(table_name, depth, type)
 string for the configured cache path
 }
 \description{
-Internal function to build cache directory/path and check that we have read/write access to
+Convenience functions to return the configured cache path and check that we have read/write access to it
 \verb{tessilake.\{depth\}/\{type\}/\{table_name\}}
 }
+\section{Functions}{
+\itemize{
+\item \code{cache_path()}: function to return the specified cache path and check that we have read/write access to
+
+\item \code{cache_primary_path()}: wrapper around \link{cache_path} that returns the path for the primary (first) defined storage
+
+}}
 \examples{
 \dontrun{
 cache_path("test", "deep", "stream")

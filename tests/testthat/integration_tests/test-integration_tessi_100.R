@@ -5,16 +5,11 @@ local_cache_dirs()
 test_that("read_tessi can read the first 100 rows from all the defined tables", {
 
   # only load first 100 rows
-  arrange <- function(...) {
-    dbplyr:::arrange.tbl_lazy(...) %>% head(100)
-  }
-
-  # only load first 100 rows
-  tbl <- function(src, from, ...) {
-    if (!grepl("INFORMATION_SCHEMA|from T", from, perl = TRUE) && is.null(get("primary_keys", envir = parent.frame()))) {
-      return(dplyr::tbl(src, from) %>% head(100))
-    }
-    dplyr::tbl(src, from)
+  arrange <- function(table, ...) {
+    out <- dbplyr:::arrange.tbl_lazy(table, ...)
+    if(!grepl("INFORMATION_SCHEMA",table$lazy_query$x))
+      out <- out %>% head(100)
+    out
   }
 
   stub(read_sql, "arrange.tbl_lazy", arrange)
@@ -23,19 +18,28 @@ test_that("read_tessi can read the first 100 rows from all the defined tables", 
   stub(read_tessi, "read_sql_table", read_sql_table)
   stub(read_tessi, "read_sql", read_sql)
 
-  name <- "creditees"
-  for (name in unique(tessi_list_tables()$short_name)) {
-    long_name <- tessi_list_tables()[short_name == name]$long_name[[1]]
+  names <- unique(tessi_list_tables()$short_name)
+  names <- c("logins","performances","seasons","audit")
+  for (name in names) {
+    table <- tessi_list_tables()[short_name == name]
+    long_name <- table$long_name[[1]]
+    date_column <- table$date_column[[1]]
+    primary_keys <- table$primary_keys
     long_name <- ifelse(!grepl("\\.", long_name), paste0("dbo.", long_name), long_name)
+
+    cli::cli_h1(name)
 
     x <- read_tessi(name)
     # check initial load
     expect_gte(nrow(collect(x)), 1)
+    expect_lte(nrow(collect(x)), 100)
     # check update
-    cache_write(cache_read(long_name, "deep", "tessi")[-1, ],
-      long_name, "deep", "tessi",
+    incomplete_cache <- read_cache(long_name, "tessi") %>% head(nrow(.)-1)
+    write_cache(incomplete_cache,
+      long_name, "tessi",
       partition = FALSE, overwrite = TRUE
     )
-    expect_equal(collect(read_tessi(!!name, freshness = 0)), collect(x))
+    expect_equal(collect(read_tessi(!!name, freshness = 0)),
+                 collect(x))
   }
 })

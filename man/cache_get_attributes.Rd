@@ -7,13 +7,13 @@
 cache_get_attributes(x)
 }
 \arguments{
-\item{x}{Arrow Object}
+\item{x}{\link[arrow:arrow-package]{arrow} Object}
 }
 \value{
 a named vector of attributes
 }
 \description{
-Internal function to read R attributes on an Arrow Dataset/arrow_dplyr_query or other object
+Internal function to read R attributes on an \link[arrow:Dataset]{arrow::Dataset}/\code{arrow:::arrow_dplyr_query} or other object
 }
 \examples{
 \dontrun{

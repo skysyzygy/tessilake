@@ -2,9 +2,19 @@
 % Please edit documentation in R/cache_readwrite.R
 \name{write_cache}
 \alias{write_cache}
+\alias{cache_write}
 \title{write_cache}
 \usage{
 write_cache(
+  x,
+  table_name,
+  type,
+  depth = deprecated(),
+  incremental = FALSE,
+  ...
+)
+
+cache_write(
   x,
   table_name,
   depth,
@@ -21,9 +31,13 @@ write_cache(
 
 \item{table_name}{string}
 
-\item{depth}{string, e.g. "deep" or "shallow"}
-
 \item{type}{string, e.g. "tessi" or "stream"}
+
+\item{depth}{string, e.g. "deep" or "shallow", deprecated in \link{write_cache}}
+
+\item{incremental}{boolean, whether to call \link{cache_update} or \link{cache_write} to update the cached dataset.}
+
+\item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
 
 \item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
 
@@ -32,19 +46,23 @@ write_cache(
 \item{overwrite}{boolean, whether or not to overwrite an existing cache}
 
 \item{num_tries}{integer number of times to try reading before failing}
-
-\item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
 }
 \value{
 invisible
 }
 \description{
-Function to write cached arrow files. Simple wrapper on write_dataset that points to a directory defined by
-\verb{tessilake.\{depth\}/\{type\}} and uses partitioning specified by primary_keys attribute/argument.
+Function to write cached \link[arrow:arrow-package]{arrow} files. Writes to the first defined storage in \code{config::get("tessilake")},
+and then syncs to the other locations by calling \link{sync_cache}.
 }
+\section{Functions}{
+\itemize{
+\item \code{cache_write()}: Underlying cache writer that invokes \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset} and handles partitioning
+specified by \code{primary_keys} attribute/argument.
+
+}}
 \examples{
 \dontrun{
 x <- data.table(a = c(1, 2, 3))
-write_cache(x, "test", "deep", "stream", primary_keys = c("a"))
+write_cache(x, "test", "stream", primary_keys = c("a"))
 }
 }

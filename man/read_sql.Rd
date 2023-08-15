@@ -47,9 +47,9 @@ Defaults to "last_update_dt" if it exists in the table.}
 \item{schema}{character, database schema. Default is \code{dbo}}
 }
 \value{
-an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
+an Apache \link[arrow:Table]{arrow::Table}
 
-an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
+an Apache \link[arrow:Table]{arrow::Table}.
 }
 \description{
 Execute a database query and cache it locally as a Feather file and remotely as a Parquet file.

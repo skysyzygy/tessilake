@@ -1,6 +1,6 @@
 #' cache_update
 #'
-#' Internal function to update portions of cached arrow files.
+#' Internal function to update portions of cached \link[arrow:arrow-package]{arrow} files.
 #'
 #' @param x data.frame or part of a data.frame to be cached
 #' @param table_name string
@@ -10,12 +10,13 @@
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
 #' @param incremental whether or not to update the cache incrementally or to simply overwrite the existing cache, default is `TRUE`.
-#' @param ... extra arguments passed on to [`arrow::open_dataset`] and [`arrow::write_dataset`]
+#' @param ... extra arguments passed on to [arrow::open_dataset] and [arrow::write_dataset]
 #'
 #' @return invisible
 #' @importFrom arrow open_dataset
 #' @importFrom dplyr select filter all_of anti_join distinct
 #' @importFrom rlang sym
+#' @importFrom utils modifyList
 #' @examples
 #' \dontrun{
 #' x <- data.table(a = 1:1000, b = runif(1000))
@@ -29,7 +30,7 @@ cache_update <- function(x, table_name, depth, type,
   . <- NULL
 
   if (!cache_exists(table_name, depth, type)) {
-    return(cache_write(x, table_name, depth, type, primary_keys = primary_keys))
+    return(cache_write(x, table_name, depth, type, primary_keys = primary_keys, ...))
   }
 
   dataset <- cache_read(table_name, depth, type, include_partition = TRUE, ...)
@@ -71,7 +72,11 @@ cache_update <- function(x, table_name, depth, type,
 
   x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
 
-  cache_write(x, table_name, depth, type, primary_keys = primary_keys, partition = partition, overwrite = TRUE, ...)
+  args <- modifyList(rlang::list2(...),
+                     list(x = x, table_name = table_name, depth = depth, type = type,
+                          primary_keys = primary_keys, partition = partition, overwrite = TRUE))
+
+  do.call(cache_write, args)
 
   if (delete == TRUE && partition == TRUE) {
     cache_delete(table_name, depth, type, partitions = setdiff(dataset_partitions, partitions))

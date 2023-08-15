@@ -58,7 +58,7 @@ tessi_list_tables <- function() {
 #' @param incremental whether or not to load data incrementally, default is `TRUE`
 #' @param ... further arguments to be passed to read_sql_table
 #'
-#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @return an Apache [arrow::Table].
 #' @importFrom rlang enexpr call_match
 #' @importFrom stringr str_split
 #' @importFrom dplyr mutate_if
@@ -149,7 +149,7 @@ merge_customer_no_map <- function(table,column,
 
 #' tessi_customer_no_map
 #'
-#' Return an Arrow table of customer numbers `customer_no` mapped to merged `merged_customer_no` and household/primary group
+#' Return an [arrow::Table] of customer numbers `customer_no` mapped to merged `merged_customer_no` and household/primary group
 #' customer numbers `group_customer_no`.
 #'
 #' @param freshness the returned data will be at least this fresh

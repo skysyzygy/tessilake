@@ -1,25 +1,53 @@
 
+
 #' read_cache
 #'
-#' Function to read cached arrow files. Simple wrapper on open_dataset.
+#' Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storage depths.
 #' Optionally returns the partition information as a dataset column.
 #'
 #' @param table_name string
-#' @param depth string, e.g. "deep" or "shallow"
+#' @param depth string, e.g. "deep" or "shallow", deprecated in [read_cache]
 #' @param type string, e.g. "tessi" or "stream"
 #' @param include_partition boolean, whether or not to return the partition information as a column
 #' @param select vector of strings indicating columns to select from database
-#' @param ... extra arguments to pass on to arrow::open_dataset
+#' @param ... extra arguments to pass on to [cache_read] and then [arrow::open_dataset], [arrow::read_parquet], or [arrow::read_feather]
 #' @param num_tries integer number of times to try reading before failing
 #'
-#' @return [`arrow::Dataset`]
-#' @importFrom arrow open_dataset read_feather read_parquet
+#' @return [arrow::Dataset]
+#' @importFrom checkmate assert_character
+#' @importFrom lifecycle deprecated deprecate_warn
 #' @export
 #' @examples
 #' \dontrun{
-#' read_cache("test", "deep", "stream")
+#' write_cache(data.table(a=letters), "test", "stream")
+#' read_cache("test", "stream")
 #' }
-read_cache <- cache_read <- function(table_name, depth, type,
+read_cache <- function(table_name, type, depth = deprecated(), ...) {
+  assert_character(table_name, len = 1)
+  assert_character(type, len = 1)
+
+  if(lifecycle::is_present(depth) | type %in% names(config::get("tessilake")$depths)) {
+    deprecate_warn("0.4.0", "tessilake::read_cache(depth)",
+                    details = "The depth argument is no longer needed, reads are made from the most-recently updated storage.",
+                    always = TRUE)
+  }
+
+  depths <- names(config::get("tessilake")[["depths"]])
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime(table_name, depth, type))
+
+  cache_read(
+    table_name = table_name,
+    depth = depths[order(mtimes, decreasing = TRUE)[1]],
+    type = type,
+    ...
+  )
+
+}
+
+#' @describeIn read_cache Underlying cache reader that invokes [arrow::open_dataset], [arrow::read_parquet], or [arrow::read_feather]
+#' and handles partitioning information
+#' @importFrom arrow open_dataset read_feather read_parquet
+cache_read <- function(table_name, depth, type,
                        include_partition = FALSE, select = NULL, num_tries = 60, ...) {
   cache_path <- cache_path(table_name, depth, type)
 
@@ -60,7 +88,7 @@ read_cache <- cache_read <- function(table_name, depth, type,
   }
 
   if(!exists("cache")) {
-    rlang::warn(c(paste("Couldn't read cache at", cache_path),
+    rlang::abort(c(paste("Couldn't read cache at", cache_path),
                   "*" = last_error$message))
     return(FALSE)
   }
@@ -70,12 +98,13 @@ read_cache <- cache_read <- function(table_name, depth, type,
 
 #' write_cache
 #'
-#' Function to write cached arrow files. Simple wrapper on write_dataset that points to a directory defined by
-#' `tessilake.{depth}/{type}` and uses partitioning specified by primary_keys attribute/argument.
+#' Function to write cached \link[arrow:arrow-package]{arrow} files. Writes to the first defined storage in `config::get("tessilake")`,
+#' and then syncs to the other locations by calling [sync_cache].
 #'
 #' @param x data.frame to be written
 #' @param table_name string
-#' @param depth string, e.g. "deep" or "shallow"
+#' @param incremental boolean, whether to call [cache_update] or [cache_write] to update the cached dataset.
+#' @param depth string, e.g. "deep" or "shallow", deprecated in [write_cache]
 #' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param num_tries integer number of times to try reading before failing
@@ -88,13 +117,54 @@ read_cache <- cache_read <- function(table_name, depth, type,
 #' @importFrom dplyr select mutate
 #' @importFrom data.table setattr
 #' @importFrom rlang is_symbol as_name env_has
+#' @importFrom lifecycle deprecated deprecate_warn
 #' @export
 #' @examples
 #' \dontrun{
 #' x <- data.table(a = c(1, 2, 3))
-#' write_cache(x, "test", "deep", "stream", primary_keys = c("a"))
+#' write_cache(x, "test", "stream", primary_keys = c("a"))
 #' }
-write_cache <- cache_write <- function(x, table_name, depth, type,
+#' @importFrom utils modifyList
+write_cache <- function(x, table_name, type,
+                        depth = deprecated(),
+                        incremental = FALSE, ...) {
+  assert_dataframeish(x)
+  assert_character(table_name, len = 1)
+  assert_character(type, len = 1)
+  depths <- names(config::get("tessilake")[["depths"]])
+
+  if(lifecycle::is_present(depth) | type %in% names(config::get("tessilake")$depths)) {
+    lifecycle::deprecate_warn("0.4.0", "tessilake::write_cache(depth)",
+                               details = "The depth argument is no longer needed, writes are to the primary storage and then synced across all storages.",
+                               always = TRUE)
+  }
+
+  args <- modifyList(rlang::list2(...),
+                     list(x = x, table_name = table_name, depth = depths[1], type = type))
+
+  if(incremental) {
+    do.call(cache_update, args)
+  } else {
+    do.call(cache_write, args)
+  }
+
+  sync_cache(table_name = table_name, type = type, incremental = incremental, ...)
+
+  cache_path <- cache_path(table_name = table_name, depth = depths[1], type = type)
+  cache_files <- c(cache_path, dir(dirname(cache_path),
+                                           pattern = paste0(table_name, "\\..+"),
+                                           full.names = TRUE, recursive = TRUE))
+
+  if(length(cache_files) > 0)
+    system2("touch",cache_files)
+
+}
+
+
+#' @describeIn write_cache Underlying cache writer that invokes [arrow::write_feather], [arrow::write_parquet] or [arrow::write_dataset] and handles partitioning
+#' specified by `primary_keys` attribute/argument.
+#' @importFrom utils modifyList
+cache_write <- function(x, table_name, depth, type,
                         primary_keys = cache_get_attributes(x)$primary_keys,
                         partition = !is.null(primary_keys), overwrite = FALSE,
                         num_tries = 60, ...) {
@@ -162,7 +232,7 @@ write_cache <- cache_write <- function(x, table_name, depth, type,
   }
 
   if(!exists("cache")) {
-    rlang::warn(c(paste("Couldn't write cache at", cache_path),
+    rlang::abort(c(paste("Couldn't write cache at", cache_path),
                   "*" = last_error$message))
   }
 
@@ -173,6 +243,63 @@ write_cache <- cache_write <- function(x, table_name, depth, type,
     }
     if (inherits(x, "data.table") & exists("partition_name"))
       x[, (partition_name) := NULL]
+  }
+
+  invisible()
+}
+
+#' sync_cache
+#'
+#' Syncs cached files across storage depths by incrementally updating using [cache_update] or simply copying and converting
+#' the most recently-modified cache to the other locations using [cache_read] and [cache_write].
+#'
+#' @param table_name string
+#' @param type string, e.g. "tessi" or "stream"
+#' @param incremental boolean, whether to incrementally update the caches by using [cache_update] or simply copying the whole file.
+#' @param date_column character name of the column to be used for determining the date of last row update, useful for incremental updates.
+#' @param whole_file boolean, whether to copy the whole file using [file.copy] or to convert it using [cache_read] and [cache_write]. The default
+#' is to convert if the cache is in a recognizable \link[arrow:arrow-package]{arrow} format and to copy if it is not.
+#' @param ... additional parameters passed on to [cache_update]
+#' @return invisible
+#' @importFrom checkmate assert_character
+#' @export
+#' @examples
+#' \dontrun{
+#' x <- data.table(a = c(1, 2, 3))
+#' write_cache(x, "test", "stream", primary_keys = c("a"))
+#' sync_cache("test", "stream")
+#' }
+sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL, whole_file = !cache_exists_any(table_name, type), ...) {
+  assert_character(table_name, len = 1)
+  assert_character(type, len = 1)
+
+  depths <- names(config::get("tessilake")[["depths"]])
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime(table_name, depth, type))
+  depths <- depths[order(mtimes, decreasing = TRUE)]
+
+  for(index in seq(2,length(depths))) {
+    if(whole_file) {
+      file.copy(cache_path(table_name = table_name, depths[index-1], type = type),
+                cache_path(table_name = table_name, depths[index], type = type),
+                overwrite = TRUE)
+      next
+    }
+
+    table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
+    if(incremental) {
+      args <- list(x = table,
+                   table_name = table_name, depth = depths[index], type = type,
+                   delete = TRUE, date_column = date_column)
+      cache_sync <- cache_update
+    } else {
+      args <- list(x = table,
+                   table_name = table_name, depth = depths[index], type = type,
+                   overwrite = TRUE)
+      cache_sync <- cache_write
+    }
+
+    args <- modifyList(rlang::list2(...), args)
+    do.call(cache_sync, args)
   }
 
   invisible()

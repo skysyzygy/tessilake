@@ -13,6 +13,6 @@ tessi_customer_no_map(freshness = as.difftime(7, units = "days"))
 \link[arrow:Table]{arrow::Table}
 }
 \description{
-Return an Arrow table of customer numbers \code{customer_no} mapped to merged \code{merged_customer_no} and household/primary group
+Return an \link[arrow:Table]{arrow::Table} of customer numbers \code{customer_no} mapped to merged \code{merged_customer_no} and household/primary group
 customer numbers \code{group_customer_no}.
 }

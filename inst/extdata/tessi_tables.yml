@@ -104,7 +104,7 @@ lists:
   base_table: T_LIST
   primary_keys: list_no
 logins:
-  long_name: T_CUST_LOGIN
+  long_name: dbo.T_CUST_LOGIN
   query: |
     select const_update_dt,create_dt,create_loc,created_by,customer_no,eaddress_no,failed_attempts,
     inactive,last_login_dt,last_update_dt,last_updated_by,locked_dt,login,login_no,login_type,n1n2_ind,
@@ -140,12 +140,8 @@ payments:
   incremental: false
 performances:
   long_name: BI.VT_PERFORMANCE_DETAIL
-  base_table: ''
-  primary_keys: ''
 performance_keywords:
   long_name: BI.VT_DW_PERFORMANCE_KEYWORDS
-  base_table: ''
-  primary_keys: ''
 plans:
   long_name: BI.VT_PLAN
   base_table: T_PLAN
@@ -192,7 +188,6 @@ seats:
 seat_history:
   long_name: T_ORDER_SEAT_HIST
   base_table: T_ORDER_SEAT_HIST
-  primary_keys: ''
   incremental: false
 sources:
   long_name: BI.VT_SOURCE

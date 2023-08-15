@@ -25,6 +25,38 @@ test_that("cache_get_mtime works with cache_write", {
   expect_lt(cache_get_mtime("test_partitioning", "shallow", "tessi"), timeC)
 })
 
+test_that("cache_get_mtime works with cache_update", {
+  timeA <- Sys.time()
+  cache_update(test_read_write[1,], "test_read_write", "deep", "tessi", partition = FALSE)
+  cache_update(test_read_write[1,], "test_read_write", "shallow", "tessi", partition = FALSE)
+  timeB <- Sys.time()
+
+  cache_update(test_read_write[1,], "test_partitioning", "deep", "tessi")
+  cache_update(test_read_write[1,], "test_partitioning", "shallow", "tessi")
+  timeC <- Sys.time()
+
+  expect_gt(cache_get_mtime("test_read_write", "deep", "tessi"), timeA)
+  expect_gt(cache_get_mtime("test_read_write", "shallow", "tessi"), timeA)
+  expect_lt(cache_get_mtime("test_read_write", "deep", "tessi"), timeB)
+  expect_lt(cache_get_mtime("test_read_write", "shallow", "tessi"), timeB)
+
+  expect_gt(cache_get_mtime("test_partitioning", "deep", "tessi"), timeB)
+  expect_gt(cache_get_mtime("test_partitioning", "shallow", "tessi"), timeB)
+  expect_lt(cache_get_mtime("test_partitioning", "deep", "tessi"), timeC)
+  expect_lt(cache_get_mtime("test_partitioning", "shallow", "tessi"), timeC)
+})
+
+test_that("cache_get_mtime doesn't get confused about similarly named caches", {
+  cache_write(test_read_write, "test_read_write", "deep", "tessi", partition = FALSE, overwrite = TRUE)
+  timeA <- Sys.time()
+  cache_write(test_read_write, "test_read_write2", "deep", "tessi", partition = FALSE)
+
+  expect_lt(cache_get_mtime("test_read_write", "deep", "tessi"), timeA)
+  expect_gt(cache_get_mtime("test_read_write2", "deep", "tessi"), timeA)
+
+})
+
+
 # cache_delete ------------------------------------------------------------
 
 test_that("cache_delete complains if arguments incorrect", {

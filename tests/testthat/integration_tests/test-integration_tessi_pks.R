@@ -9,6 +9,8 @@ test_that("read_tessi can read the primary keys from all the defined tables", {
     long_name <- tessi_list_tables()[short_name == name]$long_name[[1]]
     long_name <- ifelse(!grepl("\\.", long_name), paste0("dbo.", long_name), long_name)
 
+    cli::cli_h1(name)
+
     # only load primary keys
     tbl <- function(src, from, ...) {
       if (grepl("INFORMATION_SCHEMA|from T", from, perl = TRUE)) {

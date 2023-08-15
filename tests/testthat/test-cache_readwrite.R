@@ -63,7 +63,7 @@ test_that("cache_write is failure resistant", {
   # make cache read-only
   system2("chmod",c("400",paste0(path,".feather")))
   # and try to write it...
-  expect_warning(
+  expect_error(
     cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T,num_tries = 1),
     "IOError")
   # set up a deferred job to make it writeable again
@@ -82,7 +82,7 @@ test_that("cache_write is failure resistant", {
 # cache_read --------------------------------------------------------------
 
 test_that("cache_read returns FALSE and warns for non-existent caches", {
-  expect_warning(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
+  expect_error(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
                               "Cache does not exist")
 })
 
@@ -118,7 +118,7 @@ test_that("cache_read is failure resistant", {
   # mung up the file
   system2("truncate",c("-s","-1k",shQuote(paste0(path,".parquet"))))
   # and try to read it -- should throw warning
-  expect_warning(cache_read("test_read_write","deep","tessi",num_tries = 1),"Couldn't read cache.+corrupted")
+  expect_error(cache_read("test_read_write","deep","tessi",num_tries = 1),"Couldn't read cache.+corrupted")
   # point child process to parent tempdir
   mockery::stub(cache_read,"cache_path",path)
   # now try to read it again
@@ -130,4 +130,112 @@ test_that("cache_read is failure resistant", {
   r$wait()
   ret <- r$get_result()
   expect_equal(ret,test_read_write)
+})
+
+# read_cache --------------------------------------------------------------
+
+test_that("read_cache reads from the most recently updated cache", {
+  withr::local_package("lubridate")
+  cache_read <- mock(cycle = TRUE)
+  cache_get_mtime <- mock(now(), now() + 3600, now() + 3600, now())
+  stub(read_cache, "cache_read", cache_read)
+  stub(read_cache, "cache_get_mtime", cache_get_mtime)
+
+  read_cache("test_read_write", "tessi")
+  expect_length(mock_args(cache_read), 1)
+  expect_equal(mock_args(cache_read)[[1]][["depth"]], names(config::get("tessilake")$depths)[2])
+
+  read_cache("test_read_write", "tessi")
+  expect_length(mock_args(cache_read), 2)
+  expect_equal(mock_args(cache_read)[[2]][["depth"]], names(config::get("tessilake")$depths)[1])
+
+})
+
+# write_cache -------------------------------------------------------------
+
+test_that("write_cache writes to the primary (first listed) cache using either `cache_write` or `cache_update` and then syncs", {
+
+  cache_write <- mock()
+  cache_update <- mock()
+  sync_cache <- mock()
+  stub(write_cache, "cache_write", cache_write)
+  stub(write_cache, "cache_update", cache_update)
+  stub(write_cache, "sync_cache", sync_cache)
+
+  write_cache(test_read_write, "test_write_cache", "tessi")
+  expect_length(mock_args(cache_write), 1)
+  expect_equal(mock_args(cache_write)[[1]][["depth"]], names(config::get("tessilake")$depths)[1])
+  expect_length(mock_args(sync_cache), 1)
+  expect_equal(mock_args(sync_cache)[[1]][["table_name"]], "test_write_cache")
+  expect_equal(mock_args(sync_cache)[[1]][["incremental"]], FALSE)
+
+  write_cache(test_read_write, "test_write_cache", "tessi", incremental = TRUE)
+  expect_length(mock_args(cache_update), 1)
+  expect_equal(mock_args(cache_update)[[1]][["depth"]], names(config::get("tessilake")$depths)[1])
+  expect_length(mock_args(sync_cache), 2)
+  expect_equal(mock_args(sync_cache)[[2]][["table_name"]], "test_write_cache")
+  expect_equal(mock_args(sync_cache)[[2]][["incremental"]], TRUE)
+})
+
+test_that("write_cache makes the primary file the most recently updated after a sync for better performance", {
+  depths <- names(config::get("tessilake")$depths)
+  write_cache(test_read_write, "test_write_cache", "tessi")
+
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test_write_cache", depth, "tessi"))
+  expect_length(mtimes,length(depths))
+  expect_true(all(mtimes[1] > mtimes[-1]))
+})
+
+# sync_cache --------------------------------------------------------------
+
+test_that("sync_cache updates arrow caches non-incrementally across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+  cache_write(test_read_write, "test_sync_cache", depths[1], "stream")
+  .cache_write <- mock(cycle = TRUE)
+  stub(sync_cache, "cache_write", .cache_write)
+
+  sync_cache("test_sync_cache", "stream")
+  expect_length(mock_args(.cache_write),1)
+  expect_equal(mock_args(.cache_write)[[1]][["depth"]], depths[2])
+
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream")
+  sync_cache("test_sync_cache", "stream")
+  expect_length(mock_args(.cache_write),2)
+  expect_equal(mock_args(.cache_write)[[2]][["depth"]], depths[1])
+
+})
+
+test_that("sync_cache updates arrow caches incrementally across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+  cache_write(test_read_write, "test_sync_cache", depths[1], "stream", overwrite = TRUE)
+  cache_update <- mock(cycle = TRUE)
+  stub(sync_cache, "cache_update", cache_update)
+
+  sync_cache("test_sync_cache", "stream", incremental = TRUE)
+  expect_length(mock_args(cache_update),1)
+  expect_equal(mock_args(cache_update)[[1]][["depth"]], depths[2])
+
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream", overwrite = TRUE)
+  sync_cache("test_sync_cache", "stream", incremental = TRUE)
+  expect_length(mock_args(cache_update),2)
+  expect_equal(mock_args(cache_update)[[2]][["depth"]], depths[1])
+})
+
+test_that("sync_cache copies non-arrow files across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+
+  other_file <- file.create(cache_path("other_file.txt", depths[1], "stream"))
+  sync_cache("other_file.txt", "stream")
+  expect_file_exists(cache_path("other_file.txt", depths[2], "stream"))
+
+  timeA <- Sys.time()
+  Sys.sleep(1)
+  other_file <- system2("touch",cache_path("other_file.txt", depths[2], "stream"))
+  sync_cache("other_file.txt", "stream")
+  expect_gt(file.mtime(cache_path("other_file.txt", depths[1], "stream")), timeA)
+  expect_gt(file.mtime(cache_path("other_file.txt", depths[2], "stream")), timeA)
+
+  expect_equal(file.mtime(cache_path("other_file.txt", depths[1], "stream")),
+               file.mtime(cache_path("other_file.txt", depths[2], "stream")))
+
 })

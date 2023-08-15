@@ -15,18 +15,20 @@ cache_get_mtime <- function(table_name, depth, type) {
   cache_path <- cache_path(table_name, depth, type)
 
   cache_files <- c(
-    dir(cache_path, full.names = TRUE, recursive = TRUE),
+    cache_path,
+    dir(cache_path,
+        full.names = TRUE, recursive = TRUE),
     dir(dirname(cache_path),
-        pattern = basename(cache_path),
-        full.names = TRUE, recursive = TRUE)
+        pattern = paste0(basename(cache_path),"\\..+"),
+        full.names = TRUE)
   )
 
-  max(file.mtime(cache_files), na.rm = TRUE)
+  max(c(file.mtime(cache_files), -Inf), na.rm = TRUE)
 }
 
 #' cache_path
 #'
-#' Internal function to build cache directory/path and check that we have read/write access to
+#' Convenience functions to return the configured cache path and check that we have read/write access to it
 #' `tessilake.{depth}/{type}/{table_name}`
 #'
 #' @param table_name string
@@ -40,6 +42,7 @@ cache_get_mtime <- function(table_name, depth, type) {
 #' \dontrun{
 #' cache_path("test", "deep", "stream")
 #' }
+#' @describeIn cache_path function to return the specified cache path and check that we have read/write access to
 cache_path <- function(table_name, depth, type) {
   assert_character(table_name, len = 1)
   assert_choice(depth, names(config::get("tessilake")$depths))
@@ -60,6 +63,14 @@ cache_path <- function(table_name, depth, type) {
   cache_path
 }
 
+#' @export
+#' @describeIn cache_path wrapper around [cache_path] that returns the path for the primary (first) defined storage
+cache_primary_path <- function(table_name, type) {
+
+  cache_path(table_name = table_name, depth = names(config::get("tessilake")$depths)[1], type = type)
+
+}
+
 #' cache_exists
 #'
 #' Internal function to test if a cache already exists.
@@ -78,6 +89,14 @@ cache_exists <- function(table_name, depth, type) {
   cache_path <- cache_path(table_name, depth, type)
 
   dir.exists(cache_path) || file.exists(paste0(cache_path, ".feather")) || file.exists(paste0(cache_path, ".parquet"))
+}
+
+#' @export
+#' @describeIn cache_exists Convenience function that tests if a cache already exists at any depth
+cache_exists_any <- function(table_name, type) {
+  depths <- names(config::get("tessilake")[["depths"]])
+
+  any(sapply(depths, \(depth) cache_exists(table_name = table_name, depth = depth, type = type)))
 }
 
 #' cache_delete

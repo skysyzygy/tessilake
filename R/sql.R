@@ -58,7 +58,7 @@ db <- new.env(parent = emptyenv())
 #' @param freshness the returned data will be at least this fresh
 #' @param incremental whether or not to load data incrementally, default is `TRUE`
 #'
-#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @return an Apache [arrow::Table]
 #' @importFrom arrow arrow_table
 #' @importFrom checkmate assert_character
 #' @importFrom dplyr tbl sql summarise
@@ -88,43 +88,20 @@ read_sql <- function(query, name = digest::sha1(query),
   if (!is.null(primary_keys)) assert_character(primary_keys, min.len = length(date_column))
 
   sql_connect()
-  # build the query with dplyr
-  table <- tbl(db$db, sql(query))
-
-  # sort by primary keys for faster updating
-  if (!is.null(primary_keys)) table <- arrange(table, across(!!primary_keys))
+  # build the query with dplyr and sort by primary keys and date column for faster updating
+  table <- tbl(db$db, sql(query)) %>% arrange(across(!!c(primary_keys, date_column)))
 
   test_mtime <- Sys.time() - freshness
 
   depths <- names(config::get("tessilake")[["depths"]])
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime(name, depth, "tessi"))
 
-  iwalk(depths, \(depth, index) {
+  if(all(mtimes < test_mtime))
+    # Update caches
+    write_cache(setDT(collect(table)), table_name = name, type = "tessi", incremental = TRUE,
+                primary_keys = primary_keys, date_column = date_column, partition = FALSE)
 
-    if(index > 1) {
-      table <- cache_read(name, depths[index-1], "tessi")
-      test_mtime <- cache_get_mtime(name, depths[index-1], "tessi")
-    }
-
-    if (!cache_exists(name, depth, "tessi")) {
-      if(inherits(table, "tbl_sql"))
-        table <- collect(table)
-      cache_write(table, name, depth, "tessi", partition = FALSE, primary_keys = primary_keys)
-    } else if (cache_get_mtime(name, depth, "tessi") < test_mtime) {
-      cache_update(table, name, depth, "tessi",
-        primary_keys = primary_keys,
-        date_column = date_column,
-        delete = TRUE,
-        incremental = incremental
-      )
-    }
-  })
-
-  cache_read(
-    table_name = name,
-    depth = "shallow",
-    type = "tessi",
-    select = select
-  )
+  read_cache(table_name = name, type = "tessi", select = select)
 }
 
 #' read_sql_table
@@ -143,7 +120,7 @@ read_sql <- function(query, name = digest::sha1(query),
 #' @importFrom DBI dbListTables
 #' @importFrom rlang maybe_missing
 #' @importFrom stringr str_split
-#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @return an Apache [arrow::Table].
 #' @export
 #'
 #' @examples
