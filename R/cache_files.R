@@ -62,6 +62,7 @@ cache_path <- function(table_name, depth, type) {
   cache_path
 }
 
+#' @export
 #' @describeIn cache_path wrapper around [cache_path] that returns the path for the primary (first) defined storage
 cache_primary_path <- function(table_name, type) {
 
