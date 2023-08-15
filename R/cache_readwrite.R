@@ -88,7 +88,7 @@ cache_read <- function(table_name, depth, type,
   }
 
   if(!exists("cache")) {
-    rlang::warn(c(paste("Couldn't read cache at", cache_path),
+    rlang::abort(c(paste("Couldn't read cache at", cache_path),
                   "*" = last_error$message))
     return(FALSE)
   }
@@ -232,7 +232,7 @@ cache_write <- function(x, table_name, depth, type,
   }
 
   if(!exists("cache")) {
-    rlang::warn(c(paste("Couldn't write cache at", cache_path),
+    rlang::abort(c(paste("Couldn't write cache at", cache_path),
                   "*" = last_error$message))
   }
 

@@ -63,7 +63,7 @@ test_that("cache_write is failure resistant", {
   # make cache read-only
   system2("chmod",c("400",paste0(path,".feather")))
   # and try to write it...
-  expect_warning(
+  expect_error(
     cache_write(test_write_failure,"test_write_failure","shallow","tessi",overwrite=T,num_tries = 1),
     "IOError")
   # set up a deferred job to make it writeable again
@@ -82,7 +82,7 @@ test_that("cache_write is failure resistant", {
 # cache_read --------------------------------------------------------------
 
 test_that("cache_read returns FALSE and warns for non-existent caches", {
-  expect_warning(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
+  expect_error(expect_false(cache_read("blah", "deep", "tessi", num_tries = 1)),
                               "Cache does not exist")
 })
 
@@ -118,7 +118,7 @@ test_that("cache_read is failure resistant", {
   # mung up the file
   system2("truncate",c("-s","-1k",shQuote(paste0(path,".parquet"))))
   # and try to read it -- should throw warning
-  expect_warning(cache_read("test_read_write","deep","tessi",num_tries = 1),"Couldn't read cache.+corrupted")
+  expect_error(cache_read("test_read_write","deep","tessi",num_tries = 1),"Couldn't read cache.+corrupted")
   # point child process to parent tempdir
   mockery::stub(cache_read,"cache_path",path)
   # now try to read it again
