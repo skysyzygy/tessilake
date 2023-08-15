@@ -13,7 +13,7 @@
 #' @param ... extra arguments to pass on to [cache_read] and then [arrow::open_dataset], [arrow::read_parquet], or [arrow::read_feather]
 #' @param num_tries integer number of times to try reading before failing
 #'
-#' @return [`arrow::Dataset`]
+#' @return [arrow::Dataset]
 #' @importFrom checkmate assert_character
 #' @importFrom lifecycle deprecated deprecate_warn
 #' @export
@@ -258,7 +258,7 @@ cache_write <- function(x, table_name, depth, type,
 #' @param incremental boolean, whether to incrementally update the caches by using [cache_update] or simply copying the whole file.
 #' @param date_column character name of the column to be used for determining the date of last row update, useful for incremental updates.
 #' @param whole_file boolean, whether to copy the whole file using [file.copy] or to convert it using [cache_read] and [cache_write]. The default
-#' is to convert if the cache is in a readable format and to copy if it is not.
+#' is to convert if the cache is in a recognizable \link[arrow:arrow-package]{arrow} format and to copy if it is not.
 #' @param ... additional parameters passed on to [cache_update]
 #' @return invisible
 #' @importFrom checkmate assert_character

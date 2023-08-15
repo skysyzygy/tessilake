@@ -25,7 +25,7 @@ name of a SQL table that exists in Tessitura. The default SQL table schema is \c
 \item{...}{further arguments to be passed to read_sql_table}
 }
 \value{
-an Apache Arrow Table, see the \link[arrow:arrow-package]{arrow::arrow-package} package for more information.
+an Apache \link[arrow:Table]{arrow::Table}.
 }
 \description{
 Thin wrapper on read_sql_table using the tables configured in \code{list_tessi_tables} that also :

@@ -4,7 +4,14 @@
 \alias{sync_cache}
 \title{sync_cache}
 \usage{
-sync_cache(table_name, type, incremental = FALSE, date_column = NULL, ...)
+sync_cache(
+  table_name,
+  type,
+  incremental = FALSE,
+  date_column = NULL,
+  whole_file = !cache_exists_any(table_name, type),
+  ...
+)
 }
 \arguments{
 \item{table_name}{string}
@@ -14,6 +21,9 @@ sync_cache(table_name, type, incremental = FALSE, date_column = NULL, ...)
 \item{incremental}{boolean, whether to incrementally update the caches by using \link{cache_update} or simply copying the whole file.}
 
 \item{date_column}{character name of the column to be used for determining the date of last row update, useful for incremental updates.}
+
+\item{whole_file}{boolean, whether to copy the whole file using \link{file.copy} or to convert it using \link{cache_read} and \link{cache_write}. The default
+is to convert if the cache is in a recognizable \link[arrow:arrow-package]{arrow} format and to copy if it is not.}
 
 \item{...}{additional parameters passed on to \link{cache_update}}
 }

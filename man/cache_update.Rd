@@ -33,13 +33,13 @@ cache_update(
 
 \item{incremental}{whether or not to update the cache incrementally or to simply overwrite the existing cache, default is \code{TRUE}.}
 
-\item{...}{extra arguments passed on to \code{\link[arrow:open_dataset]{arrow::open_dataset}} and \code{\link[arrow:write_dataset]{arrow::write_dataset}}}
+\item{...}{extra arguments passed on to \link[arrow:open_dataset]{arrow::open_dataset} and \link[arrow:write_dataset]{arrow::write_dataset}}
 }
 \value{
 invisible
 }
 \description{
-Internal function to update portions of cached arrow files.
+Internal function to update portions of cached \link[arrow:arrow-package]{arrow} files.
 }
 \examples{
 \dontrun{

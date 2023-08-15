@@ -33,7 +33,7 @@ cache_read(
 \item{num_tries}{integer number of times to try reading before failing}
 }
 \value{
-\code{\link[arrow:Dataset]{arrow::Dataset}}
+\link[arrow:Dataset]{arrow::Dataset}
 }
 \description{
 Function to read cached \link[arrow:arrow-package]{arrow} files. Reads from the most recently updated cache across all storage depths.

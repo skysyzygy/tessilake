@@ -7,12 +7,12 @@
 cache_set_attributes(x, attributes)
 }
 \arguments{
-\item{x}{Arrow Object}
+\item{x}{\link[arrow:arrow-package]{arrow} Object}
 
 \item{attributes}{list of attributes to set}
 }
 \description{
-Internal function to set R attributes from an Arrow Dataset/arrow_dplyr_query
+Internal function to set R attributes from an \link[arrow:Dataset]{arrow::Dataset}/\link[arrow:arrow_dplyr_query]{arrow::arrow_dplyr_query}
 }
 \examples{
 \dontrun{

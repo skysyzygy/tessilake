@@ -1,6 +1,6 @@
 #' cache_update
 #'
-#' Internal function to update portions of cached arrow files.
+#' Internal function to update portions of cached \link[arrow:arrow-package]{arrow} files.
 #'
 #' @param x data.frame or part of a data.frame to be cached
 #' @param table_name string
@@ -10,7 +10,7 @@
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
 #' @param incremental whether or not to update the cache incrementally or to simply overwrite the existing cache, default is `TRUE`.
-#' @param ... extra arguments passed on to [`arrow::open_dataset`] and [`arrow::write_dataset`]
+#' @param ... extra arguments passed on to [arrow::open_dataset] and [arrow::write_dataset]
 #'
 #' @return invisible
 #' @importFrom arrow open_dataset

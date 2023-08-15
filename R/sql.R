@@ -58,7 +58,7 @@ db <- new.env(parent = emptyenv())
 #' @param freshness the returned data will be at least this fresh
 #' @param incremental whether or not to load data incrementally, default is `TRUE`
 #'
-#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @return an Apache [arrow::Table]
 #' @importFrom arrow arrow_table
 #' @importFrom checkmate assert_character
 #' @importFrom dplyr tbl sql summarise
@@ -120,7 +120,7 @@ read_sql <- function(query, name = digest::sha1(query),
 #' @importFrom DBI dbListTables
 #' @importFrom rlang maybe_missing
 #' @importFrom stringr str_split
-#' @return an Apache Arrow Table, see the [arrow::arrow-package] package for more information.
+#' @return an Apache [arrow::Table].
 #' @export
 #'
 #' @examples

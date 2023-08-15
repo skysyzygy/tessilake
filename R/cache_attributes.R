@@ -1,8 +1,8 @@
 #' cache_get_attributes
 #'
-#' Internal function to read R attributes on an Arrow Dataset/arrow_dplyr_query or other object
+#' Internal function to read R attributes on an [arrow::Dataset]/[arrow::arrow_dplyr_query] or other object
 #'
-#' @param x Arrow Object
+#' @param x \link[arrow:arrow-package]{arrow} Object
 #'
 #' @return a named vector of attributes
 #' @importFrom checkmate assert test_class
@@ -29,9 +29,9 @@ cache_get_attributes <- function(x) {
 
 #' cache_set_attributes
 #'
-#' Internal function to set R attributes from an Arrow Dataset/arrow_dplyr_query
+#' Internal function to set R attributes from an [arrow::Dataset]/[arrow::arrow_dplyr_query]
 #'
-#' @param x Arrow Object
+#' @param x \link[arrow:arrow-package]{arrow} Object
 #' @param attributes list of attributes to set
 #'
 #' @return NULL
