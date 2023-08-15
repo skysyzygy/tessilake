@@ -2,9 +2,12 @@
 % Please edit documentation in R/cache_files.R
 \name{cache_exists}
 \alias{cache_exists}
+\alias{cache_exists_any}
 \title{cache_exists}
 \usage{
 cache_exists(table_name, depth, type)
+
+cache_exists_any(table_name, type)
 }
 \arguments{
 \item{table_name}{string}
@@ -19,6 +22,11 @@ TRUE/FALSE
 \description{
 Internal function to test if a cache already exists.
 }
+\section{Functions}{
+\itemize{
+\item \code{cache_exists_any()}: Convenience function that tests if a cache already exists at any depth
+
+}}
 \examples{
 \dontrun{
 cache_exists("test", "deep", "stream")

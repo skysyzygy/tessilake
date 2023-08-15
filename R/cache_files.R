@@ -90,6 +90,14 @@ cache_exists <- function(table_name, depth, type) {
   dir.exists(cache_path) || file.exists(paste0(cache_path, ".feather")) || file.exists(paste0(cache_path, ".parquet"))
 }
 
+#' @export
+#' @describeIn cache_exists Convenience function that tests if a cache already exists at any depth
+cache_exists_any <- function(table_name, type) {
+  depths <- names(config::get("tessilake")[["depths"]])
+
+  any(sapply(depths, \(depth) cache_exists(table_name = table_name, depth = depth, type = type)))
+}
+
 #' cache_delete
 #'
 #' Delete some or all cache files for a given cache.
