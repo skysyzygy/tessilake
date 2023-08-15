@@ -139,6 +139,7 @@ fix_vmode <- function(vec) {
 #' @param out_dir string directory where the compressed ffdf should be written
 #' @importFrom ffbase save.ffdf
 #' @importFrom ff ffdf as.ff
+#' @importFrom utils tar
 #' @return invisibly
 #' @export
 write_ffdf <- function(x, table_name, out_dir) {
