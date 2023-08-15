@@ -222,5 +222,20 @@ test_that("sync_cache updates arrow caches incrementally across all storages", {
 })
 
 test_that("sync_cache copies non-arrow files across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+
+  other_file <- file.create(cache_path("other_file.txt", depths[1], "stream"))
+  sync_cache("other_file.txt", "stream")
+  expect_file_exists(cache_path("other_file.txt", depths[2], "stream"))
+
+  timeA <- Sys.time()
+
+  other_file <- file.create(cache_path("other_file.txt", depths[2], "stream"))
+  sync_cache("other_file.txt", "stream")
+  expect_gt(file.mtime(cache_path("other_file.txt", depths[1], "stream")), timeA)
+  expect_gt(file.mtime(cache_path("other_file.txt", depths[2], "stream")), timeA)
+
+  expect_equal(file.mtime(cache_path("other_file.txt", depths[1], "stream")),
+               file.mtime(cache_path("other_file.txt", depths[2], "stream")))
 
 })

@@ -257,6 +257,8 @@ cache_write <- function(x, table_name, depth, type,
 #' @param type string, e.g. "tessi" or "stream"
 #' @param incremental boolean, whether to incrementally update the caches by using [cache_update] or simply copying the whole file.
 #' @param date_column character name of the column to be used for determining the date of last row update, useful for incremental updates.
+#' @param whole_file boolean, whether to copy the whole file using [file.copy] or to convert it using [cache_read] and [cache_write]. The default
+#' is to convert if the cache is in a readable format and to copy if it is not.
 #' @param ... additional parameters passed on to [cache_update]
 #' @return invisible
 #' @importFrom checkmate assert_character
@@ -267,7 +269,7 @@ cache_write <- function(x, table_name, depth, type,
 #' write_cache(x, "test", "stream", primary_keys = c("a"))
 #' sync_cache("test", "stream")
 #' }
-sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL, ...) {
+sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL, whole_file = !cache_exists_any(table_name, type), ...) {
   assert_character(table_name, len = 1)
   assert_character(type, len = 1)
 
@@ -276,6 +278,13 @@ sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL
   depths <- depths[order(mtimes, decreasing = TRUE)]
 
   for(index in seq(2,length(depths))) {
+    if(whole_file) {
+      file.copy(cache_path(table_name = table_name, depths[index-1], type = type),
+                cache_path(table_name = table_name, depths[index], type = type),
+                overwrite = TRUE)
+      next
+    }
+
     table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
     if(incremental) {
       args <- list(x = table,
