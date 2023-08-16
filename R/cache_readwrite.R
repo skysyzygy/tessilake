@@ -156,7 +156,7 @@ write_cache <- function(x, table_name, type,
                                            full.names = TRUE, recursive = TRUE))
 
   if(length(cache_files) > 0)
-    system2("touch",cache_files)
+    system2("touch",shQuote(cache_files))
 
 }
 

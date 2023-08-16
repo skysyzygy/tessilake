@@ -184,6 +184,12 @@ test_that("write_cache makes the primary file the most recently updated after a 
   mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test_write_cache", depth, "tessi"))
   expect_length(mtimes,length(depths))
   expect_true(all(mtimes[1] > mtimes[-1]))
+
+  write_cache(test_read_write, "test name with spaces", "tessi")
+
+  mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test name with spaces", depth, "tessi"))
+  expect_length(mtimes,length(depths))
+  expect_true(all(mtimes[1] > mtimes[-1]))
 })
 
 # sync_cache --------------------------------------------------------------
@@ -230,7 +236,7 @@ test_that("sync_cache copies non-arrow files across all storages", {
 
   timeA <- Sys.time()
   Sys.sleep(1)
-  other_file <- system2("touch",cache_path("other_file.txt", depths[2], "stream"))
+  other_file <- system2("touch",shQuote(cache_path("other_file.txt", depths[2], "stream")))
   sync_cache("other_file.txt", "stream")
   expect_gt(file.mtime(cache_path("other_file.txt", depths[1], "stream")), timeA)
   expect_gt(file.mtime(cache_path("other_file.txt", depths[2], "stream")), timeA)

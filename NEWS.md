@@ -1,4 +1,11 @@
+# tessilake 0.4.1
+- fix for write_cache timestamp updating so that it will work with paths with spaces 
+
 # tessilake 0.4.0
+- major update deprecating the old depth-specific read_cache/write_cache.
+- read_cache now always reads from the most-recently updated cache
+- write_cache now writes to the primary (first) depth cache and then syncs using cache_write, cache_update or file.copy to the other depths.
+_ bug fixes for ... dispatch and cache_get_mtime
 
 # tessilake 0.3.0
 - New config.yml format for tessilake allowing for more flexible storage configuration
