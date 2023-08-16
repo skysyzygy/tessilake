@@ -150,10 +150,12 @@ write_cache <- function(x, table_name, type,
 
   sync_cache(table_name = table_name, type = type, incremental = incremental, ...)
 
-  cache_path <- cache_path(table_name = table_name, depth = depths[1], type = type)
-  cache_files <- c(cache_path, dir(dirname(cache_path),
-                                           pattern = paste0(table_name, "\\..+"),
-                                           full.names = TRUE, recursive = TRUE))
+  cache_path <- cache_path(table_name = "", depth = depths[1], type = type)
+  cache_files <- c(file.path(cache_path, table_name),
+                   dir(cache_path,
+                       pattern = paste0(table_name, "\\..+"),
+                       full.names = TRUE, recursive = TRUE)) %>%
+    purrr::keep(file.exists)
 
   if(length(cache_files) > 0)
     system2("touch",shQuote(cache_files))
@@ -208,7 +210,8 @@ cache_write <- function(x, table_name, depth, type,
                   partitioning = partition_name)
 
   } else {
-    if (!dir.exists(dirname(cache_path))) dir.create(dirname(cache_path))
+    cache_dir <- cache_path("", depth, type)
+    if (!dir.exists(cache_dir)) dir.create(cache_dir)
     attributes$primary_keys <- primary_keys
     cache_set_attributes(x, attributes)
 

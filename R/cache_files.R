@@ -12,14 +12,17 @@
 #' cache_get_mtime("test", "deep", "stream")
 #' }
 cache_get_mtime <- function(table_name, depth, type) {
-  cache_path <- cache_path(table_name, depth, type)
+  cache_path <- cache_path("", depth, type)
 
   cache_files <- c(
-    cache_path,
-    dir(cache_path,
+    # partitioned directory
+    file.path(cache_path,table_name),
+    # and files
+    dir(file.path(cache_path,table_name),
         full.names = TRUE, recursive = TRUE),
-    dir(dirname(cache_path),
-        pattern = paste0(basename(cache_path),"\\..+"),
+    # parquet/feather files
+    dir(cache_path,
+        pattern = paste0(table_name,"\\..+"),
         full.names = TRUE)
   )
 
