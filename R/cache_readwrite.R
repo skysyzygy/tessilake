@@ -89,7 +89,7 @@ cache_read <- function(table_name, depth, type,
 
   if(!exists("cache")) {
     rlang::abort(c(paste("Couldn't read cache at", cache_path),
-                  "*" = last_error$message))
+                  "*" = rlang::cnd_message(last_error)))
     return(FALSE)
   }
 
@@ -236,7 +236,7 @@ cache_write <- function(x, table_name, depth, type,
 
   if(!exists("cache")) {
     rlang::abort(c(paste("Couldn't write cache at", cache_path),
-                  "*" = last_error$message))
+                  "*" = rlang::cnd_message(last_error)))
   }
 
   # restore the old attributes so we don't have side-effects on x if x is a data.table
