@@ -246,8 +246,9 @@ test_that("sync_cache syncs arrow timestamps across all storages", {
   depths <- names(config::get("tessilake")$depths)
 
   cache_write(test_read_write, "test_sync_cache", depths[1], "stream", overwrite = TRUE)
-  cache_write(test_read_write, "test_sync_cache", depths[2], "stream", overwrite = TRUE)
   cache_write(test_read_write, "test_sync_cache_partitioned", depths[1], "stream", overwrite = TRUE, primary_keys = "x")
+  Sys.sleep(1)
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream", overwrite = TRUE)
   cache_write(test_read_write, "test_sync_cache_partitioned", depths[2], "stream", overwrite = TRUE, primary_keys = "x")
 
   cache_files <- c(cache_files("test_sync_cache", depths[1], "stream"),
@@ -270,6 +271,7 @@ test_that("sync_cache syncs non-arrow timestamps across all storages", {
   depths <- names(config::get("tessilake")$depths)
 
   file.create(cache_path("other_file.txt", depths[1], "stream"))
+  Sys.sleep(1)
   file.create(cache_path("other_file.txt", depths[2], "stream"))
 
   cache_files <- c(cache_files("other_file.txt", depths[1], "stream"),
