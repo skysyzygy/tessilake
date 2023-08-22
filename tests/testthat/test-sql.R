@@ -103,6 +103,7 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 
   # updates deep and shallow because they're now both older than data and they're stale
   stub(read_sql, "cache_get_mtime", lubridate::now() - lubridate::ddays(9))
+  Sys.sleep(1)
   read_sql("data_fresh", "data_fresh", primary_keys = "x", date_column = "last_update_dt")
 
   mtime_parquet <- file.mtime(file.path(tempdir(), "deep", "tessi", "data_fresh.parquet"))
