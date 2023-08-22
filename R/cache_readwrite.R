@@ -150,16 +150,6 @@ write_cache <- function(x, table_name, type,
 
   sync_cache(table_name = table_name, type = type, incremental = incremental, ...)
 
-  cache_path <- cache_path(table_name = "", depth = depths[1], type = type)
-  cache_files <- c(file.path(cache_path, table_name),
-                   dir(cache_path,
-                       pattern = paste0(table_name, "\\..+"),
-                       full.names = TRUE, recursive = TRUE)) %>%
-    purrr::keep(file.exists)
-
-  if(length(cache_files) > 0)
-    system2("touch",shQuote(cache_files))
-
 }
 
 
@@ -282,28 +272,36 @@ sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL
 
   for(index in seq(2,length(depths))) {
     if(whole_file) {
-      file.copy(cache_path(table_name = table_name, depths[index-1], type = type),
-                cache_path(table_name = table_name, depths[index], type = type),
+      file.copy(cache_files(table_name = table_name, depth = depths[index-1], type = type),
+                cache_path(table_name = table_name, depth = depths[index], type = type),
                 overwrite = TRUE)
-      next
-    }
-
-    table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
-    if(incremental) {
-      args <- list(x = table,
-                   table_name = table_name, depth = depths[index], type = type,
-                   delete = TRUE, date_column = date_column)
-      cache_sync <- cache_update
     } else {
-      args <- list(x = table,
-                   table_name = table_name, depth = depths[index], type = type,
-                   overwrite = TRUE)
-      cache_sync <- cache_write
+
+      table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
+      if(incremental) {
+        args <- list(x = table,
+                     table_name = table_name, depth = depths[index], type = type,
+                     delete = TRUE, date_column = date_column)
+        cache_sync <- cache_update
+      } else {
+        args <- list(x = table,
+                     table_name = table_name, depth = depths[index], type = type,
+                     overwrite = TRUE)
+        cache_sync <- cache_write
+      }
+
+      args <- modifyList(rlang::list2(...), args)
+      do.call(cache_sync, args)
+
     }
 
-    args <- modifyList(rlang::list2(...), args)
-    do.call(cache_sync, args)
   }
+
+  for(depth in depths)
+    if(system2("touch",c("-t",format(max(mtimes),format = "%Y%m%d%H%M.%S"),
+                       shQuote(cache_files(table_name = table_name, depth = depth, type = type))),
+             stdout = NULL, stderr = NULL) != 0)
+      rlang::warn(c("Timestamp sync failed for:","*" = cache_files(table_name = table_name, depth = depths[index], type = type)))
 
   invisible()
 }

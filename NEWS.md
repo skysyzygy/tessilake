@@ -1,5 +1,6 @@
 # tessilake 0.4.1
-- fix for write_cache timestamp updating so that it will work with paths with spaces 
+- fix for timestamp updating so that it will work with paths with spaces 
+- fix for timestamp updating so that all files end up with exactly the same timestamp
 
 # tessilake 0.4.0
 - major update deprecating the old depth-specific read_cache/write_cache.

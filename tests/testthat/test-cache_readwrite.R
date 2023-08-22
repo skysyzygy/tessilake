@@ -183,13 +183,13 @@ test_that("write_cache makes the primary file the most recently updated after a 
 
   mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test_write_cache", depth, "tessi"))
   expect_length(mtimes,length(depths))
-  expect_true(all(mtimes[1] > mtimes[-1]))
+  expect_true(all(mtimes[1] == mtimes[-1]))
 
   write_cache(test_read_write, "test name with spaces", "tessi")
 
   mtimes <- purrr::map_vec(depths, \(depth) cache_get_mtime("test name with spaces", depth, "tessi"))
   expect_length(mtimes,length(depths))
-  expect_true(all(mtimes[1] > mtimes[-1]))
+  expect_true(all(mtimes[1] == mtimes[-1]))
 })
 
 # sync_cache --------------------------------------------------------------
@@ -200,7 +200,10 @@ test_that("sync_cache updates arrow caches non-incrementally across all storages
   .cache_write <- mock(cycle = TRUE)
   stub(sync_cache, "cache_write", .cache_write)
 
-  sync_cache("test_sync_cache", "stream")
+  # sync cache will warn becasue it can't sync the timestamp on a non-existent cache
+  expect_warning(sync_cache("test_sync_cache", "stream"),
+                 paste0("Timestamp sync failed.+",depths[2],".+test_sync_cache"))
+
   expect_length(mock_args(.cache_write),1)
   expect_equal(mock_args(.cache_write)[[1]][["depth"]], depths[2])
 
@@ -230,18 +233,51 @@ test_that("sync_cache updates arrow caches incrementally across all storages", {
 test_that("sync_cache copies non-arrow files across all storages", {
   depths <- names(config::get("tessilake")$depths)
 
-  other_file <- file.create(cache_path("other_file.txt", depths[1], "stream"))
+  other_file <- write.csv(letters, cache_path("other_file.csv", depths[1], "stream"))
+  sync_cache("other_file.csv", "stream")
+  expect_file_exists(cache_path("other_file.csv", depths[2], "stream"))
+
+  expect_equal(read.csv(cache_path("other_file.csv", depths[1], "stream")),
+               read.csv(cache_path("other_file.csv", depths[2], "stream")))
+
+})
+
+test_that("sync_cache syncs arrow timestamps across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+
+  cache_write(test_read_write, "test_sync_cache", depths[1], "stream", overwrite = TRUE)
+  cache_write(test_read_write, "test_sync_cache", depths[2], "stream", overwrite = TRUE)
+  cache_write(test_read_write, "test_sync_cache_partitioned", depths[1], "stream", overwrite = TRUE, primary_keys = "x")
+  cache_write(test_read_write, "test_sync_cache_partitioned", depths[2], "stream", overwrite = TRUE, primary_keys = "x")
+
+  cache_files <- c(cache_files("test_sync_cache", depths[1], "stream"),
+                   cache_files("test_sync_cache", depths[2], "stream"))
+
+  cache_files_partitioned <- c(cache_files("test_sync_cache_partitioned", depths[1], "stream"),
+                               cache_files("test_sync_cache_partitioned", depths[2], "stream"))
+
+  expect_false(all(file.mtime(cache_files) == max(file.mtime(cache_files))))
+  expect_false(all(file.mtime(cache_files_partitioned) == max(file.mtime(cache_files_partitioned))))
+
+  sync_cache("test_sync_cache", "stream", incremental = TRUE)
+  sync_cache("test_sync_cache_partitioned", "stream", incremental = TRUE)
+
+  expect_true(all(file.mtime(cache_files) == max(file.mtime(cache_files))))
+  expect_true(all(file.mtime(cache_files_partitioned) == max(file.mtime(cache_files_partitioned))))
+})
+
+test_that("sync_cache syncs non-arrow timestamps across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+
+  file.create(cache_path("other_file.txt", depths[1], "stream"))
+  file.create(cache_path("other_file.txt", depths[2], "stream"))
+
+  cache_files <- c(cache_files("other_file.txt", depths[1], "stream"),
+                   cache_files("other_file.txt", depths[2], "stream"))
+
+  expect_false(all(file.mtime(cache_files) == max(file.mtime(cache_files))))
+
   sync_cache("other_file.txt", "stream")
-  expect_file_exists(cache_path("other_file.txt", depths[2], "stream"))
 
-  timeA <- Sys.time()
-  Sys.sleep(1)
-  other_file <- system2("touch",shQuote(cache_path("other_file.txt", depths[2], "stream")))
-  sync_cache("other_file.txt", "stream")
-  expect_gt(file.mtime(cache_path("other_file.txt", depths[1], "stream")), timeA)
-  expect_gt(file.mtime(cache_path("other_file.txt", depths[2], "stream")), timeA)
-
-  expect_equal(file.mtime(cache_path("other_file.txt", depths[1], "stream")),
-               file.mtime(cache_path("other_file.txt", depths[2], "stream")))
-
+  expect_true(all(file.mtime(cache_files) == max(file.mtime(cache_files))))
 })

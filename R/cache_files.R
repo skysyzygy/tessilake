@@ -12,9 +12,27 @@
 #' cache_get_mtime("test", "deep", "stream")
 #' }
 cache_get_mtime <- function(table_name, depth, type) {
+  cache_files <- cache_files(table_name = table_name, depth = depth, type = type)
+
+  max(c(file.mtime(cache_files), -Inf), na.rm = TRUE)
+}
+
+
+#' cache_files
+#'
+#' Get a vector of all of the files that make up the cache
+#'
+#' @param table_name string
+#' @param depth string, e.g. "deep" or "shallow"
+#' @param type string, e.g. "tessi" or "stream"
+#'
+#' @return character vector of filenames
+#' @export
+cache_files <- function(table_name, depth, type) {
+
   cache_path <- cache_path("", depth, type)
 
-  cache_files <- c(
+  c(
     # partitioned directory
     file.path(cache_path,table_name),
     # and files
@@ -25,8 +43,6 @@ cache_get_mtime <- function(table_name, depth, type) {
         pattern = paste0(table_name,"\\..+"),
         full.names = TRUE)
   )
-
-  max(c(file.mtime(cache_files), -Inf), na.rm = TRUE)
 }
 
 #' cache_path
