@@ -42,7 +42,7 @@ cache_files <- function(table_name, depth, type) {
     dir(cache_path,
         pattern = paste0(table_name,"\\..+"),
         full.names = TRUE)
-  )
+  ) %>% purrr::keep(file.exists)
 }
 
 #' cache_path

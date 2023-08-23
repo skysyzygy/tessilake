@@ -301,7 +301,8 @@ sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL
     if(system2("touch",c("-t",format(max(mtimes),format = "%Y%m%d%H%M.%S"),
                        shQuote(cache_files(table_name = table_name, depth = depth, type = type))),
              stdout = NULL, stderr = NULL) != 0)
-      rlang::warn(c("Timestamp sync failed for:","*" = cache_files(table_name = table_name, depth = depths[index], type = type)))
+      rlang::warn(c("Timestamp sync failed for:","*" = c(paste(depths[index], type, table_name),
+                                                         cache_files(table_name = table_name, depth = depths[index], type = type))))
 
   invisible()
 }
