@@ -16,11 +16,11 @@ test_that("cache_get_attributes returns attributes of a data.frame", {
 })
 
 
-test_that("cache_get_attributes returns attributes of an Arrow Table (except rownames)", {
+test_that("cache_get_attributes returns attributes of an Arrow Table (except rownames and class)", {
   x <- data.frame(c(1, 2, 3))
   setattr(x, "a", "test")
   expect_class(cache_get_attributes(arrow_table(x)), "list")
-  expect_mapequal(cache_get_attributes(arrow_table(x)), attributes(x))
+  expect_mapequal(cache_get_attributes(arrow_table(x)), attributes(x) %>% .[which(names(.) != "class")])
 })
 
 test_that("cache_get_attributes returns attributes of an arrow_dplyr_query", {
@@ -30,8 +30,8 @@ test_that("cache_get_attributes returns attributes of an arrow_dplyr_query", {
   query2 <- left_join(query1, query1)
   expect_class(cache_get_attributes(query1), "list")
   expect_class(cache_get_attributes(query2), "list")
-  expect_mapequal(cache_get_attributes(query1), attributes(x))
-  expect_mapequal(cache_get_attributes(query2), attributes(x))
+  expect_mapequal(cache_get_attributes(query1), attributes(x) %>% .[which(names(.) != "class")])
+  expect_mapequal(cache_get_attributes(query2), attributes(x) %>% .[which(names(.) != "class")])
 })
 
 
@@ -42,7 +42,7 @@ test_that("cache_get_attributes reads partitioning information from Arrow Datase
   write_dataset(x, filename)
   dataset <- open_dataset(filename)
   expect_class(cache_get_attributes(dataset), "list")
-  expect_mapequal(cache_get_attributes(dataset), attributes(x))
+  expect_mapequal(cache_get_attributes(dataset), attributes(x) %>% .[which(names(.) != "class")])
 })
 
 # cache_set_attributes ----------------------------------------------------
@@ -61,7 +61,7 @@ test_that("cache_set_attributes updates attributes of an Arrow Table", {
   x <- arrow_table(x)
   cache_set_attributes(x, list(names = "test", b = "another"))
   setattributes(y, list(names = "test", b = "another"))
-  expect_mapequal(cache_get_attributes(x), attributes(y))
+  expect_mapequal(cache_get_attributes(x), attributes(y) %>% .[which(names(.) != "class")])
 })
 
 test_that("cache_get_attributes updates attributes of an arrow_dplyr_query", {
@@ -72,6 +72,6 @@ test_that("cache_get_attributes updates attributes of an arrow_dplyr_query", {
   cache_set_attributes(query1, list(names = "test", b = "another"))
   cache_set_attributes(query2, list(names = "test", b = "another"))
   setattributes(y, list(names = "test", b = "another"))
-  expect_mapequal(cache_get_attributes(query1), attributes(y))
-  expect_mapequal(cache_get_attributes(query2), attributes(y))
+  expect_mapequal(cache_get_attributes(query1), attributes(y) %>% .[which(names(.) != "class")])
+  expect_mapequal(cache_get_attributes(query2), attributes(y) %>% .[which(names(.) != "class")])
 })
