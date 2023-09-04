@@ -142,6 +142,10 @@ performances:
   long_name: BI.VT_PERFORMANCE_DETAIL
 performance_keywords:
   long_name: BI.VT_DW_PERFORMANCE_KEYWORDS
+phones:
+  long_name: BI.VT_PHONE
+  base_table: T_PHONE
+  primary_keys: phone_no
 plans:
   long_name: BI.VT_PLAN
   base_table: T_PLAN
