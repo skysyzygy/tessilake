@@ -8,7 +8,7 @@ using date_column to determine which rows have been updated and updating only th
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
     
 
-    <nav class="navbar fixed-top navbar-light navbar-expand-lg bg-light"><div class="container">
+    <nav class="navbar fixed-top navbar-dark navbar-expand-lg bg-primary"><div class="container">
     
     <a class="navbar-brand me-2" href="../index.html">tessilake</a>
 
@@ -20,7 +20,17 @@ using date_column to determine which rows have been updated and updating only th
     </button>
 
     <div id="navbar" class="collapse navbar-collapse ms-3">
-      <ul class="navbar-nav me-auto"><li class="active nav-item">
+      <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
+  <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-r-packages">R Packages</a>
+  <div class="dropdown-menu" aria-labelledby="dropdown-r-packages">
+    <a class="dropdown-item" href="../NA">data @ BAM</a>
+    <a class="dropdown-item" href="../NA">tessireport</a>
+    <a class="dropdown-item" href="../NA">tessistream</a>
+    <a class="external-link dropdown-item" href="https://github.com/skysyzygy/tessilake">tessilake</a>
+    <a class="dropdown-item" href="../NA">tessiflow</a>
+  </div>
+</li>
+<li class="active nav-item">
   <a class="nav-link" href="../reference/index.html">Reference</a>
 </li>
 <li class="nav-item">
@@ -142,18 +152,18 @@ the default is <code>TRUE</code></p></dd>
 <span class="r-in"><span><span class="va">to</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">expect</span><span class="op">)</span><span class="op">[</span><span class="fl">1000</span><span class="op">:</span><span class="fl">10000</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="co"># and mung it up</span></span></span>
 <span class="r-in"><span><span class="va">to</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5000</span>, <span class="va">data</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">.N</span><span class="op">)</span><span class="op">]</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         x   y      data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1: 100  10 0.1149067</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2:   1  11 0.7306800</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    3:   2  11 0.2541995</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    4:   3  11 0.6298391</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    5:   4  11 0.9381227</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ---                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8997:  96 100 0.8337067</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8998:  97 100 0.9818016</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8999:  98 100 0.3118877</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9000:  99 100 0.6831759</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9001: 100 100 0.8907273</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x   y       data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1: 100  10 0.34367331</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2:   1  11 0.47003524</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    3:   2  11 0.61568370</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    4:   3  11 0.98940570</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5:   4  11 0.14119261</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ---                   </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8997:  96 100 0.65898497</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8998:  97 100 0.27858140</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8999:  98 100 0.55734437</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9000:  99 100 0.06060971</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9001: 100 100 0.95438525</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">update_table</span><span class="op">(</span><span class="va">from</span>, <span class="va">to</span>, primary_keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="va">expect</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              x     y  data</span>
@@ -10177,7 +10187,13 @@ the default is <code>TRUE</code></p></dd>
 
   
 
-  
+  <script type="module">
+  import mermaid from 'https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.esm.min.mjs';
+  mermaid.initialize({ startOnLoad: false });
+  mermaid.run({
+    querySelector: '.mermaid code',
+  });
 
-  </body></html>
+  jQuery("pre.mermaid code").on("click", (e) => jQuery(e.currentTarget).toggleClass("svg-modal"))
+</script></body></html>
 
