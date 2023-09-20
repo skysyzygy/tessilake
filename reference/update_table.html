@@ -23,11 +23,11 @@ using date_column to determine which rows have been updated and updating only th
       <ul class="navbar-nav me-auto"><li class="nav-item dropdown">
   <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown" role="button" aria-expanded="false" aria-haspopup="true" id="dropdown-r-packages">R Packages</a>
   <div class="dropdown-menu" aria-labelledby="dropdown-r-packages">
-    <a class="dropdown-item" href="../NA">data @ BAM</a>
-    <a class="dropdown-item" href="../NA">tessireport</a>
-    <a class="dropdown-item" href="../NA">tessistream</a>
-    <a class="external-link dropdown-item" href="https://github.com/skysyzygy/tessilake">tessilake</a>
-    <a class="dropdown-item" href="../NA">tessiflow</a>
+    <a class="dropdown-item" href="../../dataAtBAM/index.html">data @ BAM</a>
+    <a class="dropdown-item" href="../../tessireport/index.html">tessireport</a>
+    <a class="dropdown-item" href="../../tessistream/index.html">tessistream</a>
+    <a class="dropdown-item" href="../../tessilake/index.html">tessilake</a>
+    <a class="dropdown-item" href="../../tessiflow/index.html">tessiflow</a>
   </div>
 </li>
 <li class="active nav-item">
@@ -152,18 +152,18 @@ the default is <code>TRUE</code></p></dd>
 <span class="r-in"><span><span class="va">to</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://Rdatatable.gitlab.io/data.table/reference/copy.html" class="external-link">copy</a></span><span class="op">(</span><span class="va">expect</span><span class="op">)</span><span class="op">[</span><span class="fl">1000</span><span class="op">:</span><span class="fl">10000</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="co"># and mung it up</span></span></span>
 <span class="r-in"><span><span class="va">to</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">5000</span>, <span class="va">data</span> <span class="op">:=</span> <span class="fu"><a href="https://rdrr.io/r/stats/Uniform.html" class="external-link">runif</a></span><span class="op">(</span><span class="va">.N</span><span class="op">)</span><span class="op">]</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>         x   y      data</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    1: 100  10 0.8301750</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    2:   1  11 0.7053283</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    3:   2  11 0.3225117</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    4:   3  11 0.9388283</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    5:   4  11 0.8849548</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ---                  </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8997:  96 100 0.7718231</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8998:  97 100 0.2692353</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8999:  98 100 0.3055292</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9000:  99 100 0.5086618</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9001: 100 100 0.8068712</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         x   y        data</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    1: 100  10 0.611750737</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    2:   1  11 0.154462207</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    3:   2  11 0.995640222</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    4:   3  11 0.382939053</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    5:   4  11 0.167964639</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ---                    </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8997:  96 100 0.864284310</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8998:  97 100 0.001601493</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 8999:  98 100 0.772585558</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9000:  99 100 0.346301196</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 9001: 100 100 0.602424627</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">update_table</span><span class="op">(</span><span class="va">from</span>, <span class="va">to</span>, primary_keys <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="va">x</span>, <span class="va">y</span><span class="op">)</span><span class="op">)</span> <span class="op">==</span> <span class="va">expect</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>              x     y  data</span>
