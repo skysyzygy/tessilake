@@ -38,6 +38,10 @@ affiliations:
   long_name: BI.VT_AFFILIATION
   base_table: T_AFFILIATION
   primary_keys: affiliation_no
+associations:
+  long_name: BI.VT_ASSOCIATION
+  base_table: T_ASSOCIATION
+  primary_keys: association_no
 attributes:
   long_name: BI.VT_ATTRIBUTE
   base_table: TX_CUST_KEYWORD
