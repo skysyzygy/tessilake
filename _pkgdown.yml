@@ -1,20 +1,2 @@
 template:
   package: dataAtBAM.pkgdown
-
-reference:
-  - title: Power BI reports
-    desc: Dashboards hosted on Power BI and related topics
-  - contents:
-    - has_concept("powerbi")
-  - title: Tessitura
-    desc: Scheduled reports, utilities, and related topics
-  - contents:
-    - has_concept("tessitura")
-  - title: R scripts
-    desc:  R scripts used for synthesizing datasets, auditing, reporting, and machine learning
-  - contents:
-    - has_concept("R")
-  - title: Other
-    desc: Other things
-  - contents:
-    - lacks_concepts(c("R","powerbi","tessitura"))
