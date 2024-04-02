@@ -7,5 +7,5 @@ default:
       shallow:
         path: !expr file.path(tempdir(),"shallow")
         format: feather
-    tessitura: "Tessitura"
+    tessitura: "Tessitura ODBC Connector"
 
