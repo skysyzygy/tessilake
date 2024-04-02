@@ -79,6 +79,13 @@ test_that("cache_write is failure resistant", {
   expect_gte(length(mock_args(error_count)),1)
 })
 
+test_that("cache_write works after a read (see issue #22: Error with memory-mapped files on Windows during cache_write after a cache_read)", {
+  depths <- names(config::get("tessilake")$depths)
+  cache_write(test_read_write, "test_mmap_write", depths[1], "stream")
+  cache_read("test_mmap_write", depths[1], "stream")
+  expect_silent(cache_write(test_read_write, "test_mmap_write", depths[1], "stream", overwrite = TRUE, num_tries = 2))
+})
+
 # cache_read --------------------------------------------------------------
 
 test_that("cache_read returns FALSE and warns for non-existent caches", {

@@ -221,6 +221,7 @@ cache_write <- function(x, table_name, depth, type,
     if(exists("cache"))
       break
     num_tries <- num_tries - 1
+    gc()
     Sys.sleep(1)
   }
 
