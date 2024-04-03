@@ -80,10 +80,10 @@ supplemented by the tessi_tables dictionary in config.yml</p>
 <h3 id="yml-format">yml format<a class="anchor" aria-label="anchor" href="#yml-format"></a></h3>
 
 
-<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>{short_name}<span class="sc">:</span></span>
-<span id="cb1-2"><a href="#cb1-2" aria-hidden="true" tabindex="-1"></a>   long_name<span class="sc">:</span> {name of table<span class="sc">/</span>view to be loaded}</span>
-<span id="cb1-3"><a href="#cb1-3" aria-hidden="true" tabindex="-1"></a>   base_table<span class="sc">:</span> {the underlying table being queried that has primary_keys}</span>
-<span id="cb1-4"><a href="#cb1-4" aria-hidden="true" tabindex="-1"></a>   primary_keys<span class="sc">:</span> {the primary <span class="fu">key</span>(s) as a value or a list of values}</span></code></pre><p></p></div>
+<p></p><div class="sourceCode"><pre><code><span id="cb1-1"><a href="#cb1-1" tabindex="-1"></a>{short_name}<span class="sc">:</span></span>
+<span id="cb1-2"><a href="#cb1-2" tabindex="-1"></a>   long_name<span class="sc">:</span> {name of table<span class="sc">/</span>view to be loaded}</span>
+<span id="cb1-3"><a href="#cb1-3" tabindex="-1"></a>   base_table<span class="sc">:</span> {the underlying table being queried that has primary_keys}</span>
+<span id="cb1-4"><a href="#cb1-4" tabindex="-1"></a>   primary_keys<span class="sc">:</span> {the primary <span class="fu">key</span>(s) as a value or a list of values}</span></code></pre><p></p></div>
 </div>
 
     </div>
@@ -97,9 +97,11 @@ supplemented by the tessi_tables dictionary in config.yml</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="fu">tessi_list_tables</span><span class="op">(</span><span class="op">)</span><span class="op">[</span><span class="va">short_name</span> <span class="op">==</span> <span class="st">"customers"</span><span class="op">]</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    short_name      long_name base_table primary_keys date_column incremental</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        &lt;char&gt;         &lt;char&gt;     &lt;char&gt;       &lt;char&gt;      &lt;char&gt;      &lt;char&gt;</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1:  customers BI.VT_CUSTOMER T_CUSTOMER  customer_no        &lt;NA&gt;        &lt;NA&gt;</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    query</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1:  &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     query</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    &lt;char&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1:   &lt;NA&gt;</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
