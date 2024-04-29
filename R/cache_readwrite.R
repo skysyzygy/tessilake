@@ -62,7 +62,7 @@ cache_read <- function(table_name, depth, type,
     attributes <- cache_get_attributes(cache)
 
     if (!is.null(attributes$partitioning)) {
-      partition_name <- paste0("partition_", attributes$primary_keys)
+      partition_name <- paste0("partition_", attributes$primary_keys[[1]])
 
       if (partition_name %in% names(cache) && include_partition == FALSE) {
         cache <- select(cache, -!!partition_name)

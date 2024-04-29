@@ -19,6 +19,12 @@ test_that("cache_write with primary keys creates datasets", {
   expect_equal(length(dir(cache_path("test_partitioning", "deep", "tessi"))), 11)
   cache_write(test_partitioning, "test_partitioning", "shallow", "tessi")
   expect_equal(length(dir(cache_path("test_partitioning", "shallow", "tessi"))), 11)
+
+  data.table::setattr(test_partitioning, "primary_keys", c("x","y"))
+  cache_write(test_partitioning, "test_partitioning_2keys", "deep", "tessi")
+  expect_equal(length(dir(cache_path("test_partitioning", "deep", "tessi"))), 11)
+  cache_write(test_partitioning, "test_partitioning_2keys", "shallow", "tessi")
+  expect_equal(length(dir(cache_path("test_partitioning", "shallow", "tessi"))), 11)
 })
 
 test_that("cache_write with primary keys doesn't have side effects on x", {
@@ -102,11 +108,20 @@ test_that("cache_read returns data to the original form including attributes", {
     setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
   expect_equal(cache_read("test_partitioning", "shallow", "tessi") %>% collect() %>% setorderv("x") %>%
     setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
+
+  expect_equal(cache_read("test_partitioning_2keys", "deep", "tessi") %>% collect() %>% setorderv("x") %>%
+                 setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
+  expect_equal(cache_read("test_partitioning_2keys", "shallow", "tessi") %>% collect() %>% setorderv("x") %>%
+                 setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
 })
 
 test_that("cache_read with include_partition = TRUE returns the hidden partition column", {
   expect_equal(cache_read("test_partitioning", "deep", "tessi", include_partition = TRUE) %>% names(), c("x", "y", "partition_x"))
   expect_equal(cache_read("test_partitioning", "shallow", "tessi", include_partition = TRUE) %>% names(), c("x", "y", "partition_x"))
+
+  expect_equal(cache_read("test_partitioning_2keys", "deep", "tessi", include_partition = TRUE) %>% names(), c("x", "y", "partition_x"))
+  expect_equal(cache_read("test_partitioning_2keys", "shallow", "tessi", include_partition = TRUE) %>% names(), c("x", "y", "partition_x"))
+
 })
 
 test_that("cache_read can select particular columns", {

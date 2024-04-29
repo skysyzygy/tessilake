@@ -40,6 +40,8 @@ test_that("cache_update refuses to update a partitioned table with one with diff
   expect_error(cache_update(test_read_write, "test_partitioning", "deep", "tessi"), "primary keys")
   setattr(test_read_write, "primary_keys", "y")
   expect_error(cache_update(test_read_write, "test_partitioning", "deep", "tessi"), "primary keys")
+  setattr(test_read_write, "primary_keys", c("x","y"))
+  expect_error(cache_update(test_read_write, "test_partitioning", "deep", "tessi"), "primary keys")
 })
 
 test_incremental <- data.table(x = 1:100000, y = runif(1000))

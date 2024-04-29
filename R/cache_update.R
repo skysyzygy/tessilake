@@ -41,7 +41,7 @@ cache_update <- function(x, table_name, depth, type,
   partition <- !is.null(dataset_attributes$partitioning)
 
   if (partition == TRUE) {
-    if (is.null(primary_keys) || dataset_attributes$primary_keys != primary_keys) {
+    if (is.null(primary_keys) || !setequal(dataset_attributes$primary_keys, primary_keys)) {
       stop(sprintf(
         "Dataset has primary keys (%s) but x's primary keys are (%s). Cowardly refusing to continue.",
         dataset_attributes$primary_keys %||% "NULL",
