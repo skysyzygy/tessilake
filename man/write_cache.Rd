@@ -11,6 +11,7 @@ write_cache(
   type,
   depth = deprecated(),
   incremental = FALSE,
+  sync = TRUE,
   ...
 )
 
@@ -36,6 +37,8 @@ cache_write(
 \item{depth}{string, e.g. "deep" or "shallow", deprecated in \link{write_cache}}
 
 \item{incremental}{boolean, whether to call \link{cache_update} or \link{cache_write} to update the cached dataset.}
+
+\item{sync}{boolean, whether or not to sync the written cache to other storages}
 
 \item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
 

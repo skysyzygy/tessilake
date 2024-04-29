@@ -11,7 +11,7 @@ Description: Tessilake ingests data from Tessitura or other SQL database and cac
 License: MIT + file LICENSE
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.1
 URL: https://github.com/skysyzygy/tessilake
 BugReports: https://github.com/skysyzygy/tessilake/issues
 Config/Needs/website:
