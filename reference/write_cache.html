@@ -70,6 +70,7 @@ and then syncs to the other locations by calling <a href="sync_cache.html">sync_
 <span>  <span class="va">type</span>,</span>
 <span>  depth <span class="op">=</span> <span class="fu">deprecated</span><span class="op">(</span><span class="op">)</span>,</span>
 <span>  incremental <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sync <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span>
 <span></span>
@@ -106,6 +107,10 @@ and then syncs to the other locations by calling <a href="sync_cache.html">sync_
 
 <dt>incremental</dt>
 <dd><p>boolean, whether to call <a href="cache_update.html">cache_update</a> or cache_write to update the cached dataset.</p></dd>
+
+
+<dt>sync</dt>
+<dd><p>boolean, whether or not to sync the written cache to other storages</p></dd>
 
 
 <dt>...</dt>
