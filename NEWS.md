@@ -1,3 +1,9 @@
+# tessilake 0.4.2
+- fixed bug in update_table that was updating already existing rows in `to` on date-only updates
+- update_table now works with new columns in `from`
+- read_cache and write_cache both work with partitioned tables that have multiple primary keys
+- write_cache now has a flag to choose whether or not to sync to other storage; default is TRUE for legacy usage
+
 # tessilake 0.4.1
 - fix for timestamp updating so that it will work with paths with spaces 
 - fix for timestamp updating so that all files end up with exactly the same timestamp
