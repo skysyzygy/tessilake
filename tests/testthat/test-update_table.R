@@ -25,11 +25,39 @@ test_that("update_table requires that from and to are given", {
   expect_error(update_table(from), "to")
 })
 
-test_that("update_table requires that primary_keys and date_column refer to columns in from and to", {
-  from <- data.table(x = c(1, 2, 3))
-  to <- data.table(y = c(1, 2, 3))
-  expect_error(update_table(from, to, primary_keys = x), "colnames")
-  expect_error(update_table(from, to, date_column = y), "colnames")
+# test_that("update_table requires that primary_keys and date_column refer to columns in from and to", {
+#   from <- data.table(x = c(1, 2, 3))
+#   to <- data.table(y = c(1, 2, 3))
+#   expect_error(update_table(from, to, primary_keys = x), "colnames")
+#   expect_error(update_table(from, to, date_column = y), "colnames")
+# })
+
+test_that("update_table allows new columns in to", {
+  from_pk <- data.table(x = 1, y = 3)
+  from_dt <- data.table(x = 4, y = 3)
+  to <- data.table(x = c(3, 2, 1))
+  # primary keys
+  updated <- update_table(from_pk, copy(to), primary_keys = x)
+  expect_equal(colnames(updated),c("x","y"))
+  expect_setequal(updated$y, c(3,NA,NA))
+
+  # date only
+  expect_warning(updated <- update_table(from_dt, copy(to), date_column = x))
+  expect_equal(colnames(updated),c("x","y"))
+  expect_setequal(updated$y, c(3,NA,NA,NA))
+
+  # do it again with data.frames
+  from <- data.frame(x = 1, y = 3)
+  # primary keys
+  updated <- update_table(from_pk, copy(to), primary_keys = x)
+  expect_equal(colnames(updated),c("x","y"))
+  expect_setequal(updated$y, c(3,NA,NA))
+
+  # date only
+  expect_warning(updated <- update_table(from_dt, copy(to), date_column = x))
+  expect_equal(colnames(updated),c("x","y"))
+  expect_setequal(updated$y, c(3,NA,NA,NA))
+
 })
 
 test_that("update_table works with tidy-selected columns in primary_keys and date_column", {

@@ -65,7 +65,7 @@ expr_get_names <- function(expr) {
 #'
 update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
   assert_class(to, "data.table")
-  assert_subset(colnames(from), colnames(to))
+  #assert_subset(colnames(from), colnames(to))
 
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
@@ -117,8 +117,10 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
     # if `all` is very large we don't want to transfer it as a temp table so let's
     # download `from` and filter from by min/max of primary_keys
     for (primary_key in primary_keys) {
-      from <- filter(from, !!sym(primary_key) >= !!min(all[, primary_key, with = F]) &
-        !!sym(primary_key) <= !!max(all[, primary_key, with = F]))
+      if (is.numeric(all$primary_key)) {
+        from <- filter(from, !!sym(primary_key) >= !!min(all[, primary_key, with = F]) &
+          !!sym(primary_key) <= !!max(all[, primary_key, with = F]))
+      }
     }
     from <- from %>% collect()
   }
@@ -147,7 +149,7 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
   }
 
   to[update, (colnames(from)) := update, on = primary_keys]
-  to <- rbindlist(list(to, new), use.names = TRUE)
+  to <- rbindlist(list(to, new), use.names = TRUE, fill = TRUE)
   setorderv(to, primary_keys)
 
   to
@@ -184,7 +186,7 @@ update_table.data.table <- function(from, to, date_column = NULL, primary_keys =
   }
 
   to[update, (colnames(from)) := mget(paste0("i.", colnames(from))), on = primary_keys]
-  to <- rbindlist(list(to, new), use.names = TRUE)
+  to <- rbindlist(list(to, new), use.names = TRUE, fill = TRUE)
   setorderv(to, primary_keys)
 
   to
