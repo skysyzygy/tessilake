@@ -110,6 +110,7 @@ cache_read <- function(table_name, depth, type,
 #' @param num_tries integer number of times to try reading before failing
 #' @param partition boolean, whether or not to partition the dataset using primary_keys information
 #' @param overwrite boolean, whether or not to overwrite an existing cache
+#' @param sync boolean, whether or not to sync the written cache to other storages
 #' @param ... extra arguments passed on to [arrow::write_feather], [arrow::write_parquet] or [arrow::write_dataset]
 #'
 #' @return invisible
@@ -127,7 +128,8 @@ cache_read <- function(table_name, depth, type,
 #' @importFrom utils modifyList
 write_cache <- function(x, table_name, type,
                         depth = deprecated(),
-                        incremental = FALSE, ...) {
+                        incremental = FALSE,
+                        sync = TRUE, ...) {
   assert_dataframeish(x)
   assert_character(table_name, len = 1)
   assert_character(type, len = 1)
@@ -148,7 +150,7 @@ write_cache <- function(x, table_name, type,
     do.call(cache_write, args)
   }
 
-  sync_cache(table_name = table_name, type = type, incremental = incremental, ...)
+  if (sync) {sync_cache(table_name = table_name, type = type, incremental = incremental, ...)}
 
 }
 
