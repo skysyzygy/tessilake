@@ -210,8 +210,8 @@ update_table_date_only.data.table <- function(from, to, date_column = NULL) {
     summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
   }
   rbind(
-    to[get(date_column) < to_max_date],
-    from[get(date_column) >= to_max_date],
+    to[get(date_column) <= to_max_date],
+    from[get(date_column) > to_max_date],
     fill = TRUE
   )
 }
@@ -226,9 +226,9 @@ update_table_date_only.default <- function(from, to, date_column = NULL) {
   } else {
     summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
   }
-  from <- filter(from,!!rlang::sym(date_column) >= to_max_date) %>% collect()
+  from <- filter(from,!!rlang::sym(date_column) > to_max_date) %>% collect()
   rbind(
-    to[get(date_column) < to_max_date],
+    to[get(date_column) <= to_max_date],
     from,
     fill = TRUE
   )
