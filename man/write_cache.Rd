@@ -44,7 +44,8 @@ cache_write(
 
 \item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
 
-\item{partition}{boolean, whether or not to partition the dataset using primary_keys information}
+\item{partition}{boolean or character, if TRUE, partition is derived from primary_keys information; if character, partition identifies
+the column to use generating the partition}
 
 \item{overwrite}{boolean, whether or not to overwrite an existing cache}
 

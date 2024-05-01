@@ -239,8 +239,29 @@ test_that("update_table loads from DB incrementally by date when date_column giv
     dplyr::collect(.)
   })
 
-  # this writes out 1100 because 11*100 rows are updated
+  # this writes out 1000 because 10*100 rows are updated
   expect_output(result <- update_table_date_only(from, to, date_column = "x"), "\\[1\\] 1000$")
+  setkey(collect(result),x,y)
+  setkey(expect,x,y)
+  expect_equal(result, expect)
+})
+
+test_that("update_table loads from DB incrementally by date when date_column given and primary_keys are missing and prefer='from'", {
+  con <- DBI::dbConnect(RSQLite::SQLite(), ":memory:")
+
+  expect <- data.table(expand.grid(x = 1:100, y = 1:100))[, data := runif(.N)]
+  # divide the data
+  from <- copy_to(con,expect[x>50]) # 5000 rows
+  to <- copy(expect)[x<=90] # 9000 rows
+
+  stub(update_table_date_only.default, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., dplyr::n()))[[1]])
+    dplyr::collect(.)
+  })
+
+  # this writes out 1000 because 10*100 rows are updated
+  expect_output(result <- update_table_date_only(from, to, date_column = "x",
+                                                 prefer = "from"), "\\[1\\] 5000$")
   setkey(collect(result),x,y)
   setkey(expect,x,y)
   expect_equal(result, expect)

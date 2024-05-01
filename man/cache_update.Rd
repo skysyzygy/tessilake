@@ -13,6 +13,7 @@ cache_update(
   date_column = NULL,
   delete = FALSE,
   incremental = TRUE,
+  prefer = "to",
   ...
 )
 }
@@ -32,6 +33,9 @@ cache_update(
 \item{delete}{whether to delete rows in cache missing from \code{x}, default is not to delete the rows}
 
 \item{incremental}{whether or not to update the cache incrementally or to simply overwrite the existing cache, default is \code{TRUE}.}
+
+\item{prefer}{"from" or "to": which table to prefer on conflict during a date-only update.
+The default is to prefer the destination table, so that existing data in \code{to} is not overwritten.}
 
 \item{...}{extra arguments passed on to \link[arrow:open_dataset]{arrow::open_dataset} and \link[arrow:write_dataset]{arrow::write_dataset}}
 }

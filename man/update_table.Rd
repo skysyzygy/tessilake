@@ -15,7 +15,8 @@ update_table(
   date_column = NULL,
   primary_keys = NULL,
   delete = FALSE,
-  incremental = TRUE
+  incremental = TRUE,
+  ...
 )
 
 \method{update_table}{default}(
@@ -24,7 +25,8 @@ update_table(
   date_column = NULL,
   primary_keys = NULL,
   delete = FALSE,
-  incremental = TRUE
+  incremental = TRUE,
+  ...
 )
 
 \method{update_table}{data.table}(
@@ -33,14 +35,15 @@ update_table(
   date_column = NULL,
   primary_keys = NULL,
   delete = FALSE,
-  incremental = TRUE
+  incremental = TRUE,
+  ...
 )
 
-update_table_date_only(from, to, date_column = NULL)
+update_table_date_only(from, to, date_column = NULL, prefer = "to")
 
-\method{update_table_date_only}{data.table}(from, to, date_column = NULL)
+\method{update_table_date_only}{data.table}(from, to, date_column = NULL, prefer = "to")
 
-\method{update_table_date_only}{default}(from, to, date_column = NULL)
+\method{update_table_date_only}{default}(from, to, date_column = NULL, prefer = "to")
 }
 \arguments{
 \item{from}{the source object}
@@ -55,6 +58,15 @@ update_table_date_only(from, to, date_column = NULL)
 
 \item{incremental}{whether or not to update the table incrementally or to simply overwrite the existing table with a new one,
 the default is \code{TRUE}}
+
+\item{...}{
+  Arguments passed on to \code{\link[=update_table_date_only]{update_table_date_only}}
+  \describe{
+    \item{\code{}}{}
+  }}
+
+\item{prefer}{"from" or "to": which table to prefer on conflict during a date-only update.
+The default is to prefer the destination table, so that existing data in \code{to} is not overwritten.}
 }
 \value{
 a data.table updated in-place
@@ -83,5 +95,6 @@ to[1:5000, data := runif(.N)]
 
 update_table(from, to, primary_keys = c(x, y)) == expect
 # TRUE
+
 
 }

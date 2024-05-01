@@ -43,6 +43,7 @@ expr_get_names <- function(expr) {
 #' @param delete whether to delete rows in `to` missing from `from`, default is not to delete the rows
 #' @param incremental whether or not to update the table incrementally or to simply overwrite the existing table with a new one,
 #' the default is `TRUE`
+#' @inheritDotParams update_table_date_only prefer
 #'
 #' @importFrom dplyr collect left_join select semi_join copy_to
 #' @importFrom rlang as_name call_args eval_tidy
@@ -63,7 +64,9 @@ expr_get_names <- function(expr) {
 #' update_table(from, to, primary_keys = c(x, y)) == expect
 #' # TRUE
 #'
-update_table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
+#'
+update_table <- function(from, to, date_column = NULL, primary_keys = NULL,
+                         delete = FALSE, incremental = TRUE, ...) {
   assert_class(to, "data.table")
   #assert_subset(colnames(from), colnames(to))
 
@@ -76,7 +79,7 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
 
   if (is.null(primary_keys) && !is.null(date_column)) {
     warning("primary_keys not given but date_column given, updating by date only. Use incremental = FALSE if this is not the desired behavior.")
-    return(update_table_date_only(from, to, date_column = date_column))
+    return(update_table_date_only(from, to, date_column = date_column, ...))
   }
 
   assert(check_subset(primary_keys, colnames(from)),
@@ -92,7 +95,8 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL, dele
 #' @export
 #' @rdname update_table
 #' @importFrom utils object.size
-update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
+update_table.default <- function(from, to, date_column = NULL, primary_keys = NULL,
+                                 delete = FALSE, incremental = TRUE, ...) {
   assert_dataframeish(from)
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
@@ -158,7 +162,8 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
 #' @export
 #' @importFrom stats na.omit
 #' @rdname update_table
-update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL, delete = FALSE, incremental = TRUE) {
+update_table.data.table <- function(from, to, date_column = NULL, primary_keys = NULL,
+                                    delete = FALSE, incremental = TRUE, ...) {
   assert_class(from, "data.table")
   primary_keys <- expr_get_names(rlang::enexpr(primary_keys))
   date_column <- expr_get_names(rlang::enexpr(date_column))
@@ -194,43 +199,56 @@ update_table.data.table <- function(from, to, date_column = NULL, primary_keys =
 
 #' @describeIn update_table update incrementally when primary_keys not given but date_column given
 #' @importFrom checkmate assert_character
-update_table_date_only <- function(from, to, date_column = NULL) {
-  date_column <- expr_get_names(rlang::enexpr(date_column))
+#' @param prefer "from" or "to": which table to prefer on conflict during a date-only update.
+#' The default is to prefer the destination table, so that existing data in `to` is not overwritten.
+update_table_date_only <- function(from, to, date_column = NULL,
+                                   prefer = "to") {
   assert_character(date_column,min.len=1,max.len=1)
+  assert_choice(prefer,c("from","to"))
+  . <- NULL
+
+  if (prefer == "to") {
+    transition_date <- if(is.data.table(to)) {
+      to[,max(get(date_column))]
+    } else {
+      summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
+    }
+    from_op = `>`
+    to_op = `<=`
+  } else {
+    transition_date <- if(is.data.table(from)) {
+      from[,min(get(date_column))]
+    } else {
+      summarise(from,across(date_column,min)) %>% collect() %>% .[[1]]
+    }
+    from_op = `>=`
+    to_op = `<`
+  }
 
   UseMethod("update_table_date_only", from)
 }
 
 #' @describeIn update_table update incrementally when primary_keys not given but date_column given
 #' @importFrom dplyr across summarise collect
-update_table_date_only.data.table <- function(from, to, date_column = NULL) {
-  . <- NULL
-
-  to_max_date <- if(is.data.table(to)) {
-    to[,max(get(date_column))]
-  } else {
-    summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
-  }
+update_table_date_only.data.table <- function(from, to, date_column = NULL,
+                                              prefer = "to") {
+  from_op <- to_op <- transition_date <- NULL
   rbind(
-    to[get(date_column) <= to_max_date],
-    from[get(date_column) > to_max_date],
+    to[to_op(get(date_column),transition_date)],
+    from[from_op(get(date_column),transition_date)],
     fill = TRUE
   )
 }
 
 #' @describeIn update_table update incrementally when primary_keys not given but date_column given
 #' @importFrom dplyr across collect filter
-update_table_date_only.default <- function(from, to, date_column = NULL) {
-  . <- NULL
-
-  to_max_date <- if(is.data.table(to)) {
-     to[,max(get(date_column))]
-  } else {
-    summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
-  }
-  from <- filter(from,!!rlang::sym(date_column) > to_max_date) %>% collect()
+update_table_date_only.default <- function(from, to, date_column = NULL,
+                                           prefer = "to") {
+  from_op <- to_op <- transition_date <- NULL
+  from <- filter(from,(!!from_op)(!!rlang::sym(date_column),transition_date)) %>%
+    collect()
   rbind(
-    to[get(date_column) <= to_max_date],
+    to[to_op(get(date_column),transition_date)],
     from,
     fill = TRUE
   )

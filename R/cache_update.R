@@ -10,6 +10,7 @@
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
 #' @param incremental whether or not to update the cache incrementally or to simply overwrite the existing cache, default is `TRUE`.
+#' @inheritParams update_table_date_only
 #' @param ... extra arguments passed on to [arrow::open_dataset] and [arrow::write_dataset]
 #'
 #' @return invisible
@@ -26,7 +27,8 @@
 #' }
 cache_update <- function(x, table_name, depth, type,
                          primary_keys = cache_get_attributes(x)$primary_keys,
-                         date_column = NULL, delete = FALSE, incremental = TRUE, ...) {
+                         date_column = NULL, delete = FALSE, incremental = TRUE,
+                         prefer = "to", ...) {
   . <- NULL
 
   if (!cache_exists(table_name, depth, type)) {
