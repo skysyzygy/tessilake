@@ -12,7 +12,7 @@ test_that("cache_write with partitioning=FALSE creates parquet and feather files
   expect_true(file.exists(paste0(cache_path("test_read_write", "shallow", "tessi"), ".feather")))
 })
 
-test_that("cache_write with primary keys creates datasets", {
+test_that("cache_write with primary keys or partitioning spec creates datasets", {
   test_partitioning <- copy(test_read_write)
   data.table::setattr(test_partitioning, "primary_keys", "x")
   cache_write(test_partitioning, "test_partitioning", "deep", "tessi")
@@ -22,9 +22,15 @@ test_that("cache_write with primary keys creates datasets", {
 
   data.table::setattr(test_partitioning, "primary_keys", c("x","y"))
   cache_write(test_partitioning, "test_partitioning_2keys", "deep", "tessi")
-  expect_equal(length(dir(cache_path("test_partitioning", "deep", "tessi"))), 11)
+  expect_equal(length(dir(cache_path("test_partitioning_2keys", "deep", "tessi"))), 11)
   cache_write(test_partitioning, "test_partitioning_2keys", "shallow", "tessi")
-  expect_equal(length(dir(cache_path("test_partitioning", "shallow", "tessi"))), 11)
+  expect_equal(length(dir(cache_path("test_partitioning_2keys", "shallow", "tessi"))), 11)
+
+  data.table::setattr(test_partitioning, "primary_keys", NULL)
+  cache_write(test_partitioning, "test_partitioning_0keys", "deep", "tessi", partition = "x")
+  expect_equal(length(dir(cache_path("test_partitioning_0keys", "deep", "tessi"))), 11)
+  cache_write(test_partitioning, "test_partitioning_0keys", "shallow", "tessi", partition = "x")
+  expect_equal(length(dir(cache_path("test_partitioning_0keys", "shallow", "tessi"))), 11)
 })
 
 test_that("cache_write with primary keys doesn't have side effects on x", {

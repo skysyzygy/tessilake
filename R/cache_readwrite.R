@@ -108,7 +108,8 @@ cache_read <- function(table_name, depth, type,
 #' @param type string, e.g. "tessi" or "stream"
 #' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
 #' @param num_tries integer number of times to try reading before failing
-#' @param partition boolean, whether or not to partition the dataset using primary_keys information
+#' @param partition boolean or character, if TRUE, partition is derived from primary_keys information; if character, partition identifies
+#' the column to use generating the partition
 #' @param overwrite boolean, whether or not to overwrite an existing cache
 #' @param sync boolean, whether or not to sync the written cache to other storages
 #' @param ... extra arguments passed on to [arrow::write_feather], [arrow::write_parquet] or [arrow::write_dataset]
@@ -175,13 +176,18 @@ cache_write <- function(x, table_name, depth, type,
 
   format <- coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet")
 
-  if (partition == TRUE) {
-    if (is.null(primary_keys)) {
+  if (partition == TRUE | is.character(partition)) {
+    if (partition == TRUE && is.null(primary_keys)) {
       stop("Cannot partition without primary key information.")
     }
 
-    partitioning <- cache_make_partitioning(x, primary_keys = primary_keys)
-    partition_name <- paste0("partition_", primary_keys[[1]])
+    if (partition == TRUE) {
+      partitioning <- cache_make_partitioning(x, primary_keys = primary_keys)
+      partition_name <- paste0("partition_", primary_keys[[1]])
+    } else {
+      partitioning <- cache_make_partitioning(x, primary_keys = partition)
+      partition_name <- paste0("partition_", partition)
+    }
 
     if (inherits(x, "data.table")) {
       x[, (partition_name) := eval(partitioning)]
