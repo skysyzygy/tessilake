@@ -1,3 +1,8 @@
+# tessilake 0.4.3
+- added "prefer" option to cache_update / update_table for choosing which 
+table to use on conflicting date-only updates
+- decoupled partitioning choice from primary key choice in write_cache
+
 # tessilake 0.4.2
 - fixed bug in update_table that was updating already existing rows in `to` on date-only updates
 - update_table now works with new columns in `from`
