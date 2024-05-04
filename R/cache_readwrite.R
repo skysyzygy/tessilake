@@ -219,7 +219,7 @@ cache_write <- function(x, table_name, depth, type,
                      feather = write_feather,
                      write_parquet)
 
-    args <- list(x = x,
+    args <- list(x = collect(x),
                  sink = paste0(cache_path, ".", format))
   }
 
