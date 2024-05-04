@@ -219,7 +219,8 @@ update_table_date_only <- function(from, to, date_column = NULL,
     transition_date <- if(is.data.table(from)) {
       from[,min(get(date_column))]
     } else {
-      summarise(from,across(date_column,min)) %>% collect() %>% .[[1]]
+      summarise(from,across(all_of(date_column),\(.) min(., na.rm = TRUE))) %>%
+        collect() %>% .[[1]]
     }
     from_op = `>=`
     to_op = `<`
