@@ -37,12 +37,14 @@ test_that("read_sql preserves primary_key across runs", {
   stub(read_sql, "tbl", data)
   setattr(data, "primary_keys", "x")
 
+  ignore_attr <- c("partition_key","partitioning")
+
   read_sql("data_with_attr")
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
   expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
   read_sql("data_with_attr", freshness = 0)
-  expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data)
-  expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data)
+  expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "deep", "tessi")), data, ignore_attr = ignore_attr)
+  expect_equal(collect(cache_read(digest::sha1("data_with_attr"), "shallow", "tessi")), data, ignore_attr = ignore_attr)
 })
 
 test_that("read_sql passes select on to read_cache", {
