@@ -12,7 +12,7 @@ and then syncs to the other locations by calling sync_cache.'><!-- mathjax --><s
     
     <a class="navbar-brand me-2" href="../index.html">tessilake</a>
 
-    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.2</small>
+    <small class="nav-text text-muted me-auto" data-bs-toggle="tooltip" data-bs-placement="bottom" title="">0.4.3</small>
 
     
     <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbar" aria-controls="navbar" aria-expanded="false" aria-label="Toggle navigation">
@@ -118,11 +118,12 @@ and then syncs to the other locations by calling <a href="sync_cache.html">sync_
 
 
 <dt>primary_keys</dt>
-<dd><p>character vector of columns to be used for partitioning, only the first one is currently used</p></dd>
+<dd><p>character vector of columns to be used as primary keys</p></dd>
 
 
 <dt>partition</dt>
-<dd><p>boolean, whether or not to partition the dataset using primary_keys information</p></dd>
+<dd><p>boolean or character, if TRUE, partition is derived from primary_keys; if character, partition identifies
+the column to use for partitioning</p></dd>
 
 
 <dt>overwrite</dt>
@@ -142,8 +143,7 @@ and then syncs to the other locations by calling <a href="sync_cache.html">sync_
     <div class="section level2">
     <h2 id="functions">Functions<a class="anchor" aria-label="anchor" href="#functions"></a></h2>
     
-<ul><li><p><code>cache_write()</code>: Underlying cache writer that invokes <a href="https://arrow.apache.org/docs/r/reference/write_feather.html" class="external-link">arrow::write_feather</a>, <a href="https://arrow.apache.org/docs/r/reference/write_parquet.html" class="external-link">arrow::write_parquet</a> or <a href="https://arrow.apache.org/docs/r/reference/write_dataset.html" class="external-link">arrow::write_dataset</a> and handles partitioning
-specified by <code>primary_keys</code> attribute/argument.</p></li>
+<ul><li><p><code>cache_write()</code>: Underlying cache writer that invokes <a href="https://arrow.apache.org/docs/r/reference/write_feather.html" class="external-link">arrow::write_feather</a>, <a href="https://arrow.apache.org/docs/r/reference/write_parquet.html" class="external-link">arrow::write_parquet</a> or <a href="https://arrow.apache.org/docs/r/reference/write_dataset.html" class="external-link">arrow::write_dataset</a> and handles partitioning</p></li>
 </ul></div>
 
     <div class="section level2">
