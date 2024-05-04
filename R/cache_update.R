@@ -40,7 +40,7 @@ cache_update <- function(x, table_name, depth, type,
   assert_dataframeish(x)
 
   dataset_attributes <- cache_get_attributes(dataset)
-  partition <- !is.null(dataset_attributes$partitioning)
+  partitioning <- dataset_attributes$partitioning
 
   if (!setequal(dataset_attributes$primary_keys, primary_keys)) {
     stop(sprintf(
@@ -50,12 +50,12 @@ cache_update <- function(x, table_name, depth, type,
     ))
   }
 
-  if (partition) {
+  if (!is.null(partitioning)) {
     partition_name <- paste0("partition_", dataset_attributes$partition_key)
     partition_key <- dataset_attributes$partition_key
 
     x_partitions <- select(x, all_of(partition_key)) %>%
-      transmute(!!partition_name := !!rlang::parse_expr(dataset_attributes$partitioning)) %>%
+      transmute(!!partition_name := !!rlang::parse_expr(partitioning)) %>%
       unique() %>%
       collect() %>%
       .[[1]]
@@ -79,13 +79,20 @@ cache_update <- function(x, table_name, depth, type,
 
   x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
 
+  partition = partitioning
+  if(!is.null(partitioning) && !is.null(primary_keys)) {
+    partition = TRUE
+  }
+
   args <- modifyList(rlang::list2(...),
                      list(x = x, table_name = table_name, depth = depth, type = type,
-                          primary_keys = primary_keys, partition = partition, overwrite = TRUE))
+                          primary_keys = primary_keys, partition = partition,
+                          overwrite = TRUE))
 
   do.call(cache_write, args)
 
-  if (delete == TRUE && partition == TRUE) {
-    cache_delete(table_name, depth, type, partitions = setdiff(dataset_partitions, x_partitions))
+  if (delete == TRUE && !is.null(partitioning)) {
+    cache_delete(table_name, depth, type,
+                 partitions = setdiff(dataset_partitions, x_partitions))
   }
 }

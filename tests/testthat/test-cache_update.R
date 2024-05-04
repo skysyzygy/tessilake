@@ -51,13 +51,12 @@ test_that("cache_update updates rows incrementally, and only in the required par
   time <- Sys.time()
   cache_update(update_incremental, "test_incremental", "deep", "tessi", primary_keys = "x")
 
-  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>%
-    setorderv("x") %>%
-    setattr("partitioning", NULL) %>%
-    setattr("primary_keys", NULL)
+  ignore_attributes <- c("partitioning", "primary_keys", "partition_key")
+
+  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>% setorderv("x")
   updated_table <- update_table(update_incremental, test_incremental, primary_keys = c("x"))
 
-  expect_equal(updated_cache, updated_table)
+  expect_equal(updated_cache, updated_table, ignore_attr = ignore_attributes)
 
   cache_files <- sapply(dir(cache_path("test_incremental", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
   updated_cache_files <- purrr::keep(cache_files, ~ . > time)
@@ -70,13 +69,12 @@ test_that("cache_update updates rows incrementally, and only in the required par
   time <- Sys.time()
   cache_update(update_incremental, "test_incremental", "deep", "tessi", primary_keys = "x", delete = TRUE)
 
-  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>%
-    setorderv("x") %>%
-    setattr("partitioning", NULL) %>%
-    setattr("primary_keys", NULL)
+  ignore_attributes <- c("partitioning", "primary_keys", "partition_key")
+
+  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>% setorderv("x")
   updated_table <- update_table(update_incremental, test_incremental, primary_keys = c("x"), delete = TRUE)
 
-  expect_equal(updated_cache, updated_table)
+  expect_equal(updated_cache, updated_table, ignore_attr = ignore_attributes)
 
   cache_files <- sapply(dir(cache_path("test_incremental", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
   updated_cache_files <- purrr::keep(cache_files, ~ . > time)
@@ -85,23 +83,29 @@ test_that("cache_update updates rows incrementally, and only in the required par
 })
 
 test_that("cache_update updates rows incrementally, and only in the required partitions when partitioning is given but not primary_keys", {
-  cache_write(test_incremental, "test_incremental", "deep", "tessi", partition = "x", overwrite = TRUE)
+  test_incremental[,partition_x := floor(x/10000)]
+  cache_write(test_incremental, "test_incremental_0keys", "deep", "tessi", partition = "partition_x", overwrite = TRUE)
   time <- Sys.time()
 
-  cache_update(update_incremental, "test_incremental", "deep", "tessi", partition = "x", date_column = "x")
+  update_incremental[,partition_x := floor(x/10000)]
+  expect_warning(
+    cache_update(update_incremental, "test_incremental_0keys", "deep", "tessi", date_column = "x"),
+    "primary_keys not given")
 
-  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>%
-    setorderv("x") %>%
-    setattr("partitioning", NULL) %>%
-    setattr("primary_keys", NULL)
-  updated_table <- update_table(update_incremental, test_incremental)
+  ignore_attributes <- c("partitioning", "primary_keys", "partition_key")
 
-  expect_equal(updated_cache, updated_table)
+  updated_cache <- collect(cache_read("test_incremental_0keys", "deep", "tessi")) %>% setorderv("x")
+  expect_warning(
+    updated_table <- update_table(update_incremental, test_incremental,
+                                primary_keys = NULL, date_column = x),
+    "primary_keys not given")
 
-  cache_files <- sapply(dir(cache_path("test_incremental", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
+  expect_equal(updated_cache, updated_table, ignore_attr = ignore_attributes)
+
+  cache_files <- sapply(dir(cache_path("test_incremental_0keys", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
   updated_cache_files <- purrr::keep(cache_files, ~ . > time)
   expect_equal(length(updated_cache_files), 1)
-  expect_equal(length(cache_files) - length(updated_cache_files), 0)
+  expect_equal(length(cache_files) - length(updated_cache_files), 10)
 })
 
 test_that("cache_update updates rows incrementally and doesn't copy from", {
@@ -113,7 +117,7 @@ test_that("cache_update updates rows incrementally and doesn't copy from", {
 })
 
 test_that("cache_update returns nothing, invisibly", {
-  cache_write(test_incremental, "test_incremental3", "deep", "tessi")
+  cache_write(test_incremental, "test_incremental3", "deep", "tessi", primary_keys = "x")
   cache_update(update_incremental, "test_incremental3", "deep", "tessi", primary_keys = "x")
 
   expect_equal(cache_update(update_incremental, "test_incremental3", "deep", "tessi", primary_keys = "x"), NULL)
