@@ -232,7 +232,6 @@ update_table_date_only <- function(from, to, date_column = NULL,
 #' @importFrom dplyr across summarise collect
 update_table_date_only.data.table <- function(from, to, date_column = NULL,
                                               prefer = "to") {
-  from_op <- to_op <- transition_date <- NULL
   rbind(
     to[to_op(get(date_column),transition_date)],
     from[from_op(get(date_column),transition_date)],
@@ -244,7 +243,6 @@ update_table_date_only.data.table <- function(from, to, date_column = NULL,
 #' @importFrom dplyr across collect filter
 update_table_date_only.default <- function(from, to, date_column = NULL,
                                            prefer = "to") {
-  from_op <- to_op <- transition_date <- NULL
   from <- filter(from,(!!from_op)(!!rlang::sym(date_column),transition_date)) %>%
     collect()
   rbind(
