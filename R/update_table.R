@@ -82,10 +82,10 @@ update_table <- function(from, to, date_column = NULL, primary_keys = NULL,
     return(update_table_date_only(from, to, date_column = date_column, ...))
   }
 
-  assert(check_subset(primary_keys, colnames(from)),
-         check_subset(primary_keys, colnames(to)),
-         check_subset(date_column, colnames(from)),
-         check_subset(date_column, colnames(to)),
+  assert(check_subset(primary_keys, colnames(from) %||% names(from)),
+         check_subset(primary_keys, colnames(to) %||% names(to)),
+         check_subset(date_column, colnames(from) %||% names(from)),
+         check_subset(date_column, colnames(to) %||% names(to)),
          combine = "and"
   )
 
@@ -152,7 +152,8 @@ update_table.default <- function(from, to, date_column = NULL, primary_keys = NU
     to <- to[!delete, on = primary_keys]
   }
 
-  to[update, (colnames(from)) := update, on = primary_keys]
+  colnames_from = colnames(from) %||% names(from)
+  to[update, (colnames_from) := update, on = primary_keys]
   to <- rbindlist(list(to, new), use.names = TRUE, fill = TRUE)
   setorderv(to, primary_keys)
 
