@@ -6,16 +6,16 @@
 #' @param table_name string
 #' @param depth string, e.g. "deep" or "shallow"
 #' @param type string, e.g. "tessi" or "stream"
-#' @param primary_keys character vector of columns to be used for partitioning, only the first one is currently used
+#' @param primary_keys character vector of columns to be used for identifying rows when updating the cache
 #' @param date_column character name of the column to be used for determining the date of last row update
 #' @param delete whether to delete rows in cache missing from `x`, default is not to delete the rows
 #' @param incremental whether or not to update the cache incrementally or to simply overwrite the existing cache, default is `TRUE`.
 #' @inheritParams update_table_date_only
-#' @param ... extra arguments passed on to [arrow::open_dataset] and [arrow::write_dataset]
+#' @param ... extra arguments passed on to [arrow::write_dataset]
 #'
 #' @return invisible
 #' @importFrom arrow open_dataset
-#' @importFrom dplyr select filter all_of anti_join distinct
+#' @importFrom dplyr select filter all_of anti_join distinct transmute semi_join
 #' @importFrom rlang sym
 #' @importFrom utils modifyList
 #' @examples
@@ -35,34 +35,39 @@ cache_update <- function(x, table_name, depth, type,
     return(cache_write(x, table_name, depth, type, primary_keys = primary_keys, ...))
   }
 
-  dataset <- cache_read(table_name, depth, type, include_partition = TRUE, ...)
+  dataset <- cache_read(table_name, depth, type, include_partition = TRUE)
 
   assert_dataframeish(x)
 
   dataset_attributes <- cache_get_attributes(dataset)
   partition <- !is.null(dataset_attributes$partitioning)
 
-  if (partition == TRUE) {
-    if (is.null(primary_keys) || !setequal(dataset_attributes$primary_keys, primary_keys)) {
-      stop(sprintf(
-        "Dataset has primary keys (%s) but x's primary keys are (%s). Cowardly refusing to continue.",
-        dataset_attributes$primary_keys %||% "NULL",
-        primary_keys %||% "NULL"
-      ))
-    }
+  if (!setequal(dataset_attributes$primary_keys, primary_keys)) {
+    stop(sprintf(
+      "Dataset has primary keys (%s) but x's primary keys are (%s). Cowardly refusing to continue.",
+      dataset_attributes$primary_keys %||% "NULL",
+      primary_keys %||% "NULL"
+    ))
+  }
 
-    partition_name <- paste0("partition_", dataset_attributes$primary_keys[[1]])
-    x_primary_keys <- select(x, all_of(primary_keys)) %>% collect()
+  if (partition) {
+    partition_name <- paste0("partition_", dataset_attributes$partition_key)
+    partition_key <- dataset_attributes$partition_key
 
-    partitions <- eval_tidy(rlang::parse_expr(dataset_attributes$partitioning), x_primary_keys) %>% unique()
-    dataset_partitions <- select(dataset, !!partition_name) %>%
-      collect() %>%
+    x_partitions <- select(x, all_of(partition_key)) %>%
+      transmute(!!partition_name := !!rlang::parse_expr(dataset_attributes$partitioning)) %>%
       unique() %>%
+      collect() %>%
+      .[[1]]
+
+    dataset_partitions <- select(dataset, !!partition_name) %>%
+      unique() %>%
+      collect() %>%
       .[[1]]
 
     # load only the dataset partitions that need to get updated
     dataset <- dataset %>%
-      filter(!!sym(partition_name) %in% partitions) %>%
+      filter(!!rlang::sym(partition_name) %in% x_partitions) %>%
       select(-!!partition_name)
 
     dataset_attributes$names <- setdiff(dataset_attributes$names, partition_name)
@@ -81,6 +86,6 @@ cache_update <- function(x, table_name, depth, type,
   do.call(cache_write, args)
 
   if (delete == TRUE && partition == TRUE) {
-    cache_delete(table_name, depth, type, partitions = setdiff(dataset_partitions, partitions))
+    cache_delete(table_name, depth, type, partitions = setdiff(dataset_partitions, x_partitions))
   }
 }

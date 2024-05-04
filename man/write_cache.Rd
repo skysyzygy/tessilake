@@ -42,10 +42,10 @@ cache_write(
 
 \item{...}{extra arguments passed on to \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset}}
 
-\item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
+\item{primary_keys}{character vector of columns to be used as primary keys}
 
-\item{partition}{boolean or character, if TRUE, partition is derived from primary_keys information; if character, partition identifies
-the column to use generating the partition}
+\item{partition}{boolean or character, if TRUE, partition is derived from primary_keys; if character, partition identifies
+the column to use for partitioning}
 
 \item{overwrite}{boolean, whether or not to overwrite an existing cache}
 
@@ -61,7 +61,6 @@ and then syncs to the other locations by calling \link{sync_cache}.
 \section{Functions}{
 \itemize{
 \item \code{cache_write()}: Underlying cache writer that invokes \link[arrow:write_feather]{arrow::write_feather}, \link[arrow:write_parquet]{arrow::write_parquet} or \link[arrow:write_dataset]{arrow::write_dataset} and handles partitioning
-specified by \code{primary_keys} attribute/argument.
 
 }}
 \examples{

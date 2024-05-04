@@ -15,6 +15,7 @@ test_that("cache_write with partitioning=FALSE creates parquet and feather files
 test_that("cache_write with primary keys or partitioning spec creates datasets", {
   test_partitioning <- copy(test_read_write)
   data.table::setattr(test_partitioning, "primary_keys", "x")
+
   cache_write(test_partitioning, "test_partitioning", "deep", "tessi")
   expect_equal(length(dir(cache_path("test_partitioning", "deep", "tessi"))), 11)
   cache_write(test_partitioning, "test_partitioning", "shallow", "tessi")
@@ -27,9 +28,10 @@ test_that("cache_write with primary keys or partitioning spec creates datasets",
   expect_equal(length(dir(cache_path("test_partitioning_2keys", "shallow", "tessi"))), 11)
 
   data.table::setattr(test_partitioning, "primary_keys", NULL)
-  cache_write(test_partitioning, "test_partitioning_0keys", "deep", "tessi", partition = "x")
+  test_partitioning[,partition_x:=floor(x/10000)]
+  cache_write(test_partitioning, "test_partitioning_0keys", "deep", "tessi", partition = "partition_x")
   expect_equal(length(dir(cache_path("test_partitioning_0keys", "deep", "tessi"))), 11)
-  cache_write(test_partitioning, "test_partitioning_0keys", "shallow", "tessi", partition = "x")
+  cache_write(test_partitioning, "test_partitioning_0keys", "shallow", "tessi", partition = "partition_x")
   expect_equal(length(dir(cache_path("test_partitioning_0keys", "shallow", "tessi"))), 11)
 })
 
@@ -110,15 +112,20 @@ test_that("cache_read returns data to the original form including attributes", {
   expect_equal(cache_read("test_read_write", "shallow", "tessi") %>% collect(), test_read_write)
   expect_equal(cache_read("test_read_write_arrow", "deep", "tessi") %>% collect(), test_read_write)
   expect_equal(cache_read("test_read_write_tbl", "deep", "tessi") %>% collect(), test_read_write)
-  expect_equal(cache_read("test_partitioning", "deep", "tessi") %>% collect() %>% setorderv("x") %>%
-    setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
-  expect_equal(cache_read("test_partitioning", "shallow", "tessi") %>% collect() %>% setorderv("x") %>%
-    setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
 
-  expect_equal(cache_read("test_partitioning_2keys", "deep", "tessi") %>% collect() %>% setorderv("x") %>%
-                 setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
-  expect_equal(cache_read("test_partitioning_2keys", "shallow", "tessi") %>% collect() %>% setorderv("x") %>%
-                 setattr("partitioning", NULL) %>% setattr("primary_keys", NULL), test_read_write)
+  ignore_attributes <- c("partitioning",
+                       "partition_key",
+                       "primary_keys")
+
+  expect_equal(cache_read("test_partitioning", "deep", "tessi") %>% collect() %>% setorderv("x"),
+               test_read_write, ignore_attr = ignore_attributes)
+  expect_equal(cache_read("test_partitioning", "shallow", "tessi") %>% collect() %>% setorderv("x"),
+               test_read_write, ignore_attr = ignore_attributes)
+
+  expect_equal(cache_read("test_partitioning_2keys", "deep", "tessi") %>% collect() %>% setorderv("x"),
+               test_read_write, ignore_attr = ignore_attributes)
+  expect_equal(cache_read("test_partitioning_2keys", "shallow", "tessi") %>% collect() %>% setorderv("x"),
+               test_read_write, ignore_attr = ignore_attributes)
 })
 
 test_that("cache_read with include_partition = TRUE returns the hidden partition column", {

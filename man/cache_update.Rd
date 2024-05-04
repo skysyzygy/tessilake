@@ -26,7 +26,7 @@ cache_update(
 
 \item{type}{string, e.g. "tessi" or "stream"}
 
-\item{primary_keys}{character vector of columns to be used for partitioning, only the first one is currently used}
+\item{primary_keys}{character vector of columns to be used for identifying rows when updating the cache}
 
 \item{date_column}{character name of the column to be used for determining the date of last row update}
 
@@ -37,7 +37,7 @@ cache_update(
 \item{prefer}{"from" or "to": which table to prefer on conflict during a date-only update.
 The default is to prefer the destination table, so that existing data in \code{to} is not overwritten.}
 
-\item{...}{extra arguments passed on to \link[arrow:open_dataset]{arrow::open_dataset} and \link[arrow:write_dataset]{arrow::write_dataset}}
+\item{...}{extra arguments passed on to \link[arrow:write_dataset]{arrow::write_dataset}}
 }
 \value{
 invisible

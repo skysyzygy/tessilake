@@ -84,6 +84,26 @@ test_that("cache_update updates rows incrementally, and only in the required par
   expect_equal(length(cache_files) - length(updated_cache_files), 0)
 })
 
+test_that("cache_update updates rows incrementally, and only in the required partitions when partitioning is given but not primary_keys", {
+  cache_write(test_incremental, "test_incremental", "deep", "tessi", partition = "x", overwrite = TRUE)
+  time <- Sys.time()
+
+  cache_update(update_incremental, "test_incremental", "deep", "tessi", partition = "x", date_column = "x")
+
+  updated_cache <- collect(cache_read("test_incremental", "deep", "tessi")) %>%
+    setorderv("x") %>%
+    setattr("partitioning", NULL) %>%
+    setattr("primary_keys", NULL)
+  updated_table <- update_table(update_incremental, test_incremental)
+
+  expect_equal(updated_cache, updated_table)
+
+  cache_files <- sapply(dir(cache_path("test_incremental", "deep", "tessi"), recursive = T, full.names = T), file.mtime)
+  updated_cache_files <- purrr::keep(cache_files, ~ . > time)
+  expect_equal(length(updated_cache_files), 1)
+  expect_equal(length(cache_files) - length(updated_cache_files), 0)
+})
+
 test_that("cache_update updates rows incrementally and doesn't copy from", {
   tracemem(update_incremental)
   cache_write(test_incremental, "test_incremental2", "deep", "tessi", primary_keys = "x")
