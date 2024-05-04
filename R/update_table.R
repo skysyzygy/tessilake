@@ -207,6 +207,9 @@ update_table_date_only <- function(from, to, date_column = NULL,
   assert_character(date_column,min.len=1,max.len=1)
   assert_choice(prefer,c("from","to"))
   . <- NULL
+  transition_date <- as.POSIXct(Inf)
+  from_op = `>`
+  to_op = `<=`
 
   if (prefer == "to") {
     transition_date <- if(is.data.table(to)) {
@@ -214,8 +217,8 @@ update_table_date_only <- function(from, to, date_column = NULL,
     } else {
       summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
     }
-    from_op = ">"
-    to_op = "<="
+    from_op = `>`
+    to_op = `<=`
   } else {
     transition_date <- if(is.data.table(from)) {
       from[,min(get(date_column))]
@@ -223,8 +226,8 @@ update_table_date_only <- function(from, to, date_column = NULL,
       summarise(from,across(all_of(date_column),\(.) min(., na.rm = TRUE))) %>%
         collect() %>% .[[1]]
     }
-    from_op = ">="
-    to_op = "<"
+    from_op = `>=`
+    to_op = `<`
   }
 
   UseMethod("update_table_date_only", from)
@@ -234,11 +237,11 @@ update_table_date_only <- function(from, to, date_column = NULL,
 #' @importFrom dplyr across summarise collect
 update_table_date_only.data.table <- function(from, to, date_column = NULL,
                                               prefer = "to") {
-  eval(rlang::expr(rbind(
-    to[(!!to_op)(get(date_column),transition_date)],
-    from[(!!from_op)(get(date_column),transition_date)],
+  rbind(
+    to[to_op(get(date_column),transition_date)],
+    from[from_op(get(date_column),transition_date)],
     fill = TRUE
-  )))
+  )
 }
 
 #' @describeIn update_table update incrementally when primary_keys not given but date_column given
@@ -247,9 +250,9 @@ update_table_date_only.default <- function(from, to, date_column = NULL,
                                            prefer = "to") {
   from <- filter(from,(!!from_op)(!!rlang::sym(date_column),transition_date)) %>%
     collect()
-  eval(rlang::expr(rbind(
-    to[(!!to_op)(get(date_column),transition_date)],
+  rbind(
+    to[to_op(get(date_column),transition_date)],
     from,
     fill = TRUE
-  )))
+  )
 }
