@@ -42,6 +42,8 @@ cache_update <- function(x, table_name, depth, type,
   dataset_attributes <- cache_get_attributes(dataset)
   partitioning <- dataset_attributes$partitioning
 
+  # enforce primary key alignment with underlying dataset if primary keys aren't given
+  primary_keys = primary_keys %||% cache_get_attributes(x)$primary_keys
   if (!setequal(dataset_attributes$primary_keys, primary_keys)) {
     stop(sprintf(
       "Dataset has primary keys (%s) but x's primary keys are (%s). Cowardly refusing to continue.",
