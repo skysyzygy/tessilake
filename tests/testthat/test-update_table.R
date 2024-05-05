@@ -312,8 +312,22 @@ test_that("update_table.default loads from arrow table incrementally", {
     print(dplyr::collect(dplyr::summarize(., n()))[[1]])
     dplyr::collect(.)
   })
-  # this writes out 3 and then 2 because 3 rows are updated and 2 row is added
+  # this writes out 3 + 2 because 3 rows are updated and 2 rows are added
   expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 5$")
+})
+
+test_that("update_table.default loads from arrow query incrementally", {
+  seasons <- readRDS(test_path("seasons.Rds"))
+  seasons_arrow <- arrow::arrow_table(seasons) %>%
+    filter(id %in% seasons[c(1,3,5),"id"])
+  seasons <- setDT(seasons)[-c(1, 2), ]
+  seasons[1:3, "last_update_dt"] <- lubridate::ymd("1900-01-01")
+  stub(update_table.default, "collect", function(.) {
+    print(dplyr::collect(dplyr::summarize(., n()))[[1]])
+    dplyr::collect(.)
+  })
+  # this writes out 2 + 1 because 2 rows are updated and 1 row is added
+  expect_output(update_table(seasons_arrow, seasons, primary_keys = "id", date_column = "last_update_dt"), "\\[1\\] 3$")
 })
 
 test_that("update_table.default doesn't copy to when to is a data.table", {

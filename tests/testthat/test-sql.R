@@ -113,6 +113,10 @@ test_that("read_sql updates cache iff it's not fresh enough", {
 
   expect_gt(mtime_parquet, test_time)
   expect_gt(mtime_feather, test_time)
+
+  # there aren't any other weird files around from partitioning, etc...
+  expect_length(dir(tempdir(),pattern = "data_fresh",
+                    recursive = T,include.dirs = T),2)
 })
 
 

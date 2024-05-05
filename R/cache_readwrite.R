@@ -182,13 +182,12 @@ cache_write <- function(x, table_name, depth, type,
 
     if (partition == TRUE) {
       partitioning <- cache_make_partitioning(x, primary_keys = primary_keys)
-      partition_name <- paste0("partition_", primary_keys[[1]])
       partition_key <- primary_keys[[1]]
     } else {
-      partitioning <- sym(partition)
-      partition_name <- paste0("partition_", partition)
-      partition_key <- partition
+      partitioning <- rlang::parse_expr(attributes$partitioning %||% partition)
+      partition_key <- attributes$partition_key %||% partition #gsub("\W","_",partition)
     }
+    partition_name <- paste0("partition_", partition_key)
 
     if (inherits(x, "data.table")) {
       x[, (partition_name) := eval(partitioning)]

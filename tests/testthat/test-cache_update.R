@@ -84,10 +84,12 @@ test_that("cache_update updates rows incrementally, and only in the required par
 
 test_that("cache_update updates rows incrementally, and only in the required partitions when partitioning is given but not primary_keys", {
   test_incremental[,partition_x := floor(x/10000)]
+  setattr(test_incremental, "primary_keys", NULL)
   cache_write(test_incremental, "test_incremental_0keys", "deep", "tessi", partition = "partition_x", overwrite = TRUE)
   time <- Sys.time()
 
   update_incremental[,partition_x := floor(x/10000)]
+  setattr(update_incremental, "primary_keys", NULL)
   expect_warning(
     cache_update(update_incremental, "test_incremental_0keys", "deep", "tessi", date_column = "x"),
     "primary_keys not given")

@@ -47,7 +47,6 @@ expr_get_names <- function(expr) {
 #'
 #' @importFrom dplyr collect left_join select semi_join copy_to
 #' @importFrom rlang as_name call_args eval_tidy
-#' @importFrom bit setattributes
 #' @importFrom checkmate assert_class assert_subset check_subset assert
 #' @return a data.table updated in-place
 #' @export

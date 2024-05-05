@@ -75,17 +75,18 @@ cache_update <- function(x, table_name, depth, type,
     dataset_attributes$names <- setdiff(dataset_attributes$names, partition_name)
   }
 
-  dataset <- dataset %>% collect()
-  cache_set_attributes(dataset, dataset_attributes)
-  setDT(dataset)
+  dataset <- dataset %>% collect %>% setDT
 
   x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
 
-  partition = partitioning
-  if(!is.null(partitioning) && !is.null(primary_keys)) {
-    partition = TRUE
+  if(!is.null(partitioning)) {
+    partition = partitioning
+  } else {
+    partition = FALSE
   }
 
+  # preserve the attributes of the original dataset
+  cache_set_attributes(x, dataset_attributes)
   args <- modifyList(rlang::list2(...),
                      list(x = x, table_name = table_name, depth = depth, type = type,
                           primary_keys = primary_keys, partition = partition,
