@@ -4,6 +4,7 @@
 #'
 #' @param ... other arguments for compatibility with testthat?
 #' @param envir parent.frame()
+#' @export
 local_cache_dirs <- function(..., envir = parent.frame()) {
   dir.create(file.path(tempdir(), "deep"))
   dir.create(file.path(tempdir(), "shallow"))
