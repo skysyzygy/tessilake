@@ -1,3 +1,7 @@
+# tessilake 0.4.4
+- fixed bug preventing "prefer" being used with cache_update, and limitations with date-only updates with Apache Arrow
+- exported local_cache_dirs for use in other packages
+
 # tessilake 0.4.3
 - added "prefer" option to cache_update / update_table for choosing which 
 table to use on conflicting date-only updates
