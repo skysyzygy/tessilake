@@ -77,7 +77,7 @@ cache_update <- function(x, table_name, depth, type,
 
   dataset <- dataset %>% collect %>% setDT
 
-  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental)
+  x <- update_table(x, dataset, primary_keys = !!primary_keys, date_column = !!date_column, delete = delete, incremental = incremental, prefer = prefer)
 
   if(!is.null(partitioning)) {
     partition = partitioning
