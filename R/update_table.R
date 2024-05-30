@@ -221,24 +221,23 @@ update_table_date_only.data.table <- function(from, to, date_column = NULL,
     } else {
       summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
     }
-    from_op = `>`
-    to_op = `<=`
+    from_op = ">"
+    to_op = "<="
   } else {
     transition_date <- if(is.data.table(from)) {
       from[,min(get(date_column))]
     } else {
-      summarise(from,across(all_of(date_column),\(.) min(., na.rm = TRUE))) %>%
-        collect() %>% .[[1]]
+      summarise(from,across(date_column,min)) %>% collect() %>% .[[1]]
     }
-    from_op = `>=`
-    to_op = `<`
+    from_op = ">="
+    to_op = "<"
   }
 
-  rbind(
-    to[to_op(get(date_column),transition_date)],
-    from[from_op(get(date_column),transition_date)],
+  eval(rlang::expr(rbind(
+    to[(!!to_op)(get(date_column),transition_date)],
+    from[(!!from_op)(get(date_column),transition_date)],
     fill = TRUE
-  )
+  )))
 }
 
 #' @describeIn update_table update incrementally when primary_keys not given but date_column given
@@ -253,24 +252,24 @@ update_table_date_only.default <- function(from, to, date_column = NULL,
     } else {
       summarise(to,across(date_column,max)) %>% collect() %>% .[[1]]
     }
-    from_op = `>`
-    to_op = `<=`
+    from_op = ">"
+    to_op = "<="
   } else {
     transition_date <- if(is.data.table(from)) {
       from[,min(get(date_column))]
     } else {
-      summarise(from,across(all_of(date_column),\(.) min(., na.rm = TRUE))) %>%
-        collect() %>% .[[1]]
+      summarise(from,across(date_column,min)) %>% collect() %>% .[[1]]
     }
-    from_op = `>=`
-    to_op = `<`
+    from_op = ">="
+    to_op = "<"
   }
 
-  from <- filter(from,(!!from_op)(!!rlang::sym(date_column),transition_date)) %>%
-    collect()
-  rbind(
-    to[to_op(get(date_column),transition_date)],
-    from,
-    fill = TRUE
-  )
+  eval(rlang::expr({
+    from <- filter(from,(!!from_op)(!!rlang::sym(date_column),transition_date)) %>%
+      collect()
+    rbind(
+      to[(!!to_op)(get(date_column),transition_date)],
+      from,
+      fill = TRUE
+  )}))
 }
