@@ -206,8 +206,11 @@ cache_write <- function(x, table_name, depth, type,
     args <- list(dataset = x,
                   path = cache_path,
                   format = format,
-                  codec = arrow::Codec$create("lz4"),
                   partitioning = partition_name)
+
+    if(format %in% c("feather","arrow")) {
+      args$codec = arrow::Codec$create("lz4_frame")
+    }
 
   } else {
     cache_dir <- cache_path("", depth, type)
