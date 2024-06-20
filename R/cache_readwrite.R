@@ -206,6 +206,7 @@ cache_write <- function(x, table_name, depth, type,
     args <- list(dataset = x,
                   path = cache_path,
                   format = format,
+                  codec = "lz4",
                   partitioning = partition_name)
 
   } else {
