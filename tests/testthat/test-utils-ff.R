@@ -196,5 +196,7 @@ test_that("write_ffdf works with arrow dataset", {
   expect_true(exists("testFfdf"))
   test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
     purrr::map_if(is.factor,as.character) %>% setDT
+  setkey(test_ffdf,a,b)
+  setkey(test_ffdf_data,a,b)
   expect_equal(test_ffdf, test_ffdf_data, ignore_attr = TRUE)
 })
