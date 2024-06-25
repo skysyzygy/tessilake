@@ -6,7 +6,7 @@
 #'
 #' @return a data.table
 #' @export
-#' @importFrom ff as.ram delete is.ffdf
+#' @importFrom ff as.ram delete is.ffdf ff as.ffdf
 #' @importFrom ffbase as.ram.ffdf
 #' @importFrom data.table setDT setattr
 #' @examples
@@ -164,7 +164,7 @@ write_ffdf <- function(x, table_name, out_dir) {
            setNames(colnames(x)) %>%
            do.call(what = ffdf))
 
-  temp_dir <- tempfile(paste0(table_name_camelcase,"XXX"))
+  temp_dir <- tempfile(table_name_camelcase)
   dir.create(temp_dir)
   eval(rlang::expr(save.ffdf(!!table_name_camelcase,dir=temp_dir,overwrite=T)))
 
