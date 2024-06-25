@@ -7,7 +7,7 @@
 write_ffdf(x, table_name, out_dir)
 }
 \arguments{
-\item{x}{data.frame to be written}
+\item{x}{data.frame or \link{dplyr} table or \link[arrow:Table-class]{arrow::Table}/\link[arrow:Dataset]{arrow::Dataset} to be written}
 
 \item{table_name}{string name of the file to be written, will be converted to camel-case}
 

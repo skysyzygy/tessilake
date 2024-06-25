@@ -151,13 +151,13 @@ test_that("fix_vmode assigns in-place things that don't need conversion", {
   vecs[1:31] <- map(vecs[1:31], as.integer)
   expect_equal(map(vecs[1:31], ~ rlang::is_reference(fix_vmode(.), .)), as.list(c(F, rep(T, 30))))
 })
-# }
 
 # write_ffdf --------------------------------------------------------------
 test_ffdf_data <- data.table(a = sample(seq(1000),1e6,replace = T),
                    b = sample(letters,1e6,replace=T),
                    c = runif(1e6))
 local_cache_dirs()
+
 test_that("write_ffdf outputs a file to out_dir/table_name", {
   expect_failure(expect_file_exists(file.path(tempdir(),"deep","testFfdf.gz")))
   suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", file.path(tempdir(),"deep")))
@@ -165,6 +165,33 @@ test_that("write_ffdf outputs a file to out_dir/table_name", {
 })
 
 test_that("write_ffdf outputs a readable ffdf", {
+  ffbase::unpack.ffdf(file.path(tempdir(),"deep","testFfdf.gz"))
+  expect_true(exists("testFfdf"))
+  test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
+    purrr::map_if(is.factor,as.character) %>% setDT
+  expect_equal(test_ffdf, test_ffdf_data,
+               ignore_attr = TRUE)
+})
+
+test_that("write_ffdf works with arrow tables", {
+  arrow <- arrow::as_arrow_table(test_ffdf_data)
+  suppressMessages(write_ffdf(arrow,"test_ffdf",file.path(tempdir(),"deep")))
+  expect_file_exists(file.path(tempdir(),"deep","testFfdf.gz"))
+
+  ffbase::unpack.ffdf(file.path(tempdir(),"deep","testFfdf.gz"))
+  expect_true(exists("testFfdf"))
+  test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
+    purrr::map_if(is.factor,as.character) %>% setDT
+  expect_equal(test_ffdf, test_ffdf_data,
+               ignore_attr = TRUE)
+})
+
+test_that("write_ffdf works with arrow dataset", {
+  arrow::write_dataset(test_ffdf_data,file.path(tempdir(),"dataset"))
+  arrow <- arrow::open_dataset(file.path(tempdir(),"dataset"))
+  suppressMessages(write_ffdf(arrow,"test_ffdf",file.path(tempdir(),"deep")))
+  expect_file_exists(file.path(tempdir(),"deep","testFfdf.gz"))
+
   ffbase::unpack.ffdf(file.path(tempdir(),"deep","testFfdf.gz"))
   expect_true(exists("testFfdf"))
   test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
