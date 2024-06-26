@@ -59,7 +59,7 @@ fix_vmode <- function(vec) {
   }
 
   if (!is.atomic(vec)) vec <- as.vector(vec)
-  if (is.list(vec)) vec <- unlist(vec)
+  if (is.list(vec)) vec <- vec[[1]]
 
   if (is.character(vec)) {
     message("Converting character to factor...")
