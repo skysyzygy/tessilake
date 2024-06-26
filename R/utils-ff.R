@@ -160,8 +160,8 @@ write_ffdf <- function(x, table_name, out_dir) {
   }
 
   assign(table_name_camelcase,
-         lapply(colnames(x), as_ff) %>%
-           setNames(colnames(x)) %>%
+         lapply(names(x), as_ff) %>%
+           setNames(names(x)) %>%
            do.call(what = ffdf))
 
   temp_dir <- tempfile(table_name_camelcase)
