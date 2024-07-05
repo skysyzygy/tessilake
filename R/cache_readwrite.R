@@ -52,7 +52,12 @@ cache_read <- function(table_name, depth, type,
   cache_path <- cache_path(table_name, depth, type)
 
   if (dir.exists(cache_path)) {
-    cache <- open_dataset(cache_path, format = coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet"), ...)
+    args <- modifyList(rlang::list2(...),
+                       list(sources = cache_path,
+                       format = coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet"),
+                       unify_schemas = TRUE))
+
+    cache <- do.call(open_dataset,args)
 
     if (!is.null(select)) {
       assert_names(select, subset.of = colnames(cache))
@@ -76,10 +81,16 @@ cache_read <- function(table_name, depth, type,
     cache_file <- paste0(cache_path, ".parquet")
   } else {
     cache_reader <- \(...) stop("Cache does not exist")
+    cache_file <- NULL
   }
 
   while(!exists("cache") && num_tries > 0) {
-    last_error <- tryCatch(cache <- cache_reader(cache_file, as_data_frame = F, col_select = !!select),
+    args <- modifyList(rlang::list2(...),
+                       eval(rlang::expr(list(file = cache_file,
+                       as_data_frame = F,
+                       col_select = !!select))))
+
+    last_error <- tryCatch(cache <- do.call(cache_reader,args),
                            error = force)
     if(exists("cache"))
       break
