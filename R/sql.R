@@ -13,11 +13,13 @@
 #' sql_connect()
 #' tessilake:::db$db
 #' sql_disconnect()
+#'
 #' }
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
-        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake")[["tessitura"]], encoding = "windows-1252"))
+        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake")[["tessitura"]],
+                                       encoding = !!config::get("tessilake")[["tessitura.encoding"]]))
 
         callbacks <- getTaskCallbackNames()
         db$db <- eval(db_expr)

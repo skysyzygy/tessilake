@@ -5,6 +5,7 @@ local_cache_dirs()
 # sql_connect -------------------------------------------------------------
 stub(sql_connect, "odbc::odbc", RSQLite::SQLite())
 stub(sql_connect, "config::get", list(tessitura = ":memory:"))
+withr::defer(sql_disconnect())
 
 test_that("sql_connect connects to the database", {
   expect_true(is.null(tessilake:::db$db))
