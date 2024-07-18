@@ -22,9 +22,22 @@ test_that("sql_connect only connects once", {
   expect_equal(ptr1, ptr2)
 })
 
+test_that("sql_connect sends encoding to dbConnect", {
+  assign("db", NULL, rlang::ns_env("tessilake")$db)
+  dbConnect <- mock(cycle=T)
+  stub(sql_connect, "DBI::dbConnect", dbConnect)
+
+  sql_connect()
+  expect_equal(mock_args(dbConnect)[[1]][["encoding"]],"")
+
+  stub(sql_connect, "config::get", list(tessitura = ":memory:", tessitura.encoding = "x-mac-12345"))
+
+  sql_connect()
+  expect_equal(mock_args(dbConnect)[[2]][["encoding"]],"x-mac-12345")
+})
+
 rm(sql_connect)
 test_that("sql_connect throws an error when it can't connect", {
-  sql_disconnect()
   stub(sql_connect, "config::get", list(tessitura = "not a database"))
   expect_error(suppressMessages(sql_connect()), "DSN")
 })
