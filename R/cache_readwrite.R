@@ -181,6 +181,7 @@ cache_write <- function(x, table_name, depth, type,
 
   assert_dataframeish(x)
 
+  x <- collect(x)
   attributes <- cache_get_attributes(x)
   attributes_old <- attributes
 
@@ -233,7 +234,7 @@ cache_write <- function(x, table_name, depth, type,
                      feather = write_feather,
                      write_parquet)
 
-    args <- list(x = collect(x),
+    args <- list(x = x,
                  sink = paste0(cache_path, ".", format))
   }
 

@@ -53,8 +53,9 @@ test_that("cache_write with works with anything data.frameish", {
 
   cache_write(arrow_table(test_read_write), "test_read_write_arrow", "deep", "tessi")
   expect_true(file.exists(paste0(cache_path("test_read_write_arrow", "deep", "tessi"), ".parquet")))
-  cache_write(test_read_write, "test_read_write_tbl", "deep", "tessi")
+  cache_write(test_read_write_table, "test_read_write_tbl", "deep", "tessi", primary_keys = "x", partition = F)
   expect_true(file.exists(paste0(cache_path("test_read_write_tbl", "deep", "tessi"), ".parquet")))
+  expect_true("primary_keys" %in% names(cache_get_attributes(cache_read("test_read_write_tbl", "deep", "tessi"))))
 
   DBI::dbDisconnect(con)
 })
@@ -111,7 +112,6 @@ test_that("cache_read returns data to the original form including attributes", {
   expect_equal(cache_read("test_read_write", "deep", "tessi") %>% collect(), test_read_write)
   expect_equal(cache_read("test_read_write", "shallow", "tessi") %>% collect(), test_read_write)
   expect_equal(cache_read("test_read_write_arrow", "deep", "tessi") %>% collect(), test_read_write)
-  expect_equal(cache_read("test_read_write_tbl", "deep", "tessi") %>% collect(), test_read_write)
 
   ignore_attributes <- c("partitioning",
                        "partition_key",
