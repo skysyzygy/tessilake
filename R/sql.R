@@ -13,7 +13,6 @@
 #' sql_connect()
 #' tessilake:::db$db
 #' sql_disconnect()
-#'
 #' }
 sql_connect <- function() {
   if (is.null(db$db)) {
