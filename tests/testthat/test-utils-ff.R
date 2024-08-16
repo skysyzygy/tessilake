@@ -1,5 +1,4 @@
 withr::local_package("purrr")
-withr::local_package("ff")
 withr::local_package("checkmate")
 
 # as.ram2 -----------------------------------------------------------------
@@ -19,17 +18,17 @@ test_that("as.ram2 returns ram objects", {
 test_that("as.ram2 leaves nothing behind", {
   test.ff <- ff(1:5)
   as.ram2(test.ff)
-  expect_equal(file.exists(filename(test.ff)), FALSE)
+  expect_equal(file.exists(ff::filename(test.ff)), FALSE)
 
   test.ffdf <- as.ffdf(data.frame(a = 1:5, b = 6:10))
   as.ram2(test.ffdf)
-  expect_mapequal(sapply(filename(test.ffdf), file.exists), c(a = FALSE, b = FALSE))
+  expect_mapequal(sapply(ff::filename(test.ffdf), file.exists), c(a = FALSE, b = FALSE))
 })
 
 # fix_vmode ---------------------------------------------------------------
 
-fix_vmode <- function(...) {
-  suppressMessages(tessilake::fix_vmode(...))
+fix_vmode <- function(x) {
+  suppressMessages(tessilake::fix_vmode(x))
 }
 
 test_that("fix_vmode throws an error when given an ff", {
@@ -151,23 +150,54 @@ test_that("fix_vmode assigns in-place things that don't need conversion", {
   vecs[1:31] <- map(vecs[1:31], as.integer)
   expect_equal(map(vecs[1:31], ~ rlang::is_reference(fix_vmode(.), .)), as.list(c(F, rep(T, 30))))
 })
-# }
 
 # write_ffdf --------------------------------------------------------------
-test_ffdf_data <- data.table(a = sample(seq(1000),1e6,replace = T),
-                   b = sample(letters,1e6,replace=T),
-                   c = runif(1e6))
-local_cache_dirs()
-test_that("write_ffdf outputs a file to out_dir/table_name", {
-  expect_failure(expect_file_exists(file.path(tempdir(),"deep","testFfdf.gz")))
-  suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", file.path(tempdir(),"deep")))
-  expect_file_exists(file.path(tempdir(),"deep","testFfdf.gz"))
+test_ffdf_data <- data.table(a = sample(seq(1000),1e3,replace = T),
+                   b = sample(letters,1e3,replace=T),
+                   c = runif(1e3))
+
+test_that("write_ffdf works with data.tables", {
+  withr::defer(file.remove(file.path(tempdir(),"testFfdf.gz")))
+  expect_failure(expect_file_exists(file.path(tempdir(),"testFfdf.gz")))
+  suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", tempdir()))
+  expect_file_exists(file.path(tempdir(),"testFfdf.gz"))
 })
 
 test_that("write_ffdf outputs a readable ffdf", {
-  ffbase::unpack.ffdf(file.path(tempdir(),"deep","testFfdf.gz"))
+  withr::defer(file.remove(file.path(tempdir(),"testFfdf.gz")))
+  suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", tempdir()))
+  ffbase::unpack.ffdf(file.path(tempdir(),"testFfdf.gz"))
   expect_true(exists("testFfdf"))
   test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
     purrr::map_if(is.factor,as.character) %>% setDT
+  expect_equal(test_ffdf, test_ffdf_data,
+               ignore_attr = TRUE)
+})
+
+test_that("write_ffdf works with arrow tables", {
+  withr::defer(file.remove(file.path(tempdir(),"testFfdf.gz")))
+  arrow <- arrow::as_arrow_table(test_ffdf_data)
+  suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", tempdir()))
+
+  ffbase::unpack.ffdf(file.path(tempdir(),"testFfdf.gz"))
+  expect_true(exists("testFfdf"))
+  test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
+    purrr::map_if(is.factor,as.character) %>% setDT
+  expect_equal(test_ffdf, test_ffdf_data,
+               ignore_attr = TRUE)
+})
+
+test_that("write_ffdf works with arrow dataset", {
+  withr::defer(file.remove(file.path(tempdir(),"testFfdf.gz")))
+  arrow::write_dataset(test_ffdf_data,file.path(tempdir(),"dataset"))
+  arrow <- arrow::open_dataset(file.path(tempdir(),"dataset"))
+  suppressMessages(write_ffdf(test_ffdf_data, "test_ffdf", tempdir()))
+
+  ffbase::unpack.ffdf(file.path(tempdir(),"testFfdf.gz"))
+  expect_true(exists("testFfdf"))
+  test_ffdf <- suppressMessages(as.data.table(testFfdf)) %>%
+    purrr::map_if(is.factor,as.character) %>% setDT
+  setkey(test_ffdf,a,b)
+  setkey(test_ffdf_data,a,b)
   expect_equal(test_ffdf, test_ffdf_data, ignore_attr = TRUE)
 })

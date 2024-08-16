@@ -6,7 +6,7 @@
 #'
 #' @return a data.table
 #' @export
-#' @importFrom ff as.ram delete is.ffdf
+#' @importFrom ff as.ram delete is.ffdf ff as.ffdf
 #' @importFrom ffbase as.ram.ffdf
 #' @importFrom data.table setDT setattr
 #' @examples
@@ -57,6 +57,10 @@ fix_vmode <- function(vec) {
   if (is.ff(vec)) {
     stop("ff objects can't be coerced")
   }
+
+  if (!is.atomic(vec)) vec <- as.vector(vec)
+  if (is.list(vec)) vec <- vec[[1]]
+
   if (is.character(vec)) {
     message("Converting character to factor...")
     return(as.factor(vec))
@@ -134,21 +138,33 @@ fix_vmode <- function(vec) {
 #' Write out a gzip compressed ffdf. `table_name` is converted to camel-case for consistency with
 #' legacy use
 #'
-#' @param x data.frame to be written
+#' @param x data.frame or [dplyr] table or [arrow::Table]/[arrow::Dataset] to be written
 #' @param table_name string name of the file to be written, will be converted to camel-case
 #' @param out_dir string directory where the compressed ffdf should be written
 #' @importFrom ffbase save.ffdf
 #' @importFrom ff ffdf as.ff
 #' @importFrom utils tar
+#' @importFrom dplyr collect
 #' @return invisibly
 #' @export
 write_ffdf <- function(x, table_name, out_dir) {
   table_name_camelcase <- gsub("[^a-zA-Z](\\w)", "\\U\\1", table_name, perl = TRUE)
 
-  assign(table_name_camelcase,
-         lapply(x, function(c) { as.ff(fix_vmode(c)) }) %>% do.call(what = ffdf))
+  as_ff <- function(c) {
+    vec <- x[[c]] %||% x[c]
+    tryCatch(
+      vec <- collect(vec),
+      error = \(e){}
+    )
+    as.ff(fix_vmode(vec))
+  }
 
-  temp_dir <- tempfile(paste0(table_name_camelcase,"XXX"))
+  assign(table_name_camelcase,
+         lapply(names(x), as_ff) %>%
+           setNames(names(x)) %>%
+           do.call(what = ffdf))
+
+  temp_dir <- tempfile(table_name_camelcase)
   dir.create(temp_dir)
   eval(rlang::expr(save.ffdf(!!table_name_camelcase,dir=temp_dir,overwrite=T)))
 

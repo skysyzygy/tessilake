@@ -28,6 +28,7 @@ default:
       shallow: path_to_shallow_storage
       somewhere: another_path
     tessitura: ODBC_name_for_database
+    [tessitura.encoding: optionally force encoding for the connection]
 ```
 
 ## Example

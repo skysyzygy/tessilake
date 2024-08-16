@@ -17,10 +17,12 @@
 sql_connect <- function() {
   if (is.null(db$db)) {
     tryCatch({
-        db_expr <- expr(DBI::dbConnect(odbc::odbc(), !!config::get("tessilake")[["tessitura"]], encoding = "windows-1252"))
+        args <- list(drv = odbc::odbc(),
+                     dsn = config::get("tessilake")[["tessitura"]],
+                     encoding = config::get("tessilake")[["tessitura.encoding"]] %||% "")
 
         callbacks <- getTaskCallbackNames()
-        db$db <- eval(db_expr)
+        db$db <- do.call(DBI::dbConnect,args)
         removeTaskCallback(setdiff(getTaskCallbackNames(), callbacks))
 
         if ("odbc.version" %in% names(attributes(db$db))) {

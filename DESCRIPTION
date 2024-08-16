@@ -8,7 +8,7 @@ Authors@R:
            email = "sky@skysyzygy.xyz",
            comment = c(ORCID = "YOUR-ORCID-ID"))
 Description: Tessilake ingests data from Tessitura or other SQL database and caches it using Apache Arrow and Parquet formats.
-License: MIT + file LICENSE
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.3.1
