@@ -277,6 +277,19 @@ test_that("sync_cache copies non-arrow files across all storages", {
 
 })
 
+test_that("sync_cache copies directories across all storages", {
+  depths <- names(config::get("tessilake")$depths)
+
+  dir.create(cache_path("other_file", depths[1], "stream"))
+  other_file <- write.csv(letters, cache_path("other_file/other_file.csv", depths[1], "stream"))
+  sync_cache("other_file", "stream", whole_file = T)
+  expect_file_exists(cache_path("other_file/other_file.csv", depths[2], "stream"))
+
+  expect_equal(read.csv(cache_path("other_file/other_file.csv", depths[1], "stream")),
+               read.csv(cache_path("other_file/other_file.csv", depths[2], "stream")))
+
+})
+
 test_that("sync_cache syncs arrow timestamps across all storages", {
   depths <- names(config::get("tessilake")$depths)
 
