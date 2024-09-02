@@ -298,9 +298,13 @@ sync_cache <- function(table_name, type, incremental = FALSE, date_column = NULL
 
   for(index in seq(2,length(depths))) {
     if(whole_file) {
+      src_path <- cache_path(table_name = table_name, depth = depths[index-1], type = type)
+      dst_path <- cache_path(table_name = table_name, depth = depths[index], type = type)
+      if (dir.exists(src_path) & !dir.exists(dst_path)) {
+        dir.create(dst_path, recursive = T)
+      }
       file.copy(cache_files(table_name = table_name, depth = depths[index-1], type = type),
-                cache_path(table_name = table_name, depth = depths[index], type = type),
-                overwrite = TRUE)
+                dst_path, overwrite = TRUE)
     } else {
 
       table <- cache_read(table_name = table_name, depth = depths[index-1], type = type)
