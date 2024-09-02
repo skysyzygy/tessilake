@@ -40,7 +40,7 @@ cache_files <- function(table_name, depth, type) {
         full.names = TRUE, recursive = TRUE),
     # parquet/feather files
     dir(cache_path,
-        pattern = paste0(table_name,"\\..+"),
+        pattern = paste0("^",gsub("([[:punct:]])","\\\\\\1",table_name),"\\..+"),
         full.names = TRUE)
   ) %>% purrr::keep(file.exists)
 }
