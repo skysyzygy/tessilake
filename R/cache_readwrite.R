@@ -50,6 +50,7 @@ read_cache <- function(table_name, type, depth = deprecated(), ...) {
 cache_read <- function(table_name, depth, type,
                        include_partition = FALSE, select = NULL, num_tries = 60, ...) {
   cache_path <- cache_path(table_name, depth, type)
+  cache <- NULL
 
   if (dir.exists(cache_path)) {
     args <- modifyList(rlang::list2(...),
