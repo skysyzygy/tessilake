@@ -85,7 +85,7 @@ cache_read <- function(table_name, depth, type,
     cache_file <- NULL
   }
 
-  while(!exists("cache") && num_tries > 0) {
+  while(is.null(cache) && num_tries > 0) {
     args <- modifyList(rlang::list2(...),
                        eval(rlang::expr(list(file = cache_file,
                        as_data_frame = F,
@@ -93,7 +93,7 @@ cache_read <- function(table_name, depth, type,
 
     last_error <- tryCatch(cache <- do.call(cache_reader,args),
                            error = force)
-    if(exists("cache"))
+    if(!is.null(cache))
       break
     num_tries <- num_tries - 1
     Sys.sleep(1)
