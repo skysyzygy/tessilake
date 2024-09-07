@@ -99,7 +99,7 @@ cache_read <- function(table_name, depth, type,
     Sys.sleep(1)
   }
 
-  if(!exists("cache")) {
+  if(is.null(cache)) {
     rlang::abort(c(paste("Couldn't read cache at", cache_path),
                   "*" = rlang::cnd_message(last_error)))
     return(FALSE)
@@ -188,6 +188,7 @@ cache_write <- function(x, table_name, depth, type,
 
   format <- coalesce(config::get("tessilake")$depths[[depth]]$format,"parquet")
 
+  partition_name <- NULL
   if (partition == TRUE | is.character(partition)) {
     if (partition == TRUE && is.null(primary_keys)) {
       stop("Cannot auto generate partition without primary key information.")
@@ -241,17 +242,18 @@ cache_write <- function(x, table_name, depth, type,
 
   args <- modifyList(rlang::list2(...),args)
 
-  while(!exists("cache") && num_tries > 0) {
+  cache <- NULL
+  while(is.null(cache) && num_tries > 0) {
     last_error <- tryCatch(cache <- do.call(cache_writer, args),
                            error = force)
-    if(exists("cache"))
+    if(!is.null(cache))
       break
     num_tries <- num_tries - 1
     gc()
     Sys.sleep(1)
   }
 
-  if(!exists("cache")) {
+  if(is.null(cache)) {
     rlang::abort(c(paste("Couldn't write cache at", cache_path),
                   "*" = rlang::cnd_message(last_error)))
   }
@@ -261,7 +263,7 @@ cache_write <- function(x, table_name, depth, type,
     for (name in names(attributes)) {
       setattr(x, name, attributes_old[[name]])
     }
-    if (inherits(x, "data.table") & exists("partition_name"))
+    if (inherits(x, "data.table") & !is.null(partition_name))
       x[, (partition_name) := NULL]
   }
 
