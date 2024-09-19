@@ -181,7 +181,8 @@ cache_write <- function(x, table_name, depth, type,
 
   assert_dataframeish(x)
 
-  x <- collect(x)
+  if (inherits(x,"tbl_lazy"))
+    x <- collect(x)
   attributes <- cache_get_attributes(x)
   attributes_old <- attributes
 
@@ -204,7 +205,7 @@ cache_write <- function(x, table_name, depth, type,
     if (inherits(x, "data.table")) {
       x[, (partition_name) := eval(partitioning)]
     } else {
-      x <- mutate(x, !!partition_name := eval(partitioning)) %>% collect()
+      x <- mutate(x, !!partition_name := eval(partitioning))
     }
 
     if (!dir.exists(cache_path)) dir.create(cache_path, recursive = T)
