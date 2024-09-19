@@ -57,6 +57,42 @@ test_that("cache_get_mtime doesn't get confused about similarly named caches", {
 })
 
 
+# cache_files -------------------------------------------------------------
+
+test_that("cache_files returns named file, directory, and/or subfiles", {
+  root_path <- cache_path("","shallow","tessi")
+
+  expect_length(cache_files("test","shallow","tessi"),0)
+
+  file.create(test_file <- file.path(root_path,"test.file"))
+  expect_equal(cache_files("test","shallow","tessi"),test_file)
+  expect_equal(cache_files("test.file","shallow","tessi"),test_file)
+
+  dir.create(test_dir <- file.path(root_path,"test_dir"))
+  expect_equal(cache_files("test","shallow","tessi"),test_file)
+  expect_equal(cache_files("test.file","shallow","tessi"),test_file)
+  expect_equal(cache_files("test_dir","shallow","tessi"),test_dir)
+
+  file.create(test_file2 <- file.path(test_dir,"test.file"))
+  expect_equal(cache_files("test","shallow","tessi"),test_file)
+  expect_equal(cache_files("test.file","shallow","tessi"),test_file)
+  expect_equal(cache_files("test_dir","shallow","tessi"),c(test_dir,test_file2))
+
+})
+
+test_that("cache_files handles filename regex collisions", {
+  root_path <- cache_path("","shallow","tessi")
+
+  file.create(test_file <- file.path(root_path,"test.file"))
+  file.create(test_file2 <- file.path(root_path,"test+file.file"))
+  file.create(test_file3 <- file.path(root_path,"a_test_file.file"))
+  expect_equal(cache_files("test.file","shallow","tessi"),test_file)
+  expect_equal(cache_files("test+file","shallow","tessi"),test_file2)
+  expect_equal(cache_files("a_test_file","shallow","tessi"),test_file3)
+
+})
+
+
 # cache_delete ------------------------------------------------------------
 
 test_that("cache_delete complains if arguments incorrect", {

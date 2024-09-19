@@ -84,7 +84,7 @@ cache_read <- function(table_name, depth, type,
     cache_file <- NULL
   }
 
-  while(!exists("cache") && num_tries > 0) {
+  while(!exists("cache", inherits = F) && num_tries > 0) {
     args <- modifyList(rlang::list2(...),
                        eval(rlang::expr(list(file = cache_file,
                        as_data_frame = F,
@@ -92,13 +92,13 @@ cache_read <- function(table_name, depth, type,
 
     last_error <- tryCatch(cache <- do.call(cache_reader,args),
                            error = force)
-    if(exists("cache"))
+    if(exists("cache", inherits = F))
       break
     num_tries <- num_tries - 1
     Sys.sleep(1)
   }
 
-  if(!exists("cache")) {
+  if(!exists("cache", inherits = F)) {
     rlang::abort(c(paste("Couldn't read cache at", cache_path),
                   "*" = rlang::cnd_message(last_error)))
     return(FALSE)
@@ -241,17 +241,17 @@ cache_write <- function(x, table_name, depth, type,
 
   args <- modifyList(rlang::list2(...),args)
 
-  while(!exists("cache") && num_tries > 0) {
+  while(!exists("cache", inherits = F) && num_tries > 0) {
     last_error <- tryCatch(cache <- do.call(cache_writer, args),
                            error = force)
-    if(exists("cache"))
+    if(exists("cache", inherits = F))
       break
     num_tries <- num_tries - 1
     gc()
     Sys.sleep(1)
   }
 
-  if(!exists("cache")) {
+  if(!exists("cache", inherits = F)) {
     rlang::abort(c(paste("Couldn't write cache at", cache_path),
                   "*" = rlang::cnd_message(last_error)))
   }
@@ -261,7 +261,7 @@ cache_write <- function(x, table_name, depth, type,
     for (name in names(attributes)) {
       setattr(x, name, attributes_old[[name]])
     }
-    if (inherits(x, "data.table") & exists("partition_name"))
+    if (inherits(x, "data.table") & exists("partition_name", inherits = F))
       x[, (partition_name) := NULL]
   }
 
