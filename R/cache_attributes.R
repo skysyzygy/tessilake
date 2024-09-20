@@ -51,16 +51,17 @@ cache_set_attributes <- function(x, attributes) {
   if (inherits(x, "arrow_dplyr_query"))
     return(cache_set_attributes(x$.data, attributes))
 
-  if (!is.null(x$metadata$r)) {
-    r <- x$metadata$r
-    r$attributes[names(attributes)] <- attributes[names(attributes)]
-    tryCatch(
-      x$schema$metadata$r <- r,
-      error = function(e) {
-        x$metadata$r <- r
-      }
-    )
-  }
+  if (!"r" %in% names(x$metadata))
+    x$metadata$r <- list()
+
+  r <- x$metadata$r
+  r$attributes[names(attributes)] <- attributes[names(attributes)]
+  tryCatch(
+    x$schema$metadata$r <- r,
+    error = function(e) {
+      x$metadata$r <- r
+    }
+  )
 
   invisible(NULL)
 }

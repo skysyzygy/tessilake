@@ -53,9 +53,19 @@ test_that("cache_write with works with anything data.frameish", {
 
   cache_write(arrow_table(test_read_write), "test_read_write_arrow", "deep", "tessi")
   expect_true(file.exists(paste0(cache_path("test_read_write_arrow", "deep", "tessi"), ".parquet")))
+
+  cache_write(arrow_table(x=1), "test_read_write_arrow", "shallow", "tessi", primary_keys = "x", partition = F)
+  expect_true(file.exists(paste0(cache_path("test_read_write_arrow", "shallow", "tessi"), ".feather")))
+  expect_true("primary_keys" %in% names(cache_get_attributes(cache_read("test_read_write_arrow", "shallow", "tessi"))))
+
   cache_write(test_read_write_table, "test_read_write_tbl", "deep", "tessi", primary_keys = "x", partition = F)
   expect_true(file.exists(paste0(cache_path("test_read_write_tbl", "deep", "tessi"), ".parquet")))
   expect_true("primary_keys" %in% names(cache_get_attributes(cache_read("test_read_write_tbl", "deep", "tessi"))))
+
+  cache_write(test_read_write_table, "test_read_write_tbl", "shallow", "tessi", primary_keys = "x", partition = F)
+  expect_true(file.exists(paste0(cache_path("test_read_write_tbl", "shallow", "tessi"), ".feather")))
+  expect_true("primary_keys" %in% names(cache_get_attributes(cache_read("test_read_write_tbl", "shallow", "tessi"))))
+
 
   DBI::dbDisconnect(con)
 })

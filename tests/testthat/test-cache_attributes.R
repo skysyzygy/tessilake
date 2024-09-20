@@ -56,6 +56,10 @@ test_that("cache_set_attributes updates attributes of a data.frame", {
 })
 
 test_that("cache_set_attributes updates attributes of an Arrow Table", {
+  x <- arrow_table(x = c(1,2,3))
+  cache_set_attributes(x, list(names = "test", b = "another"))
+  expect_mapequal(cache_get_attributes(x), list(b = "another"))
+
   x <- data.frame(c(1, 2, 3))
   y <- copy(x)
   x <- arrow_table(x)
